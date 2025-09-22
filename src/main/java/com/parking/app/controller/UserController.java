@@ -58,6 +58,14 @@ public class UserController {
         if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         return ResponseEntity.ok(user);
     }
+    @GetMapping("/{userId}/vehicles")
+    public ResponseEntity<List<String>> getUserVehicles(@PathVariable String userId) {
+        Users user = userService.getUserById(userId);
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(user.getVehicleNumbers());
+    }
 
     // Update user by ID
     @PutMapping("/{id}")
@@ -79,4 +87,8 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+// In UserController.java
+
+
+
 }

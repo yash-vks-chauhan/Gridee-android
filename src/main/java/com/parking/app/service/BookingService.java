@@ -333,6 +333,8 @@ import com.parking.app.model.Users;
 import com.parking.app.repository.BookingRepository;
 import com.parking.app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -373,6 +375,81 @@ public class BookingService {
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
     }
 
+    public Bookings startBooking(String spotId, String userId, String lotId, Date checkInTime, Date checkOutTime, String vehicleNumber) {
+        if (checkInTime == null || checkOutTime == null) {
+            throw new IllegalArgumentException("Check-in and Check-out times are required.");
+        }
+        if (!checkOutTime.after(checkInTime)) {
+            throw new IllegalArgumentException("Check-out time must be after Check-in time.");
+        }
+
+        Query spotQuery = new Query(Criteria.where("_id").is(spotId).and("available").gt(0));
+        Update decUpdate = new Update().inc("available", -1);
+
+        ParkingSpot updatedSpot = mongoOperations.findAndModify(
+                spotQuery, decUpdate, org.springframework.data.mongodb.core.FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
+
+        if (updatedSpot == null) {
+            // No spots available
+            throw new com.parking.app.exception.ConflictException("No spots available");
+        }
+
+        long durationMs = checkOutTime.getTime() - checkInTime.getTime();
+        double hoursParked = Math.ceil(durationMs / (1000.0 * 60 * 60));
+        double amount = hoursParked * 2.5;
+
+        Bookings booking = new Bookings();
+        booking.setSpotId(spotId);
+        booking.setUserId(userId);
+        booking.setLotId(lotId);
+        booking.setStatus("pending");
+        booking.setAmount(amount);
+        booking.setCreatedAt(new Date());
+        booking.setCheckInTime(checkInTime);
+        booking.setCheckOutTime(checkOutTime);
+        booking.setVehicleNumber(vehicleNumber);
+        return bookingRepository.save(booking);
+    }
+
+
+    public List<Bookings> getAllBookingsFiltered(
+            String status,
+            String lotId,
+            String fromDate,
+            String toDate,
+            int page,
+            int size
+    ) {
+        Query query = new Query();
+        if (status != null) query.addCriteria(Criteria.where("status").is(status));
+        if (lotId != null) query.addCriteria(Criteria.where("lotId").is(lotId));
+        if (fromDate != null) query.addCriteria(Criteria.where("checkInTime").gte(parseDate(fromDate)));
+        if (toDate != null) query.addCriteria(Criteria.where("checkOutTime").lte(parseDate(toDate)));
+        query.with(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        return mongoOperations.find(query, Bookings.class);
+    }
+
+    private Date parseDate(String date) {
+        try {
+            return java.util.Date.from(java.time.ZonedDateTime.parse(date).toInstant());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public List<Bookings> getBookingHistoryByUserId(String userId) {
+        Date now = new Date();
+        Query query = new Query(
+                Criteria.where("userId").is(userId)
+                        .orOperator(
+                                Criteria.where("status").in("completed", "cancelled"),
+                                Criteria.where("checkOutTime").lt(now)
+                        )
+        );
+        query.with(Sort.by(Sort.Direction.DESC, "checkOutTime"));
+        return mongoOperations.find(query, Bookings.class);
+    }
+
     private void validateTimes(Date checkIn, Date checkOut) {
         if (checkIn == null || checkOut == null) {
             throw new IllegalArgumentException("Check-in and Check-out times are required");
@@ -381,62 +458,17 @@ public class BookingService {
             throw new IllegalArgumentException("Check-out time must be after Check-in time");
         }
     }
+
     public List<String> getVehicleNumbersByUserId(String userId) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return user.getVehicleNumbers();  // Returns List<String> of vehicle numbers
     }
 
-
     private double calculateCharge(Date from, Date to) {
         long durationMs = to.getTime() - from.getTime();
         return Math.ceil(durationMs / (1000.0 * 60 * 60)) * HOURLY_RATE;
     }
-
-    public Bookings startBooking(
-            String spotId,
-            String userId,
-            String lotId,
-            Date checkInTime,
-            Date checkOutTime,
-            String selectedVehicleNumber   // <- name it “selected”
-    ) {
-        validateTimes(checkInTime, checkOutTime);
-
-        // make sure this vehicle belongs to the user
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        if (!user.getVehicleNumbers().contains(selectedVehicleNumber)) {
-            throw new IllegalArgumentException("Vehicle not registered for this user");
-        }
-
-        Query spotQuery = new Query(
-                Criteria.where("_id").is(spotId).and("available").gt(0)
-        );
-        Update decUpdate = new Update().inc("available", -1);
-        ParkingSpot updatedSpot =
-                mongoOperations.findAndModify(spotQuery, decUpdate, ParkingSpot.class);
-
-        if (updatedSpot == null) {
-            throw new ConflictException("No spots available");
-        }
-
-        Bookings booking = new Bookings();
-        booking.setSpotId(spotId);
-        booking.setUserId(userId);
-        booking.setLotId(lotId);
-        booking.setStatus("pending");
-        booking.setAmount(calculateCharge(checkInTime, checkOutTime));
-        booking.setCreatedAt(new Date());
-        booking.setCheckInTime(checkInTime);
-        booking.setCheckOutTime(checkOutTime);
-
-        // ✅ store the chosen vehicle for reference
-        booking.setVehicleNumber(selectedVehicleNumber);
-
-        return bookingRepository.save(booking);
-    }
-
 
     public Bookings confirmBooking(String bookingId) {
         Bookings booking = findBookingOrThrow(bookingId);

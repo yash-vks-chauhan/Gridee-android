@@ -1,219 +1,171 @@
-/* Reset & basics */
-* {
-  box-sizing: border-box;
-}
-
+/* style.css */
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f6fc;
-  color: #333;
-  margin: 0;
-  padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f7fa;
+    margin: 0;
+    padding: 0;
+    color: #222;
 }
 
 header {
-  background: #3a4f6b;
-  padding: 20px 40px;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+    background: #2d3e50;
+    padding: 0 0 10px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
 
-.logo {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 1.3px;
+header nav {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 20px 30px 0 30px;
 }
 
-.nav-buttons button {
-  background: #486a8e;
-  border: none;
-  color: white;
-  margin-left: 12px;
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.3s ease;
+header nav button {
+    background: #fff;
+    color: #2d3e50;
+    border: none;
+    border-radius: 4px 4px 0 0;
+    margin-right: 12px;
+    padding: 10px 24px;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
 }
 
-.nav-buttons button:hover,
-.nav-buttons button:focus {
-  background: #608abc;
-  outline: none;
+header nav button:hover,
+header nav button:focus {
+    background: #4a90e2;
+    color: #fff;
 }
 
-main {
-  padding: 30px 50px;
-  max-width: 1200px;
-  margin: auto;
+section {
+    background: #fff;
+    margin: 30px auto 0 auto;
+    padding: 32px 40px 40px 40px;
+    border-radius: 10px;
+    max-width: 900px;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.07);
 }
 
-h2 {
-  font-size: 28px;
-  margin-bottom: 20px;
-  color: #223344;
-}
-
-h3 {
-  margin-top: 30px;
-  font-size: 22px;
-  color: #42526c;
-  margin-bottom: 12px;
-}
-
-.form-grid {
-  display: flex;
-  gap: 50px;
-  margin-bottom: 30px;
-}
-
-.form-grid > div {
-  background: white;
-  padding: 20px 30px;
-  border-radius: 12px;
-  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
-  flex: 1;
+h2, h3 {
+    color: #2d3e50;
+    margin-top: 0;
 }
 
 label {
-  display: block;
-  margin: 15px 0 6px 0;
-  font-weight: 600;
-  color: #4a5a6a;
+    display: inline-block;
+    width: 160px;
+    margin-right: 10px;
+    font-weight: 500;
+    color: #34495e;
+    vertical-align: top;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="datetime-local"],
-input[type="number"],
-select,
-textarea {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1.6px solid #ccd6ea;
-  font-size: 14px;
-  transition: border-color 0.3s;
+input, select, textarea {
+    padding: 8px 10px;
+    width: 320px;
+    margin: 6px 0 14px 0;
+    border: 1px solid #cfd8dc;
+    border-radius: 4px;
+    font-size: 1em;
+    background: #f9fbfc;
+    transition: border 0.2s;
 }
 
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="password"]:focus,
-input[type="datetime-local"]:focus,
-input[type="number"]:focus,
-select:focus,
-textarea:focus {
-  border-color: #6c8dd5;
-  outline: none;
+input:focus, select:focus, textarea:focus {
+    border: 1.5px solid #4a90e2;
+    outline: none;
+    background: #fff;
 }
 
 button {
-  cursor: pointer;
-  font-weight: 700;
-  padding: 10px 20px;
-  border-radius: 8px;
-  border: none;
-  transition: background-color 0.3s ease;
-  margin-top: 20px;
+    background: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 22px;
+    font-size: 1em;
+    font-weight: 500;
+    margin: 8px 0 16px 0;
+    cursor: pointer;
+    transition: background 0.2s;
+    box-shadow: 0 2px 6px rgba(44,62,80,0.04);
 }
 
-.btn-primary {
-  background-color: #4b7bec;
-  color: white;
+button:hover, button:focus {
+    background: #357ab8;
 }
 
-.btn-primary:hover {
-  background-color: #3867d6;
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 18px;
+    background: #fafbfc;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(44,62,80,0.03);
 }
 
-.btn-secondary {
-  background-color: #63cdda;
-  color: #054045;
+th, td {
+    border: 1px solid #e3e7ea;
+    padding: 10px 12px;
+    text-align: left;
+    vertical-align: middle;
+    font-size: 0.98em;
 }
 
-.btn-secondary:hover {
-  background-color: #3ebaec;
-  color: white;
+th {
+    background: #eaf1f8;
+    color: #2d3e50;
+    font-weight: 600;
 }
 
-.btn-danger {
-  background-color: #fc5c65;
-  color: white;
+tr:nth-child(even) {
+    background: #f4f7fa;
 }
 
-.btn-danger:hover {
-  background-color: #eb3b5a;
-}
-
-.data-table {
-  background: white;
-  border-collapse: collapse;
-  width: 100%;
-  margin-top: 10px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 3px 7px rgba(79, 79, 79, 0.1);
-}
-
-.data-table th,
-.data-table td {
-  padding: 12px 18px;
-  text-align: left;
-  border-bottom: 1px solid #f1f2f6;
-  font-size: 15px;
-}
-
-.data-table th {
-  background: #e6ecf8;
-  font-weight: 700;
-  color: #223344;
-  text-transform: uppercase;
-}
-
-.data-table tbody tr:hover {
-  background-color: #f3f7ff;
+tr:hover {
+    background: #e3f0fc;
 }
 
 .response {
-  background: #dde7ff;
-  border: 1px solid #a1baff;
-  padding: 12px 15px;
-  border-radius: 8px;
-  font-family: monospace;
-  max-height: 300px;
-  overflow-y: auto;
-  margin-bottom: 20px;
+    background: #eaf6ff;
+    padding: 12px;
+    margin-top: 12px;
+    border: 1.5px solid #b3d8f6;
+    border-radius: 4px;
+    color: #205081;
+    font-size: 0.98em;
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-.delete-section {
-  margin-top: 25px;
-  background: #fff4f4;
-  padding: 15px 20px;
-  border-radius: 12px;
-  border: 1px solid #f5a7a7;
+img.qrcode {
+    height: 70px;
+    border: 1px solid #e3e7ea;
+    border-radius: 4px;
+    background: #fff;
+    padding: 4px;
 }
 
-footer {
-  text-align: center;
-  padding: 20px 0;
-  margin-top: 50px;
-  background: #3a4f6b;
-  color: white;
-  font-weight: 500;
-  font-size: 16px;
+.hidden {
+    display: none;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 900px) {
-  .form-grid {
-    flex-direction: column;
-  }
-
-  header nav {
-    flex-direction: column;
-    gap: 15px;
-  }
+@media (max-width: 700px) {
+    section {
+        padding: 18px 6vw 24px 6vw;
+        max-width: 98vw;
+    }
+    label, input, select, textarea {
+        width: 98vw;
+        min-width: 0;
+        max-width: 98vw;
+    }
+    table, th, td {
+        font-size: 0.95em;
+    }
 }

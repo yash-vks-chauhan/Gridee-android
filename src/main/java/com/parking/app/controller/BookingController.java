@@ -159,43 +159,56 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/users/{userId}/bookings")
+@RequestMapping("/api")
 public class BookingController {
 
     private final BookingService bookingService;
-
     private static final SimpleDateFormat ISO_DATE_TIME_FORMAT =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX"); // ISO format with timezone
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
 
     @Autowired
     public BookingController(BookingService bookingService) {
         this.bookingService = bookingService;
     }
 
-    @PostMapping("/start")
+    // --- ADMIN/GLOBAL ENDPOINTS ---
+
+    // List all bookings with optional filtering and pagination
+    @GetMapping("/bookings")
+    public ResponseEntity<List<Bookings>> getAllBookings(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String lotId,
+            @RequestParam(required = false) String fromDate,
+            @RequestParam(required = false) String toDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        // Implement filtering and pagination in your service
+        List<Bookings> bookings = bookingService.getAllBookingsFiltered(status, lotId, fromDate, toDate, page, size);
+        return bookings.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(bookings);
+    }
+
+    // --- USER ENDPOINTS ---
+
+    // Start a booking
+    @PostMapping("/users/{userId}/bookings/start")
     public ResponseEntity<?> startBooking(
             @PathVariable String userId,
             @RequestParam String spotId,
             @RequestParam String lotId,
             @RequestParam String checkInTime,
             @RequestParam String checkOutTime,
-            @RequestParam String vehicleNumber   // <- from frontend
+            @RequestParam String vehicleNumber
     ) {
         try {
-            Date checkIn  = ISO_DATE_TIME_FORMAT.parse(checkInTime);
+            Date checkIn = ISO_DATE_TIME_FORMAT.parse(checkInTime);
             Date checkOut = ISO_DATE_TIME_FORMAT.parse(checkOutTime);
-
-            Bookings booking = bookingService.startBooking(
-                    spotId, userId, lotId, checkIn, checkOut, vehicleNumber
-            );
+            Bookings booking = bookingService.startBooking(spotId, userId, lotId, checkIn, checkOut, vehicleNumber);
             return ResponseEntity.ok(booking);
         } catch (ConflictException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("No spots available");
@@ -204,9 +217,8 @@ public class BookingController {
         }
     }
 
-    // ... keep the rest of your existing controller methods unchanged ...
-
-    @PostMapping("/{bookingId}/confirm")
+    // Confirm booking
+    @PostMapping("/users/{userId}/bookings/{bookingId}/confirm")
     public ResponseEntity<?> confirmBooking(@PathVariable String userId, @PathVariable String bookingId) {
         try {
             Bookings booking = bookingService.confirmBooking(bookingId);
@@ -219,7 +231,8 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/{bookingId}/cancel")
+    // Cancel booking
+    @PostMapping("/users/{userId}/bookings/{bookingId}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable String userId, @PathVariable String bookingId) {
         try {
             Bookings booking = bookingService.getBookingById(bookingId);
@@ -233,7 +246,8 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/{bookingId}/checkin")
+    // Check in
+    @PostMapping("/users/{userId}/bookings/{bookingId}/checkin")
     public ResponseEntity<?> checkIn(@PathVariable String userId, @PathVariable String bookingId) {
         try {
             Bookings booking = bookingService.getBookingById(bookingId);
@@ -247,7 +261,8 @@ public class BookingController {
         }
     }
 
-    @PostMapping("/{bookingId}/checkout")
+    // Check out
+    @PostMapping("/users/{userId}/bookings/{bookingId}/checkout")
     public ResponseEntity<?> checkOut(@PathVariable String userId, @PathVariable String bookingId) {
         try {
             Bookings booking = bookingService.getBookingById(bookingId);
@@ -263,13 +278,15 @@ public class BookingController {
         }
     }
 
-    @GetMapping
-    public ResponseEntity<List<Bookings>> getAllBookings(@PathVariable String userId) {
+    // List all bookings for a user
+    @GetMapping("/users/{userId}/bookings")
+    public ResponseEntity<List<Bookings>> getUserBookings(@PathVariable String userId) {
         List<Bookings> bookings = bookingService.getBookingsByUserId(userId);
         return bookings.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(bookings);
     }
 
-    @GetMapping("/{bookingId}")
+    // Get a specific booking for a user
+    @GetMapping("/users/{userId}/bookings/{bookingId}")
     public ResponseEntity<Bookings> getBookingById(@PathVariable String userId, @PathVariable String bookingId) {
         Bookings booking = bookingService.getBookingById(bookingId);
         if (booking == null || !booking.getUserId().equals(userId)) {
@@ -278,7 +295,8 @@ public class BookingController {
         return ResponseEntity.ok(booking);
     }
 
-    @PutMapping("/{bookingId}")
+    // Update booking status
+    @PutMapping("/users/{userId}/bookings/{bookingId}")
     public ResponseEntity<?> updateBookingStatus(@PathVariable String userId,
                                                  @PathVariable String bookingId,
                                                  @RequestBody Bookings bookingDetails) {
@@ -297,7 +315,8 @@ public class BookingController {
         }
     }
 
-    @DeleteMapping("/{bookingId}")
+    // Delete booking
+    @DeleteMapping("/users/{userId}/bookings/{bookingId}")
     public ResponseEntity<Void> deleteBooking(@PathVariable String userId, @PathVariable String bookingId) {
         Bookings booking = bookingService.getBookingById(bookingId);
         if (booking == null || !booking.getUserId().equals(userId)) {
@@ -306,4 +325,184 @@ public class BookingController {
         bookingService.deleteBooking(bookingId);
         return ResponseEntity.noContent().build();
     }
+
+//    // Get user's active booking
+//    @GetMapping("/users/{userId}/bookings/active")
+//    public ResponseEntity<Bookings> getActiveBooking(@PathVariable String userId) {
+//        Bookings active = bookingService.getBookingHistoryByUserId(userId);
+//        return active == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(active);
+//    }
+
+    // Get user's booking history
+    @GetMapping("/users/{userId}/bookings/history")
+    public ResponseEntity<List<Bookings>> getBookingHistory(@PathVariable String userId) {
+        List<Bookings> history = bookingService.getBookingHistoryByUserId(userId);
+        return history.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(history);
+    }
+
+    // Health check
+    @GetMapping("/health")
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("OK");
+    }
 }
+//}package com.parking.app.controller;
+//
+//import com.parking.app.exception.*;
+//import com.parking.app.exception.IllegalStateException;
+//import com.parking.app.model.Bookings;
+//import com.parking.app.service.BookingService;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.http.HttpStatus;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.web.bind.annotation.*;
+//
+//import java.text.ParseException;
+//import java.text.SimpleDateFormat;
+//import java.util.Date;
+//import java.util.HashMap;
+//import java.util.List;
+//import java.util.Map;
+//
+//@RestController
+//@RequestMapping("/api/users/{userId}/bookings")
+//public class BookingController {
+//
+//    private final BookingService bookingService;
+//
+//    private static final SimpleDateFormat ISO_DATE_TIME_FORMAT =
+//            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX"); // ISO format with timezone
+//
+//    @Autowired
+//    public BookingController(BookingService bookingService) {
+//        this.bookingService = bookingService;
+//    }
+//
+//    @PostMapping("/start")
+//    public ResponseEntity<?> startBooking(
+//            @PathVariable String userId,
+//            @RequestParam String spotId,
+//            @RequestParam String lotId,
+//            @RequestParam String checkInTime,
+//            @RequestParam String checkOutTime,
+//            @RequestParam String vehicleNumber   // <- from frontend
+//    ) {
+//        try {
+//            Date checkIn  = ISO_DATE_TIME_FORMAT.parse(checkInTime);
+//            Date checkOut = ISO_DATE_TIME_FORMAT.parse(checkOutTime);
+//
+//            Bookings booking = bookingService.startBooking(
+//                    spotId, userId, lotId, checkIn, checkOut, vehicleNumber
+//            );
+//            return ResponseEntity.ok(booking);
+//        } catch (ConflictException e) {
+//            return ResponseEntity.status(HttpStatus.CONFLICT).body("No spots available");
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    // ... keep the rest of your existing controller methods unchanged ...
+//
+//    @PostMapping("/{bookingId}/confirm")
+//    public ResponseEntity<?> confirmBooking(@PathVariable String userId, @PathVariable String bookingId) {
+//        try {
+//            Bookings booking = bookingService.confirmBooking(bookingId);
+//            if (!booking.getUserId().equals(userId)) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+//            }
+//            return ResponseEntity.ok(booking);
+//        } catch (IllegalStateException | NotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+//        }
+//    }
+//
+//    @PostMapping("/{bookingId}/cancel")
+//    public ResponseEntity<?> cancelBooking(@PathVariable String userId, @PathVariable String bookingId) {
+//        try {
+//            Bookings booking = bookingService.getBookingById(bookingId);
+//            if (booking == null || !booking.getUserId().equals(userId)) {
+//                return ResponseEntity.notFound().build();
+//            }
+//            boolean cancelled = bookingService.cancelBooking(bookingId);
+//            return cancelled ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+//        } catch (IllegalStateException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    @PostMapping("/{bookingId}/checkin")
+//    public ResponseEntity<?> checkIn(@PathVariable String userId, @PathVariable String bookingId) {
+//        try {
+//            Bookings booking = bookingService.getBookingById(bookingId);
+//            if (booking == null || !booking.getUserId().equals(userId)) {
+//                return ResponseEntity.notFound().build();
+//            }
+//            booking = bookingService.checkIn(bookingId);
+//            return ResponseEntity.ok(booking);
+//        } catch (IllegalStateException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    @PostMapping("/{bookingId}/checkout")
+//    public ResponseEntity<?> checkOut(@PathVariable String userId, @PathVariable String bookingId) {
+//        try {
+//            Bookings booking = bookingService.getBookingById(bookingId);
+//            if (booking == null || !booking.getUserId().equals(userId)) {
+//                return ResponseEntity.notFound().build();
+//            }
+//            booking = bookingService.checkOut(bookingId);
+//            return ResponseEntity.ok(booking);
+//        } catch (InsufficientFundsException e) {
+//            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body("Insufficient wallet coins");
+//        } catch (IllegalStateException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    @GetMapping
+//    public ResponseEntity<List<Bookings>> getAllBookings(@PathVariable String userId) {
+//        List<Bookings> bookings = bookingService.getBookingsByUserId(userId);
+//        return bookings.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(bookings);
+//    }
+//
+//    @GetMapping("/{bookingId}")
+//    public ResponseEntity<Bookings> getBookingById(@PathVariable String userId, @PathVariable String bookingId) {
+//        Bookings booking = bookingService.getBookingById(bookingId);
+//        if (booking == null || !booking.getUserId().equals(userId)) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        return ResponseEntity.ok(booking);
+//    }
+//
+//    @PutMapping("/{bookingId}")
+//    public ResponseEntity<?> updateBookingStatus(@PathVariable String userId,
+//                                                 @PathVariable String bookingId,
+//                                                 @RequestBody Bookings bookingDetails) {
+//        if (bookingDetails.getStatus() == null) {
+//            return ResponseEntity.badRequest().body("Status field is required");
+//        }
+//        try {
+//            Bookings existing = bookingService.getBookingById(bookingId);
+//            if (existing == null || !existing.getUserId().equals(userId)) {
+//                return ResponseEntity.notFound().build();
+//            }
+//            Bookings updated = bookingService.updateBookingStatus(bookingId, bookingDetails.getStatus());
+//            return ResponseEntity.ok(updated);
+//        } catch (IllegalArgumentException e) {
+//            return ResponseEntity.badRequest().body(e.getMessage());
+//        }
+//    }
+//
+//    @DeleteMapping("/{bookingId}")
+//    public ResponseEntity<Void> deleteBooking(@PathVariable String userId, @PathVariable String bookingId) {
+//        Bookings booking = bookingService.getBookingById(bookingId);
+//        if (booking == null || !booking.getUserId().equals(userId)) {
+//            return ResponseEntity.notFound().build();
+//        }
+//        bookingService.deleteBooking(bookingId);
+//        return ResponseEntity.noContent().build();
+//    }
+//
+//}
