@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ParkingSpotService {
@@ -30,19 +31,127 @@ public class ParkingSpotService {
         if (spot.getAvailable() == 0) {
             spot.setAvailable(spot.getCapacity());
         }
+
+        // ✅ SET PROPER ZONE NAME when creating
+        setProperZoneName(spot);
+
         return parkingSpotRepository.save(spot);
     }
 
     public List<ParkingSpot> getAllParkingSpots() {
-        return parkingSpotRepository.findAll();
+        List<ParkingSpot> spots = parkingSpotRepository.findAll();
+
+        // ✅ ENSURE ALL SPOTS HAVE PROPER ZONE NAMES
+        return spots.stream()
+                .map(this::ensureProperZoneName)
+                .collect(Collectors.toList());
     }
 
     public List<ParkingSpot> getParkingSpotsByLotId(String lotId) {
-        return parkingSpotRepository.findByLotId(lotId);
+        List<ParkingSpot> spots = parkingSpotRepository.findByLotId(lotId);
+
+        // ✅ ENSURE ALL SPOTS HAVE PROPER ZONE NAMES
+        return spots.stream()
+                .map(this::ensureProperZoneName)
+                .collect(Collectors.toList());
     }
 
     public ParkingSpot getParkingSpotById(String spotId) {
-        return parkingSpotRepository.findById(spotId).orElse(null);
+        ParkingSpot spot = parkingSpotRepository.findById(spotId).orElse(null);
+        if (spot != null) {
+            return ensureProperZoneName(spot);
+        }
+        return null;
+    }
+
+    // ✅ NEW: Helper method to set proper zone names
+    private void setProperZoneName(ParkingSpot spot) {
+        if (spot.getZoneName() == null ||
+                spot.getZoneName().isEmpty() ||
+                spot.getZoneName().equals("nil") ||
+                spot.getZoneName().equals("null")) {
+
+            String spotId = spot.getId();
+            String zoneName = generateZoneNameFromId(spotId);
+            spot.setZoneName(zoneName);
+        }
+    }
+
+    // ✅ NEW: Helper method to ensure proper zone names (with potential save)
+    private ParkingSpot ensureProperZoneName(ParkingSpot spot) {
+        boolean needsUpdate = false;
+
+        if (spot.getZoneName() == null ||
+                spot.getZoneName().isEmpty() ||
+                spot.getZoneName().equals("nil") ||
+                spot.getZoneName().equals("null")) {
+
+            String zoneName = generateZoneNameFromId(spot.getId());
+            spot.setZoneName(zoneName);
+            needsUpdate = true;
+        }
+
+        // ✅ UPDATE DATABASE if zone name was missing
+        if (needsUpdate) {
+            System.out.println("🔧 Updating zone name for spot " + spot.getId() + " to: " + spot.getZoneName());
+            parkingSpotRepository.save(spot);
+        }
+
+        return spot;
+    }
+
+    // ✅ NEW: Generate proper zone names based on spot ID
+    private String generateZoneNameFromId(String spotId) {
+        if (spotId == null || spotId.isEmpty()) {
+            return "Unknown Zone";
+        }
+
+        // Handle your specific ID patterns
+        switch (spotId.toLowerCase()) {
+            case "ps1":
+                return "Main Parking Zone";
+            case "ps2":
+                return "Secondary Parking Zone";
+            case "ps3":
+                return "Tertiary Parking Zone";
+            default:
+                // Generic pattern for other IDs
+                if (spotId.toLowerCase().startsWith("ps")) {
+                    String number = spotId.substring(2);
+                    return "Parking Zone " + number.toUpperCase();
+                } else if (spotId.contains("-")) {
+                    // Handle IDs like "zone1-area2"
+                    String[] parts = spotId.split("-");
+                    return parts[0].substring(0, 1).toUpperCase() + parts[0].substring(1) + " Area";
+                } else {
+                    // Generic fallback
+                    return "Zone " + spotId.toUpperCase();
+                }
+        }
+    }
+
+    // ✅ NEW: Method to fix all existing spots in database
+    public void fixAllZoneNames() {
+        System.out.println("🔧 Starting zone name fix for all parking spots...");
+        List<ParkingSpot> allSpots = parkingSpotRepository.findAll();
+
+        int updatedCount = 0;
+        for (ParkingSpot spot : allSpots) {
+            if (spot.getZoneName() == null ||
+                    spot.getZoneName().equals("nil") ||
+                    spot.getZoneName().equals("null") ||
+                    spot.getZoneName().isEmpty()) {
+
+                String newZoneName = generateZoneNameFromId(spot.getId());
+                spot.setZoneName(newZoneName);
+                parkingSpotRepository.save(spot);
+                updatedCount++;
+
+                System.out.println("✅ Updated spot " + spot.getId() + " with zone name: " + newZoneName);
+            }
+        }
+
+        System.out.println("🎉 Zone name fix complete! Updated " + updatedCount + " parking spots.");
     }
 
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
@@ -61,10 +170,8 @@ public class ParkingSpotService {
         parkingSpotRepository.deleteById(spotId);
     }
 
-    /**
-     * Atomically hold spot: decrement available by 1 if available > 0, set heldBy and heldAt.
-     * Return updated spot or null if none available.
-     */
+    // ... rest of your existing methods (holdSpot, releaseSpot, etc.)
+
     public ParkingSpot holdSpot(String spotId, String userId) {
         Query spotQuery = new Query(Criteria.where("_id").is(spotId).and("available").gt(0));
         Update holdUpdate = new Update()
@@ -76,9 +183,6 @@ public class ParkingSpotService {
                 FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
     }
 
-    /**
-     * Release spot hold: increment available by 1 and clear heldBy and heldAt.
-     */
     public ParkingSpot releaseSpot(String spotId) {
         Query spotQuery = new Query(Criteria.where("_id").is(spotId));
         Update releaseUpdate = new Update()
@@ -89,9 +193,4 @@ public class ParkingSpotService {
         return mongoOperations.findAndModify(spotQuery, releaseUpdate,
                 FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
     }
-
-    /**
-     * Release all expired holds older than expiryCutoff.
-     */
-    }
-
+}

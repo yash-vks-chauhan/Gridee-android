@@ -27,6 +27,11 @@ public class ParkingSpotController {
         List<ParkingSpot> spots = parkingSpotService.getParkingSpotsByLotId(lotId);
         return ResponseEntity.ok(spots);
     }
+    @GetMapping("/fix-zone-names")
+    public ResponseEntity<String> fixZoneNames() {
+        parkingSpotService.fixAllZoneNames();
+        return ResponseEntity.ok("Zone names have been fixed for all parking spots");
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<ParkingSpot> getParkingSpotById(@PathVariable String id) {
