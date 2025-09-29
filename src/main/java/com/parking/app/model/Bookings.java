@@ -26,9 +26,9 @@ public class Bookings {
     // Constructors, getters, setters
 
     public Bookings() {
-            this.status = "pending";  // initialize status as pending
-            this.createdAt = new Date();  // initialize createdAt as now
-        }
+        this.status = "pending";  // initialize status as pending
+        this.createdAt = new Date();  // initialize createdAt as now
+    }
 
     public String getId() {
         return id;
