@@ -69,4 +69,40 @@ public class WalletService {
 
         return walletRepository.save(wallet);
     }
+// src/main/java/com/parking/app/service/WalletService.java
+
+    public Wallet deductPenalty(String userId, double penaltyAmount) {
+        Optional<Wallet> walletOpt = getWalletByUserId(userId);
+        if (walletOpt.isPresent()) {
+            Wallet wallet = walletOpt.get();
+            if (wallet.getBalance() >= penaltyAmount) {
+                // Create penalty transaction
+                Transactions tx = new Transactions();
+                tx.setReferenceId(UUID.randomUUID().toString());
+                tx.setUserId(userId);
+                tx.setAmount(-penaltyAmount);
+                tx.setType("penalty_deduction");
+                tx.setStatus("completed");
+                tx.setTimestamp(new Date());
+                transactionRepository.save(tx);
+
+                // Update wallet
+                wallet.setBalance(wallet.getBalance() - penaltyAmount);
+                wallet.setLastUpdated(new Date());
+                Wallet.TransactionRef ref = new Wallet.TransactionRef();
+                ref.setReferenceId(tx.getReferenceId());
+                ref.setType(tx.getType());
+                ref.setAmount(-penaltyAmount);
+                ref.setStatus("completed");
+
+                List<Wallet.TransactionRef> txnList = wallet.getTransactions() == null ? new ArrayList<>() : wallet.getTransactions();
+                txnList.add(ref);
+                wallet.setTransactions(txnList);
+
+                return walletRepository.save(wallet);
+            }
+        }
+        return null;
+    }
+
 }

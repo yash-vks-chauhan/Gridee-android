@@ -43,6 +43,23 @@ public class WalletController {
         Wallet wallet = walletService.topUpWallet(userId, amount);
         return ResponseEntity.ok(wallet);
     }
+// Add this to WalletController
+
+    @PostMapping("/deduct-penalty")
+    public ResponseEntity<?> deductPenalty(
+            @PathVariable String userId,
+            @RequestBody Map<String, Double> request) {
+        Double penalty = request.get("penalty");
+        if (penalty == null || penalty <= 0) {
+            return ResponseEntity.badRequest().body("Penalty must be positive.");
+        }
+        Wallet wallet = walletService.deductPenalty(userId, penalty);
+        if (wallet == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Wallet not found or insufficient balance.");
+        }
+        return ResponseEntity.ok(wallet);
+    }
+
 
 
 }
