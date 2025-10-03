@@ -24,8 +24,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -34,8 +35,8 @@ import java.util.List;
 @Transactional
 public class BookingService {
 
-    private static final double HOURLY_RATE = 2.5;
-    private static final double PENALTY_RATE = 5.0;
+    private static final double HOURLY_RATE = 5.0;
+    private static final double PENALTY_RATE = 10.0;
     private static final int DEFAULT_HOLD_HOURS = 2;
 
     private final BookingRepository bookingRepository;
@@ -69,7 +70,7 @@ public class BookingService {
         if (actualEnd.isBefore(scheduledEnd)) {
             return 0;
         }
-        long lateHours = ChronoUnit.HOURS.between(scheduledEnd, actualEnd);
+        long lateHours = java.time.temporal.ChronoUnit.HOURS.between(scheduledEnd, actualEnd);
         if (scheduledEnd.plusHours(lateHours).isBefore(actualEnd)) {
             lateHours++; // round up
         }
@@ -77,7 +78,7 @@ public class BookingService {
     }
 
     private double calculateCharge(ZonedDateTime from, ZonedDateTime to) {
-        long hours = ChronoUnit.HOURS.between(from, to);
+        long hours = java.time.temporal.ChronoUnit.HOURS.between(from, to);
         if (from.plusHours(hours).isBefore(to)) {
             hours++; // round up if not exact
         }
@@ -93,8 +94,30 @@ public class BookingService {
         }
     }
 
+    // Booking time restriction logic added here
+    private void validateBookingWindow(ZonedDateTime checkInTime, ZonedDateTime checkOutTime) {
+        LocalDate today = ZonedDateTime.now().toLocalDate();
+        LocalTime nowTime = ZonedDateTime.now().toLocalTime();
+        LocalTime cutoff = LocalTime.of(20, 0); // 8 pm
+
+        if (nowTime.isBefore(cutoff)) {
+            // Before 8 pm: only allow bookings for today, ending before 8 pm
+            if (!checkInTime.toLocalDate().isEqual(today) || checkOutTime.toLocalTime().isAfter(cutoff)) {
+                throw new java.lang.IllegalStateException("Bookings are only allowed for today until 8 pm.");
+            }
+        } else {
+            // After 8 pm: only allow bookings for tomorrow
+            LocalDate tomorrow = today.plusDays(1);
+            if (!checkInTime.toLocalDate().isEqual(tomorrow) || !checkOutTime.toLocalDate().isEqual(tomorrow)) {
+                throw new java.lang.IllegalStateException("Bookings after 8 pm are only allowed for tomorrow.");
+            }
+        }
+    }
+
+
     public Bookings startBooking(String spotId, String userId, String lotId, ZonedDateTime checkInTime, ZonedDateTime checkOutTime, String vehicleNumber) {
         validateTimes(checkInTime, checkOutTime);
+        validateBookingWindow(checkInTime, checkOutTime);
 
         double amount = calculateCharge(checkInTime, checkOutTime);
 
@@ -285,4 +308,14 @@ public class BookingService {
     public List<Bookings> getBookingsByUserId(String userId) {
         return bookingRepository.findByUserId(userId);
     }
+    public boolean isQrCodeValid(String bookingId) {
+        Bookings booking = getBookingById(bookingId);
+        if (booking == null) return false;
+        Date now = new Date();
+        Date checkIn = booking.getCheckInTime();
+        Date checkOut = booking.getCheckOutTime();
+        // QR is valid only between check-in and check-out
+        return checkIn != null && checkOut != null && !now.before(checkIn) && !now.after(checkOut);
+    }
+
 }

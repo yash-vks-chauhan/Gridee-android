@@ -31,17 +31,12 @@ public class ParkingSpotService {
         if (spot.getAvailable() == 0) {
             spot.setAvailable(spot.getCapacity());
         }
-
-        // ✅ SET PROPER ZONE NAME when creating
         setProperZoneName(spot);
-
         return parkingSpotRepository.save(spot);
     }
 
     public List<ParkingSpot> getAllParkingSpots() {
         List<ParkingSpot> spots = parkingSpotRepository.findAll();
-
-        // ✅ ENSURE ALL SPOTS HAVE PROPER ZONE NAMES
         return spots.stream()
                 .map(this::ensureProperZoneName)
                 .collect(Collectors.toList());
@@ -49,8 +44,6 @@ public class ParkingSpotService {
 
     public List<ParkingSpot> getParkingSpotsByLotId(String lotId) {
         List<ParkingSpot> spots = parkingSpotRepository.findByLotId(lotId);
-
-        // ✅ ENSURE ALL SPOTS HAVE PROPER ZONE NAMES
         return spots.stream()
                 .map(this::ensureProperZoneName)
                 .collect(Collectors.toList());
@@ -64,7 +57,6 @@ public class ParkingSpotService {
         return null;
     }
 
-    // ✅ NEW: Helper method to set proper zone names
     private void setProperZoneName(ParkingSpot spot) {
         if (spot.getZoneName() == null ||
                 spot.getZoneName().isEmpty() ||
@@ -77,7 +69,6 @@ public class ParkingSpotService {
         }
     }
 
-    // ✅ NEW: Helper method to ensure proper zone names (with potential save)
     private ParkingSpot ensureProperZoneName(ParkingSpot spot) {
         boolean needsUpdate = false;
 
@@ -91,7 +82,6 @@ public class ParkingSpotService {
             needsUpdate = true;
         }
 
-        // ✅ UPDATE DATABASE if zone name was missing
         if (needsUpdate) {
             System.out.println("🔧 Updating zone name for spot " + spot.getId() + " to: " + spot.getZoneName());
             parkingSpotRepository.save(spot);
@@ -100,13 +90,10 @@ public class ParkingSpotService {
         return spot;
     }
 
-    // ✅ NEW: Generate proper zone names based on spot ID
     private String generateZoneNameFromId(String spotId) {
         if (spotId == null || spotId.isEmpty()) {
             return "Unknown Zone";
         }
-
-        // Handle your specific ID patterns
         switch (spotId.toLowerCase()) {
             case "ps1":
                 return "Main Parking Zone";
@@ -115,22 +102,18 @@ public class ParkingSpotService {
             case "ps3":
                 return "Tertiary Parking Zone";
             default:
-                // Generic pattern for other IDs
                 if (spotId.toLowerCase().startsWith("ps")) {
                     String number = spotId.substring(2);
                     return "Parking Zone " + number.toUpperCase();
                 } else if (spotId.contains("-")) {
-                    // Handle IDs like "zone1-area2"
                     String[] parts = spotId.split("-");
                     return parts[0].substring(0, 1).toUpperCase() + parts[0].substring(1) + " Area";
                 } else {
-                    // Generic fallback
                     return "Zone " + spotId.toUpperCase();
                 }
         }
     }
 
-    // ✅ NEW: Method to fix all existing spots in database
     public void fixAllZoneNames() {
         System.out.println("🔧 Starting zone name fix for all parking spots...");
         List<ParkingSpot> allSpots = parkingSpotRepository.findAll();
@@ -170,8 +153,6 @@ public class ParkingSpotService {
         parkingSpotRepository.deleteById(spotId);
     }
 
-    // ... rest of your existing methods (holdSpot, releaseSpot, etc.)
-
     public ParkingSpot holdSpot(String spotId, String userId) {
         Query spotQuery = new Query(Criteria.where("_id").is(spotId).and("available").gt(0));
         Update holdUpdate = new Update()
@@ -192,5 +173,15 @@ public class ParkingSpotService {
 
         return mongoOperations.findAndModify(spotQuery, releaseUpdate,
                 FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
+    }
+
+    // NEW: Reset all parking spots to full capacity
+    public void resetAllSpotsCapacity() {
+        List<ParkingSpot> allSpots = parkingSpotRepository.findAll();
+        for (ParkingSpot spot : allSpots) {
+            spot.setAvailable(spot.getCapacity());
+            parkingSpotRepository.save(spot);
+        }
+        System.out.println("✅ All parking spots have been reset to full capacity.");
     }
 }

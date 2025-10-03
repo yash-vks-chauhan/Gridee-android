@@ -5,6 +5,7 @@ import com.parking.app.service.ParkingSpotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class ParkingSpotController {
         List<ParkingSpot> spots = parkingSpotService.getParkingSpotsByLotId(lotId);
         return ResponseEntity.ok(spots);
     }
+
     @GetMapping("/fix-zone-names")
     public ResponseEntity<String> fixZoneNames() {
         parkingSpotService.fixAllZoneNames();
@@ -81,5 +83,16 @@ public class ParkingSpotController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
         return ResponseEntity.ok(spot);
+    }
+
+    // Reset all parking spots to full capacity
+    @PostMapping("/reset-capacity")
+    public ResponseEntity<String> resetAllSpotsCapacity() {
+        parkingSpotService.resetAllSpotsCapacity();
+        return ResponseEntity.ok("All parking spots have been reset to full capacity");
+    }
+    @Scheduled(cron = "0 0 20 * * *") // Runs every day at 8 pm server time
+    public void scheduledResetAllSpotsCapacity() {
+        resetAllSpotsCapacity();
     }
 }

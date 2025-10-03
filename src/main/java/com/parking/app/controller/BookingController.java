@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -212,4 +213,25 @@ public class BookingController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
     }
+
+    @GetMapping("/bookings/{bookingId}/validate-qr")
+    public ResponseEntity<?> validateQrCode(@PathVariable String bookingId) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null) {
+                return ResponseEntity.notFound().build();
+            }
+            ZonedDateTime now = ZonedDateTime.now();
+            java.util.Date checkInDate = booking.getCheckInTime();
+            java.util.Date checkOutDate = booking.getCheckOutTime();
+            ZonedDateTime checkIn = checkInDate != null ? checkInDate.toInstant().atZone(ZoneId.systemDefault()) : null;
+            ZonedDateTime checkOut = checkOutDate != null ? checkOutDate.toInstant().atZone(ZoneId.systemDefault()) : null;
+            boolean valid = checkIn != null && checkOut != null && !now.isBefore(checkIn) && !now.isAfter(checkOut);
+            return ResponseEntity.ok(valid);
+        } catch (Exception e) {
+            logger.error("Error validating QR code for booking {}: {}", bookingId, e.getMessage());
+            return ResponseEntity.badRequest().body("Error validating QR code");
+        }
+    }
+
 }
