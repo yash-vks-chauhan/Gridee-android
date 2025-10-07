@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Gridee</string>
+    <string name="registration_title">Create Account</string>
+    <string name="registration_subtitle">Join Gridee for smart parking</string>
+    <string name="login_link">Already have an account? Login</string>
+    <string name="name_hint">Full Name</string>
+    <string name="email_hint">Email Address</string>
+    <string name="phone_hint">Phone Number</string>
+    <string name="password_hint">Password</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="vehicle_label">Vehicle Numbers (Optional)</string>
+    <string name="vehicle_hint_1">Vehicle Number 1</string>
+    <string name="vehicle_hint_2">Vehicle Number 2</string>
+    <string name="create_account">Create Account</string>
+    
+    <!-- Login Screen -->
+    <string name="welcome_back">Welcome Back</string>
+    <string name="sign_in_subtitle">Sign in to your account</string>
+    <string name="email_or_phone_label">Email or Phone</string>
+    <string name="password_label">Password</string>
+    <string name="email_phone_hint">Enter your email or phone</string>
+    <string name="login_password_hint">Enter your password</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="sign_in">Sign In</string>
+    <string name="or">or</string>
+    <string name="sign_in_with_apple">Sign in with Apple</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_up_link">Don\'t have an account? Sign Up</string>
+</resources>

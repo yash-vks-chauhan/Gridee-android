@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary_green">#2E7D32</color>
+    <color name="primary_green_light">#A8D5AA</color>
+    <color name="primary_green_dark">#00390B</color>
+    <color name="secondary_green">#526350</color>
+    <color name="background_light">#F2F2F7</color>
+    <color name="background_color">#F2F2F7</color>
+    
+    <!-- Apple-style backgrounds -->
+    <color name="background_primary">#F2F2F7</color>
+    <color name="background_secondary">#FFFFFF</color>
+    <color name="background_grouped">#F2F2F7</color>
+    <color name="background_card">#FFFFFF</color>
+    <color name="text_primary">#191C19</color>
+    <color name="text_secondary">#666666</color>
+    <color name="white">#FFFFFF</color>
+    <color name="error">#BA1A1A</color>
+    
+    <!-- Bottom Navigation Colors -->
+    <color name="primary_blue">#1976D2</color>
+    <color name="primary_blue_light">#E3F2FD</color>
+    <color name="light_blue">#E3F2FD</color>
+    <color name="inactive_gray">#999999</color>
+    <color name="light_gray">#CCCCCC</color>
+    <color name="gray_500">#9CA3AF</color>
+    
+    <!-- New Bottom Navigation Colors -->
+    <!-- Professional bottom nav colors for dark theme -->
+    <color name="bottom_nav_active">#FFFFFF</color>
+    <color name="bottom_nav_inactive">#8E8E93</color>
+    <color name="bottom_nav_background">#FEFEFE</color>
+    <color name="bottom_nav_surface">#F8F9FA</color>
+    <color name="bottom_nav_indicator">#FFFFFF</color>
+    <color name="bottom_nav_shadow">#12000000</color>
+    
+    <!-- Status Colors -->
+    <color name="success_green">#4CAF50</color>
+    <color name="green">#4CAF50</color>
+    <color name="red">#F44336</color>
+    <color name="divider_color">#E0E0E0</color>
+    <color name="darker_gray">#666666</color>
+    <color name="divider">#E0E0E0</color>
+    
+    <!-- Common alias -->
+    <color name="primary_color">@color/primary_blue</color>
+    <color name="charcoal_black">#2D3748</color>
+</resources>
