@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/white"
+    android:paddingTop="16dp">
+
+    <!-- Simple handle bar -->
+    <View
+        android:layout_width="32dp"
+        android:layout_height="3dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="#E0E0E0" />
+
+    <!-- Content -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="24dp"
+        android:paddingBottom="32dp">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="24dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Add Money"
+                android:textColor="@android:color/black"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/btn_close"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_close"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:padding="2dp"
+                app:tint="#757575" />
+
+        </LinearLayout>
+
+        <!-- Current Balance -->
+        <TextView
+            android:id="@+id/tv_current_balance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Balance: ₹0.00"
+            android:textColor="#757575"
+            android:textSize="14sp"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Amount Input -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Amount"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/et_amount"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Enter amount"
+            android:textColorHint="#BDBDBD"
+            android:inputType="numberDecimal"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:paddingHorizontal="12dp"
+            android:background="@android:drawable/edit_text"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Quick Select -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quick Select"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="20dp">
+
+            <Button
+                android:id="@+id/btn_amount_50"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="₹50"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:background="@android:drawable/btn_default"
+                style="?android:attr/buttonBarButtonStyle" />
+
+            <Button
+                android:id="@+id/btn_amount_100"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="8dp"
+                android:text="₹100"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:background="@android:drawable/btn_default"
+                style="?android:attr/buttonBarButtonStyle" />
+
+            <Button
+                android:id="@+id/btn_amount_200"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="₹200"
+                android:textColor="@android:color/black"
+                android:textSize="14sp"
+                android:background="@android:drawable/btn_default"
+                style="?android:attr/buttonBarButtonStyle" />
+
+        </LinearLayout>
+
+        <!-- Payment Method -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Payment Method"
+            android:textColor="@android:color/black"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="8dp" />
+
+        <!-- UPI -->
+        <LinearLayout
+            android:id="@+id/layout_upi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?android:attr/selectableItemBackground">
+
+            <RadioButton
+                android:id="@+id/radio_upi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:buttonTint="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="UPI"
+                android:textColor="@android:color/black"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <!-- Card -->
+        <LinearLayout
+            android:id="@+id/layout_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingVertical="12dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:layout_marginBottom="24dp">
+
+            <RadioButton
+                android:id="@+id/radio_card"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="@android:color/black" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Credit/Debit Card"
+                android:textColor="@android:color/black"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <!-- Add Money Button -->
+        <Button
+            android:id="@+id/btn_add_money_confirm"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:text="Add Money"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:background="#000000"
+            android:enabled="false"
+            style="?android:attr/borderlessButtonStyle" />
+
+    </LinearLayout>
+
+</LinearLayout>

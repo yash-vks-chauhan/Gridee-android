@@ -233,7 +233,7 @@ class CustomBottomNavigation @JvmOverloads constructor(
         
         // Set active ripple effect for the parent tab
         val parentTab = imageView.parent.parent as FrameLayout
-        parentTab.setBackgroundResource(R.drawable.tab_ripple_active)
+        parentTab.setBackgroundResource(R.drawable.tab_ripple_effect)
         
         // Switch to filled icons for active state and update colors to black
         when (imageView) {

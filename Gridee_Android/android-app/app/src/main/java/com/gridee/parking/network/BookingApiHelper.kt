@@ -232,6 +232,7 @@ data class BookingResponse(
             id = id,
             vehicleNumber = vehicleNumber,
             spotId = spotId,
+            spotName = spotId, // Use spot ID as spot name for now
             locationName = locationName,
             locationAddress = locationAddress,
             startTime = startTime,

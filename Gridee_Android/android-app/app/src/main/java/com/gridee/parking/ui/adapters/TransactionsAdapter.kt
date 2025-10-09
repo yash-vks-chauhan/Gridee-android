@@ -64,15 +64,15 @@ class TransactionsAdapter(
                 // Set transaction details
                 tvDescription.text = transaction.description
                 tvTimestamp.text = dateFormat.format(transaction.timestamp)
-                tvBalance.text = "Balance: $${String.format("%.2f", transaction.balanceAfter)}"
+                tvBalance.text = "Balance: ₹${String.format("%.2f", transaction.balanceAfter)}"
 
                 // Set amount with appropriate color
                 val amountText = if (transaction.amount >= 0) {
                     tvAmount.setTextColor(root.context.getColor(R.color.success_green))
-                    "+$${String.format("%.2f", transaction.amount)}"
+                    "+₹${String.format("%.2f", transaction.amount)}"
                 } else {
                     tvAmount.setTextColor(root.context.getColor(R.color.red))
-                    "-$${String.format("%.2f", Math.abs(transaction.amount))}"
+                    "-₹${String.format("%.2f", Math.abs(transaction.amount))}"
                 }
                 tvAmount.text = amountText
             }

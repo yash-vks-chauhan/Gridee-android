@@ -1,6 +1,9 @@
 package com.gridee.parking.ui.main
 
 import android.os.Bundle
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
@@ -8,10 +11,10 @@ import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityMainContainerBinding
 import com.gridee.parking.ui.base.BaseActivityWithBottomNav
 import com.gridee.parking.ui.components.CustomBottomNavigation
-import com.gridee.parking.ui.fragments.BookingsFragment
+import com.gridee.parking.ui.fragments.BookingsFragmentNew
 import com.gridee.parking.ui.fragments.HomeFragment
 import com.gridee.parking.ui.fragments.ProfileFragment
-import com.gridee.parking.ui.fragments.WalletFragment
+import com.gridee.parking.ui.fragments.WalletFragmentNew
 
 class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBinding>() {
 
@@ -20,8 +23,8 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
 
     // Fragment instances (create once, reuse for better performance)
     private val homeFragment by lazy { HomeFragment() }
-    private val bookingsFragment by lazy { BookingsFragment() }
-    private val walletFragment by lazy { WalletFragment() }
+    private val bookingsFragment by lazy { BookingsFragmentNew() }
+    private val walletFragment by lazy { WalletFragmentNew() }
     private val profileFragment by lazy { ProfileFragment() }
 
     override fun getViewBinding(): ActivityMainContainerBinding {
@@ -34,6 +37,19 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+                // Handle system window insets for proper edge-to-edge
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
+            val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            
+            // Apply top padding to fragment container to avoid status bar overlap
+            binding.fragmentContainer.updatePadding(top = systemBarsInsets.top)
+            
+            // Don't add bottom padding to bottom navigation to keep original size
+            // The bottom nav will handle its own positioning
+            
+            insets
+        }
         
         // Setup bottom navigation manually using binding
         setupBottomNavigationManually(binding.bottomNavigation)
@@ -130,8 +146,8 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         currentFragment?.let { fragment ->
             when (fragment) {
                 is HomeFragment -> fragment.scrollToTop()
-                is BookingsFragment -> fragment.scrollToTop()
-                is WalletFragment -> fragment.scrollToTop()
+                is BookingsFragmentNew -> fragment.scrollToTop()
+                is WalletFragmentNew -> fragment.scrollToTop()
                 is ProfileFragment -> fragment.scrollToTop()
                 else -> {
                     // Handle unknown fragment types
@@ -144,8 +160,8 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         currentFragment?.let { fragment ->
             when (fragment) {
                 is HomeFragment -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
-                is BookingsFragment -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
-                is WalletFragment -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
+                is BookingsFragmentNew -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
+                is WalletFragmentNew -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
                 is ProfileFragment -> fragment.getScrollableView()?.let { setupScrollBehaviorForView(it) }
                 else -> {
                     // Handle unknown fragment types
