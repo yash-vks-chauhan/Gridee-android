@@ -1,8 +1,10 @@
 package com.parking.app.service;
 
+import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
 import com.parking.app.repository.ParkingSpotRepository;
 import com.parking.app.repository.ParkingLotRepository;
+import com.parking.app.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -11,8 +13,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,6 +30,9 @@ public class ParkingSpotService {
 
     @Autowired
     private MongoOperations mongoOperations;
+
+    @Autowired
+    private BookingRepository bookingRepository;
 
     public ParkingSpot createParkingSpot(ParkingSpot spot) {
         if (spot.getAvailable() == 0) {
@@ -183,5 +190,17 @@ public class ParkingSpotService {
             parkingSpotRepository.save(spot);
         }
         System.out.println("✅ All parking spots have been reset to full capacity.");
+    }
+
+    // NEW: Get available spots for a time window
+    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime) {
+        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotId(lotId);
+        List<Bookings> overlappingBookings = bookingRepository.findByLotIdAndTimeWindow(lotId, startTime, endTime);
+        Set<String> bookedSpotIds = overlappingBookings.stream()
+                .map(Bookings::getSpotId)
+                .collect(Collectors.toSet());
+        return allSpots.stream()
+                .filter(spot -> !bookedSpotIds.contains(spot.getId()))
+                .collect(Collectors.toList());
     }
 }

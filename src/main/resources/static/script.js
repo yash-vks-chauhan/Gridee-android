@@ -1,3 +1,5 @@
+// src/main/resources/static/script.js
+
 const baseUrl = window.location.origin + "/api";
 
 function pad(n) { return n < 10 ? "0" + n : n; }
@@ -83,15 +85,12 @@ async function createUser() {
         const res = await fetch(`${baseUrl}/users/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, vehicleNumbers, passwordHash: password }),
+            body: JSON.stringify({ name, email, phone, vehicleNumbers, password }),
         });
         if (res.ok) {
-            const user = await res.json();
-            document.getElementById("usersResponse").textContent = `User registered: ${JSON.stringify(user)}`;
             fetchUsers();
         } else {
-            const err = await res.text();
-            alert("Failed to register user: " + err);
+            alert("Failed to create user");
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -118,12 +117,9 @@ async function updateUser() {
             body: JSON.stringify(payload),
         });
         if (res.ok) {
-            const updatedUser = await res.json();
-            document.getElementById("usersResponse").textContent = `User updated: ${JSON.stringify(updatedUser)}`;
             fetchUsers();
         } else {
-            const err = await res.text();
-            alert("Failed to update user: " + err);
+            alert("Failed to update user");
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -135,11 +131,9 @@ async function deleteUser() {
     try {
         const res = await fetch(`${baseUrl}/users/${encodeURIComponent(id)}`, { method: "DELETE" });
         if (res.ok) {
-            document.getElementById("usersResponse").textContent = "User deleted successfully.";
             fetchUsers();
         } else {
-            const err = await res.text();
-            alert("Failed to delete user: " + err);
+            alert("Failed to delete user");
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -152,10 +146,9 @@ async function fetchBookings() {
     const userId = bookingsUserIdInput();
     if (!userId) { alert("Enter User ID to fetch bookings"); return; }
     try {
-        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/bookings`);
+        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/all-bookings`);
         if (!res.ok) {
-            const errorText = await res.text();
-            alert("Failed to fetch bookings for user: " + errorText);
+            alert("Failed to fetch bookings");
             return;
         }
         const data = await res.json();
@@ -184,14 +177,28 @@ function displayBookings(bookings) {
             section = document.createElement("div");
             section.id = tableId;
             section.innerHTML = `<h3>${title}</h3><table><thead>
-                <tr><th>ID</th><th>User</th><th>Spot</th><th>Lot</th><th>Check-In</th><th>Check-Out</th><th>Status</th><th>Amount</th><th>Vehicle</th><th>QR</th></tr>
+                <tr>
+                    <th>ID</th><th>User</th><th>Spot</th><th>Lot</th>
+                    <th>Check-In</th><th>Check-Out</th><th>Status</th>
+                    <th>Amount</th><th>Vehicle</th><th>QR</th><th>Actions</th>
+                </tr>
             </thead><tbody></tbody></table>`;
             document.getElementById("bookingsTable").parentNode.appendChild(section);
         }
         const tbody = section.querySelector("tbody");
         tbody.innerHTML = "";
         bookings.forEach((b) => {
+            // QR code is just the booking ID
+            const qrImg = b.id ? `<img src="${getQrCodeImageUrl(b.id)}" alt="QR" width="80" height="80"/>` : "N/A";
             const tr = document.createElement("tr");
+            let actions = "";
+            if (b.status === "pending") {
+                actions += `<button onclick="checkIn('${b.userId}','${b.id}')">Check In</button> `;
+                actions += `<button onclick="cancelBooking('${b.userId}','${b.id}')">Cancel</button>`;
+            } else if (b.status === "active") {
+                actions += `<button onclick="checkOut('${b.userId}','${b.id}')">Check Out</button> `;
+                actions += `<button onclick="fetchPenaltyInfo('${b.userId}','${b.id}')">Penalty Info</button>`;
+            }
             tr.innerHTML = `
                 <td>${b.id || ""}</td>
                 <td>${b.userId || ""}</td>
@@ -202,13 +209,13 @@ function displayBookings(bookings) {
                 <td>${b.status || ""}</td>
                 <td>${b.amount?.toFixed(2) || "0.00"}</td>
                 <td>${b.vehicleNumber || ""}</td>
-                <td>${b.qrCode ? `<img src="${getQrCodeImageUrl(b.qrCode)}" class="qrcode"/>` : "N/A"}</td>
+                <td>${qrImg}</td>
+                <td>${actions}</td>
             `;
             tbody.appendChild(tr);
         });
     }
 
-    // Remove old segregated tables if present
     ["pendingBookings", "activeBookings", "completedBookings"].forEach(id => {
         const old = document.getElementById(id);
         if (old) old.remove();
@@ -234,9 +241,7 @@ async function fetchUserVehicles() {
             opt.textContent = v;
             select.appendChild(opt);
         });
-    } catch (e) {
-        // Silent fail
-    }
+    } catch (e) {}
 }
 function calculateBookingAmount() {
     const checkInTimeStr = document.getElementById("bookingCheckIn").value;
@@ -256,22 +261,20 @@ function calculateBookingAmount() {
     }
     const durationMs = checkOutTime - checkInTime;
     const hours = Math.ceil(durationMs / (1000 * 60 * 60));
-    const amount = (hours * 2.5).toFixed(2);
+    const amount = (hours * 5).toFixed(2);
     amountSpan.textContent = amount;
     amountSection.style.display = "block";
 }
 document.getElementById("bookingCheckIn").addEventListener("change", calculateBookingAmount);
 document.getElementById("bookingCheckOut").addEventListener("change", calculateBookingAmount);
 
-// Booking time restriction helper
 function isBookingTimeAllowed(checkInRaw, checkOutRaw) {
     const now = new Date();
-    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0); // today 8 pm
+    const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 20, 0, 0);
     const checkIn = new Date(checkInRaw);
     const checkOut = new Date(checkOutRaw);
 
     if (now < cutoff) {
-        // Before 8 pm: only allow bookings for today, ending before 8 pm
         if (
             checkIn.getFullYear() !== now.getFullYear() ||
             checkIn.getMonth() !== now.getMonth() ||
@@ -281,7 +284,6 @@ function isBookingTimeAllowed(checkInRaw, checkOutRaw) {
             return false;
         }
     } else {
-        // After 8 pm: only allow bookings for tomorrow
         const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
         if (
             checkIn.getFullYear() !== tomorrow.getFullYear() ||
@@ -319,16 +321,12 @@ async function createBooking() {
         const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/start?spotId=${encodeURIComponent(spotId)}&lotId=${encodeURIComponent(lotId)}&checkInTime=${encodeURIComponent(checkInTime)}&checkOutTime=${encodeURIComponent(checkOutTime)}&vehicleNumber=${encodeURIComponent(vehicleNumber)}`;
         const res = await fetch(url, { method: "POST" });
         if (res.ok) {
-            const booking = await res.json();
-            document.getElementById("bookingsResponse").textContent = "Booking created: " + JSON.stringify(booking);
             fetchBookings();
-            document.getElementById("bookingAmountSection").style.display = "none";
-            document.getElementById("bookingAmount").textContent = "0.00";
         } else if (res.status === 409) {
-            alert("No available spots for this spot");
+            alert("Booking conflict: Spot may already be booked.");
         } else if (res.status === 400) {
-            const err = await res.text();
-            alert("Booking failed: " + err);
+            const errorText = await res.text();
+            alert("Booking error: " + errorText);
         } else {
             alert("Failed to create booking");
         }
@@ -349,8 +347,6 @@ async function updateBooking() {
             body: JSON.stringify({ status }),
         });
         if (res.ok) {
-            const updated = await res.json();
-            document.getElementById("bookingsResponse").textContent = "Updated booking: " + JSON.stringify(updated);
             fetchBookings();
         } else {
             alert("Failed to update booking");
@@ -359,15 +355,12 @@ async function updateBooking() {
         alert("Error: " + e.message);
     }
 }
-async function deleteBooking() {
-    const userId = bookingsUserIdInput();
-    const id = document.getElementById("deleteBookingId").value.trim();
+async function deleteBooking(userId, id) {
     if (!userId || !id) { alert("Enter User ID and Booking ID"); return; }
     try {
         const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(id)}`;
         const res = await fetch(url, { method: "DELETE" });
         if (res.ok) {
-            document.getElementById("bookingsResponse").textContent = "Booking deleted";
             fetchBookings();
         } else {
             alert("Failed to delete booking");
@@ -381,7 +374,169 @@ function getQrCodeImageUrl(qrCode) {
     return `https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${qr}`;
 }
 
+// Booking History
+async function fetchBookingHistory() {
+    const userId = bookingsUserIdInput();
+    if (!userId) { alert("Enter User ID to fetch booking history"); return; }
+    try {
+        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/all-bookings/history`);
+        if (!res.ok) {
+            const errorText = await res.text();
+            alert("Failed to fetch booking history: " + errorText);
+            return;
+        }
+        const history = await res.json();
+        displayBookingHistory(history);
+        document.getElementById("bookingsResponse").textContent = "Fetched booking history successfully";
+    } catch (e) {
+        alert("Error fetching booking history: " + e.message);
+    }
+}
+function displayBookingHistory(history) {
+    const tbody = document.querySelector("#bookingHistoryTable tbody");
+    tbody.innerHTML = "";
+    history.forEach((b) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${b.id || ""}</td>
+            <td>${b.userId || ""}</td>
+            <td>${b.spotId || ""}</td>
+            <td>${b.lotId || ""}</td>
+            <td>${b.checkInTime || ""}</td>
+            <td>${b.checkOutTime || ""}</td>
+            <td>${b.status || ""}</td>
+            <td>${b.amount?.toFixed(2) || "0.00"}</td>
+            <td>${b.vehicleNumber || ""}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// Filtered Bookings
+async function fetchFilteredBookings(status, lotId, fromDate, toDate, page, size) {
+    let url = `${baseUrl}/bookings?`;
+    if (status) url += `status=${encodeURIComponent(status)}&`;
+    if (lotId) url += `lotId=${encodeURIComponent(lotId)}&`;
+    if (fromDate) url += `fromDate=${encodeURIComponent(fromDate)}&`;
+    if (toDate) url += `toDate=${encodeURIComponent(toDate)}&`;
+    if (page) url += `page=${encodeURIComponent(page)}&`;
+    if (size) url += `size=${encodeURIComponent(size)}&`;
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            alert("Failed to fetch filtered bookings");
+            return;
+        }
+        const bookings = await res.json();
+        displayBookings(bookings);
+        document.getElementById("bookingsResponse").textContent = "Fetched filtered bookings";
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+// Check-in/out and Penalty
+async function checkIn(userId, bookingId) {
+    try {
+        const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/checkin`;
+        // Send bookingId as qrCode in body
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qrCode: bookingId })
+        });
+        if (res.ok) {
+            fetchBookings();
+        } else {
+            const errorText = await res.text();
+            alert("Check-in failed: " + errorText);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+async function checkOut(userId, bookingId) {
+    try {
+        const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/checkout`;
+        // Send bookingId as qrCode in body
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ qrCode: bookingId })
+        });
+        if (res.ok) {
+            fetchBookings();
+        } else {
+            const errorText = await res.text();
+            alert("Check-out failed: " + errorText);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+async function cancelBooking(userId, bookingId) {
+    if (!userId || !bookingId) { alert("Enter User ID and Booking ID"); return; }
+    try {
+        const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/cancel`;
+        const res = await fetch(url, { method: "POST" });
+        if (res.ok) {
+            fetchBookings();
+        } else {
+            const errorText = await res.text();
+            alert("Cancel failed: " + errorText);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+async function fetchPenaltyInfo(userId, bookingId) {
+    try {
+        const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/penalty`;
+        const res = await fetch(url);
+        if (!res.ok) {
+            alert("Failed to fetch penalty info");
+            return;
+        }
+        const penalty = await res.json();
+        alert("Penalty amount: " + penalty);
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+// Get all bookings
+async function fetchAllBookings() {
+    try {
+        const res = await fetch(`${baseUrl}/bookings`);
+        if (!res.ok) {
+            alert("Failed to fetch all bookings");
+            return;
+        }
+        const bookings = await res.json();
+        displayBookings(bookings);
+        document.getElementById("bookingsResponse").textContent = "Fetched all bookings";
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
 // SPOTS
+async function resetAllSpots() {
+    if (!confirm("Are you sure you want to reset all parking spots to max capacity?")) return;
+    try {
+        const res = await fetch(`${baseUrl}/admin/reset-spots`, { method: "POST" });
+        if (res.ok) {
+            alert("All parking spots have been reset.");
+            fetchSpots(); // Refresh the spots table
+        } else {
+            const errorText = await res.text();
+            alert("Failed to reset spots: " + errorText);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
 async function fetchSpots() {
     const res = await fetch(`${baseUrl}/parking-spots`);
     if (!res.ok) { alert("Failed to fetch parking spots"); return; }
@@ -400,8 +555,6 @@ function displaySpots(spots) {
         <td>${s.capacity || ""}</td>
         <td>${s.available || ""}</td>
         <td>
-            <button onclick="holdSpot('${s.id}')">Hold Spot</button>
-            <button onclick="releaseSpot('${s.id}')">Release Spot</button>
             <button onclick="deleteSpot('${s.id}')">Delete</button>
         </td>
     `;
@@ -425,41 +578,9 @@ async function createSpot() {
             body: JSON.stringify(spot),
         });
         if (res.ok) {
-            alert("Parking spot created");
             fetchSpots();
         } else {
-            const errText = await res.text();
-            alert("Failed to create spot: " + errText);
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
-}
-async function holdSpot(id) {
-    const userId = prompt("Enter User ID to hold this spot:");
-    if (!userId) { alert("User ID required"); return; }
-    try {
-        const res = await fetch(`${baseUrl}/parking-spots/${encodeURIComponent(id)}/hold?userId=${encodeURIComponent(userId)}`, { method: "POST" });
-        if (res.ok) {
-            alert("Spot held successfully");
-            fetchSpots();
-        } else if (res.status === 409) {
-            alert("No availability for this spot");
-        } else {
-            alert("Failed to hold spot");
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
-}
-async function releaseSpot(id) {
-    try {
-        const res = await fetch(`${baseUrl}/parking-spots/${encodeURIComponent(id)}/release`, { method: "POST" });
-        if (res.ok) {
-            alert("Spot released successfully");
-            fetchSpots();
-        } else {
-            alert("Failed to release spot");
+            alert("Failed to create spot");
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -470,7 +591,6 @@ async function deleteSpot(id) {
     try {
         const res = await fetch(`${baseUrl}/parking-spots/${encodeURIComponent(id)}`, { method: "DELETE" });
         if (res.ok) {
-            alert("Spot deleted");
             fetchSpots();
         } else {
             alert("Failed to delete spot");
@@ -520,11 +640,9 @@ async function createLot() {
             body: JSON.stringify(lot),
         });
         if (res.ok) {
-            alert("Parking lot created");
             fetchLots();
         } else {
-            const errText = await res.text();
-            alert("Failed to create lot: " + errText);
+            alert("Failed to create lot");
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -535,7 +653,6 @@ async function deleteLot(id) {
     try {
         const res = await fetch(`${baseUrl}/parking-lots/${encodeURIComponent(id)}`, { method: "DELETE" });
         if (res.ok) {
-            alert("Lot deleted");
             fetchLots();
         } else {
             alert("Failed to delete lot");
@@ -559,6 +676,108 @@ async function fetchWallet() {
         alert("Error: " + e.message);
     }
 }
+// Add to WALLET section
+
+// Initiate payment (calls backend, shows orderId)
+async function initiateWalletPayment() {
+    const userId = document.getElementById("topUpUserId").value.trim();
+    const amount = parseFloat(document.getElementById("topUpAmount").value);
+    if (!userId || isNaN(amount) || amount <= 0) {
+        alert("Enter valid User ID and amount (positive number)");
+        return;
+    }
+    try {
+        const res = await fetch(`${baseUrl}/payments/initiate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, amount }),
+        });
+        const data = await res.json();
+        if (res.ok && data.orderId) {
+            document.getElementById("walletResponse").textContent = "Payment order created: " + data.orderId;
+            // For demo: simulate payment success after 2s
+            setTimeout(() => {
+                handleWalletPaymentCallback(data.orderId, "payment_test_" + Date.now(), true, userId, amount);
+            }, 2000);
+        } else {
+            alert("Failed to initiate payment: " + (data.error || ""));
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+// Simulate payment callback (in real, this is from Razorpay/webhook)
+async function handleWalletPaymentCallback(orderId, paymentId, success, userId, amount) {
+    try {
+        const res = await fetch(`${baseUrl}/payments/callback`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ orderId, paymentId, success, userId, amount }),
+        });
+        const data = await res.json();
+        if (res.ok && data.status === "success") {
+            document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
+            fetchWallet();
+        } else {
+            alert("Payment failed: " + (data.error || ""));
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+async function topUpWallet() {
+    const userId = document.getElementById("topUpUserId").value.trim();
+    const amount = parseFloat(document.getElementById("topUpAmount").value);
+    if (!userId || isNaN(amount) || amount <= 0) {
+        alert("Enter valid User ID and amount (positive number)");
+        return;
+    }
+    try {
+        const res = await fetch(`${baseUrl}/payments/initiate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, amount }),
+        });
+        const data = await res.json();
+        if (res.ok && data.orderId) {
+            const options = {
+                key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay test key
+                amount: amount * 100,
+                currency: "INR",
+                name: "Parking App Wallet Top-Up",
+                description: "Wallet Recharge",
+                order_id: data.orderId,
+                handler: async function (response) {
+                    await fetch(`${baseUrl}/payments/callback`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            orderId: data.orderId,
+                            paymentId: response.razorpay_payment_id,
+                            success: true,
+                            userId,
+                            amount
+                        }),
+                    });
+                    document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
+                    fetchWallet();
+                },
+                prefill: { email: "", contact: "" },
+                theme: { color: "#3399cc" }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+        } else {
+            alert("Failed to initiate payment: " + (data.error || ""));
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+// Optionally, add a button in your HTML for "Simulate Payment Success" if you want manual control
 function displayWallet(wallet) {
     const tbody = document.querySelector("#walletTable tbody");
     tbody.innerHTML = "";
@@ -567,7 +786,7 @@ function displayWallet(wallet) {
     <td>${wallet.id || ""}</td>
     <td>${wallet.userId || ""}</td>
     <td>${wallet.balance?.toFixed(2) || "0.00"}</td>
-    <td>${new Date(wallet.lastUpdated).toLocaleString() || ""}</td>
+    <td>${wallet.lastUpdated ? new Date(wallet.lastUpdated).toLocaleString() : ""}</td>
 `;
     tbody.appendChild(tr);
 }
@@ -592,35 +811,12 @@ function displayWalletTransactions(txs) {
         <td>${tx.referenceId || ""}</td>
         <td>${tx.type || ""}</td>
         <td>${tx.amount?.toFixed(2) || "0.00"}</td>
+        <td>${tx.method || ""}</td>
+        <td>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ""}</td>
         <td>${tx.status || ""}</td>
     `;
         tbody.appendChild(tr);
     });
-}
-async function topUpWallet() {
-    const userId = document.getElementById("topUpUserId").value.trim();
-    const amount = parseFloat(document.getElementById("topUpAmount").value);
-    if (!userId || isNaN(amount) || amount <= 0) {
-        alert("Enter valid User ID and amount (positive number)");
-        return;
-    }
-    try {
-        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet/topup`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ amount }),
-        });
-        if (res.ok) {
-            const wallet = await res.json();
-            alert("Wallet topped up successfully");
-            displayWallet(wallet);
-        } else {
-            const errorText = await res.text();
-            alert("Failed to top-up wallet: " + errorText);
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
 }
 
 // Initialize on page load

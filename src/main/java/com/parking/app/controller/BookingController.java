@@ -5,6 +5,7 @@ import com.parking.app.exception.*;
 import com.parking.app.exception.IllegalStateException;
 import com.parking.app.model.Bookings;
 import com.parking.app.service.BookingService;
+import com.parking.app.service.BookingService.QrValidationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -92,6 +94,26 @@ public class BookingController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+    @PutMapping("/users/{userId}/bookings/{bookingId}/extend")
+    public ResponseEntity<?> extendBooking(
+            @PathVariable String userId,
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> body
+    ) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                return ResponseEntity.notFound().build();
+            }
+            String newCheckOutTimeStr = body.get("newCheckOutTime");
+            ZonedDateTime newCheckOutTime = ZonedDateTime.parse(newCheckOutTimeStr);
+            Bookings updated = bookingService.extendBooking(bookingId, newCheckOutTime);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
 
     @PostMapping("/users/{userId}/bookings/{bookingId}/cancel")
     public ResponseEntity<?> cancelBooking(@PathVariable String userId, @PathVariable String bookingId) {
@@ -109,15 +131,21 @@ public class BookingController {
         }
     }
 
+    // --- Check-in: expects { "qrCode": "..." } in body, but bookingId is used as QR code ---
     @PostMapping("/users/{userId}/bookings/{bookingId}/checkin")
-    public ResponseEntity<?> checkIn(@PathVariable String userId, @PathVariable String bookingId) {
+    public ResponseEntity<?> checkIn(
+            @PathVariable String userId,
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> body
+    ) {
         try {
             Bookings booking = bookingService.getBookingById(bookingId);
             if (booking == null || !booking.getUserId().equals(userId)) {
                 logger.warn("User {} tried to check in for booking {} not belonging to them", userId, bookingId);
                 return ResponseEntity.notFound().build();
             }
-            booking = bookingService.checkIn(bookingId);
+            String qrCode = body.get("qrCode");
+            booking = bookingService.checkIn(bookingId, qrCode);
             return ResponseEntity.ok(booking);
         } catch (IllegalStateException e) {
             logger.error("Error during check-in: {}", e.getMessage());
@@ -125,15 +153,21 @@ public class BookingController {
         }
     }
 
+    // --- Check-out: expects { "qrCode": "..." } in body, but bookingId is used as QR code ---
     @PostMapping("/users/{userId}/bookings/{bookingId}/checkout")
-    public ResponseEntity<?> checkOut(@PathVariable String userId, @PathVariable String bookingId) {
+    public ResponseEntity<?> checkOut(
+            @PathVariable String userId,
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> body
+    ) {
         try {
             Bookings booking = bookingService.getBookingById(bookingId);
             if (booking == null || !booking.getUserId().equals(userId)) {
                 logger.warn("User {} tried to check out for booking {} not belonging to them", userId, bookingId);
                 return ResponseEntity.notFound().build();
             }
-            booking = bookingService.checkOut(bookingId);
+            String qrCode = body.get("qrCode");
+            booking = bookingService.checkOut(bookingId, qrCode);
             return ResponseEntity.ok(booking);
         } catch (InsufficientFundsException e) {
             logger.error("Insufficient funds for userId: {}", userId);
@@ -143,7 +177,6 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @GetMapping("/users/{userId}/bookings/{bookingId}")
     public ResponseEntity<Bookings> getBookingById(@PathVariable String userId, @PathVariable String bookingId) {
@@ -198,7 +231,18 @@ public class BookingController {
         }
     }
 
-    @GetMapping("/users/{userId}/bookings")
+    @GetMapping("/users/{userId}/all-bookings")
+    public ResponseEntity<List<Bookings>> getAllBookingsForUser(@PathVariable String userId) {
+        try {
+            List<Bookings> bookings = bookingService.getBookingsByUserId(userId);
+            return bookings.isEmpty() ? ResponseEntity.notFound().build() : ResponseEntity.ok(bookings);
+        } catch (Exception e) {
+            logger.error("Error fetching user bookings: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(null);
+        }
+    }
+
+    @GetMapping("/users/{userId}/all-bookings/history")
     public ResponseEntity<List<Bookings>> getBookingHistory(@PathVariable String userId) {
         try {
             List<Bookings> history = bookingService.getBookingHistoryByUserId(userId);
@@ -213,25 +257,83 @@ public class BookingController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
     }
-
-    @GetMapping("/bookings/{bookingId}/validate-qr")
-    public ResponseEntity<?> validateQrCode(@PathVariable String bookingId) {
+    @PostMapping("/admin/reset-spots")
+    public ResponseEntity<String> resetAllSpots() {
         try {
-            Bookings booking = bookingService.getBookingById(bookingId);
-            if (booking == null) {
-                return ResponseEntity.notFound().build();
-            }
-            ZonedDateTime now = ZonedDateTime.now();
-            java.util.Date checkInDate = booking.getCheckInTime();
-            java.util.Date checkOutDate = booking.getCheckOutTime();
-            ZonedDateTime checkIn = checkInDate != null ? checkInDate.toInstant().atZone(ZoneId.systemDefault()) : null;
-            ZonedDateTime checkOut = checkOutDate != null ? checkOutDate.toInstant().atZone(ZoneId.systemDefault()) : null;
-            boolean valid = checkIn != null && checkOut != null && !now.isBefore(checkIn) && !now.isAfter(checkOut);
-            return ResponseEntity.ok(valid);
+            bookingService.resetParkingSpotsAvailability();
+            return ResponseEntity.ok("All parking spots have been reset to max capacity.");
         } catch (Exception e) {
-            logger.error("Error validating QR code for booking {}: {}", bookingId, e.getMessage());
-            return ResponseEntity.badRequest().body("Error validating QR code");
+            logger.error("Error resetting parking spots: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");
         }
     }
 
+    // --- QR validation for check-in: expects { "qrCode": "..." } in body ---
+    @PostMapping("/users/{userId}/bookings/{bookingId}/validate-qr-checkin")
+    public ResponseEntity<?> validateQrCodeCheckIn(
+            @PathVariable String userId,
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> body
+    ) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                return ResponseEntity.notFound().build();
+            }
+            String qrCode = body.get("qrCode");
+            QrValidationResult result = bookingService.validateQrCodeForCheckIn(bookingId, qrCode);
+            if (!result.valid) {
+                return ResponseEntity.badRequest().body(result.message);
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error validating QR code for check-in for booking {}: {}", bookingId, e.getMessage());
+            return ResponseEntity.badRequest().body("Error validating QR code for check-in");
+        }
+    }
+
+    // --- QR validation for checkout: expects { "qrCode": "..." } in body ---
+    @PostMapping("/users/{userId}/bookings/{bookingId}/validate-qr-checkout")
+    public ResponseEntity<?> validateQrCodeCheckOut(
+            @PathVariable String userId,
+            @PathVariable String bookingId,
+            @RequestBody Map<String, String> body
+    ) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                return ResponseEntity.notFound().build();
+            }
+            String qrCode = body.get("qrCode");
+            QrValidationResult result = bookingService.validateQrCodeForCheckOut(bookingId, qrCode);
+            if (!result.valid) {
+                return ResponseEntity.badRequest().body(result.message);
+            }
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Error validating QR code for checkout for booking {}: {}", bookingId, e.getMessage());
+            return ResponseEntity.badRequest().body("Error validating QR code for checkout");
+        }
+    }
+
+    @GetMapping("/users/{userId}/bookings/{bookingId}/penalty")
+    public ResponseEntity<?> getPenaltyInfo(@PathVariable String userId, @PathVariable String bookingId) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                return ResponseEntity.notFound().build();
+            }
+            ZonedDateTime now = ZonedDateTime.now();
+            ZonedDateTime checkIn = booking.getCheckInTime().toInstant().atZone(ZoneId.systemDefault());
+            long minutesSinceCheckIn = java.time.Duration.between(checkIn, now).toMinutes();
+            double penalty = 0;
+            if (minutesSinceCheckIn > 10) {
+                penalty = (minutesSinceCheckIn - 10) * 2.0;
+            }
+            return ResponseEntity.ok(penalty);
+        } catch (Exception e) {
+            logger.error("Error fetching penalty info: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Error fetching penalty info");
+        }
+    }
 }

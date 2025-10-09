@@ -40,6 +40,8 @@ dependencies {
     implementation 'org.springframework.security:spring-security-crypto'
     implementation 'org.springframework.boot:spring-boot-actuator-autoconfigure'
     implementation 'org.json:json:20240303'
+    implementation 'com.razorpay:razorpay-java:1.4.4'
+
 }
 
     tasks.named('test') {

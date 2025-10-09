@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @RestController
@@ -84,6 +85,15 @@ public class ParkingSpotController {
         }
         return ResponseEntity.ok(spot);
     }
+    @PostMapping("/available")
+    public ResponseEntity<List<ParkingSpot>> getAvailableSpots(
+            @RequestParam String lotId,
+            @RequestParam ZonedDateTime startTime,
+            @RequestParam ZonedDateTime endTime) {
+        List<ParkingSpot> availableSpots = parkingSpotService.getAvailableSpots(lotId, startTime, endTime);
+        return ResponseEntity.ok(availableSpots);
+    }
+
 
     // Reset all parking spots to full capacity
     @PostMapping("/reset-capacity")

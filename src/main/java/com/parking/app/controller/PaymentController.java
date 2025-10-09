@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/payments")
+@RequestMapping("/api/payments")
 public class PaymentController {
 
     @Autowired
@@ -19,7 +19,16 @@ public class PaymentController {
     public ResponseEntity<?> initiatePayment(@RequestBody Map<String, Object> request) {
         try {
             String userId = (String) request.get("userId");
-            double amount = Double.parseDouble(request.get("amount").toString());
+            Object amountObj = request.get("amount");
+            if (userId == null || amountObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "userId and amount are required"));
+            }
+            double amount;
+            if (amountObj instanceof Number) {
+                amount = ((Number) amountObj).doubleValue();
+            } else {
+                amount = Double.parseDouble(amountObj.toString());
+            }
             String orderId = paymentGatewayService.initiatePayment(userId, amount);
             return ResponseEntity.ok(Map.of("orderId", orderId));
         } catch (Exception e) {
@@ -33,9 +42,27 @@ public class PaymentController {
         try {
             String orderId = (String) payload.get("orderId");
             String paymentId = (String) payload.get("paymentId");
-            boolean success = Boolean.parseBoolean(payload.get("success").toString());
+            Object successObj = payload.get("success");
             String userId = (String) payload.get("userId");
-            double amount = Double.parseDouble(payload.get("amount").toString());
+            Object amountObj = payload.get("amount");
+
+            if (orderId == null || paymentId == null || successObj == null || userId == null || amountObj == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "orderId, paymentId, success, userId, and amount are required"));
+            }
+
+            boolean success;
+            if (successObj instanceof Boolean) {
+                success = (Boolean) successObj;
+            } else {
+                success = Boolean.parseBoolean(successObj.toString());
+            }
+
+            double amount;
+            if (amountObj instanceof Number) {
+                amount = ((Number) amountObj).doubleValue();
+            } else {
+                amount = Double.parseDouble(amountObj.toString());
+            }
 
             boolean result = paymentGatewayService.handlePaymentCallback(orderId, paymentId, success, userId, amount);
             if (result) {
