@@ -19,18 +19,26 @@
         android:padding="16dp">
 
         <!-- Booking ID -->
-        <TextView
-            android:id="@+id/tv_booking_id"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:text="Booking #12345678"
-            android:textColor="#333333"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif"
-            app:layout_constraintEnd_toStartOf="@id/tv_status"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+                    <!-- Parking Location at top left -->
+            <TextView
+                android:id="@+id/tv_parking_location"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mall Parking"
+                android:textSize="12sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Parking Spot (instead of booking ID) -->
+            <TextView
+                android:id="@+id/tv_parking_spot"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Spot A-15"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="8dp" />
 
         <!-- Status -->
         <TextView
@@ -57,7 +65,7 @@
             android:orientation="horizontal"
             android:gravity="center_vertical"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_booking_id">
+            app:layout_constraintTop_toBottomOf="@id/tv_parking_spot">
 
             <ImageView
                 android:layout_width="16dp"

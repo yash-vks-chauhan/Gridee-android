@@ -45,4 +45,9 @@
     <!-- Common alias -->
     <color name="primary_color">@color/primary_blue</color>
     <color name="charcoal_black">#2D3748</color>
+    <!-- Status Colors -->
+    <color name="status_active">#4CAF50</color>
+    <color name="status_error">#F44336</color>
+    <color name="status_pending">#FF9800</color>
+
 </resources>

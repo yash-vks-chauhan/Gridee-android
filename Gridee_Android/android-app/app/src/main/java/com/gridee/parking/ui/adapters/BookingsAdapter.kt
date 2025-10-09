@@ -6,11 +6,13 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ItemBookingBinding
+import java.io.Serializable
 
 data class Booking(
     val id: String,
     val vehicleNumber: String,
     val spotId: String,
+    val spotName: String,        // Add spot name
     val locationName: String,
     val locationAddress: String,
     val startTime: String,
@@ -19,9 +21,9 @@ data class Booking(
     val amount: String,
     val status: BookingStatus,
     val bookingDate: String
-)
+) : Serializable
 
-enum class BookingStatus {
+enum class BookingStatus : Serializable {
     ACTIVE,
     PENDING,
     COMPLETED
@@ -37,9 +39,14 @@ class BookingsAdapter(
         
         fun bind(booking: Booking) {
             binding.apply {
-                tvBookingId.text = "Booking #${booking.id}"
+                // Set parking location at top left
+                tvParkingLocation.text = booking.locationName
+                
+                // Set parking spot (instead of booking ID)
+                tvParkingSpot.text = "Spot ${booking.spotName}"
+                
                 tvVehicleNumber.text = booking.vehicleNumber
-                tvSpotId.text = "Spot: ${booking.spotId}"
+                tvSpotId.text = booking.spotName  // Show spot name instead of ID
                 tvBookingDate.text = booking.bookingDate
                 tvTimeSlot.text = "${booking.startTime} - ${booking.endTime}"
                 tvAmount.text = booking.amount
