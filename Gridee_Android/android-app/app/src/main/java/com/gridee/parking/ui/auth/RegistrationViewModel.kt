@@ -1,0 +1,136 @@
+package com.gridee.parking.ui.auth
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.gridee.parking.data.model.User
+import com.gridee.parking.data.model.UserRegistration
+import com.gridee.parking.data.repository.UserRepository
+import kotlinx.coroutines.launch
+import java.security.MessageDigest
+
+class RegistrationViewModel : ViewModel() {
+    
+    private val userRepository = UserRepository()
+    
+    private val _registrationState = MutableLiveData<RegistrationState>()
+    val registrationState: LiveData<RegistrationState> = _registrationState
+    
+    private val _validationErrors = MutableLiveData<Map<String, String>>()
+    val validationErrors: LiveData<Map<String, String>> = _validationErrors
+    
+    fun registerUser(
+        name: String,
+        email: String,
+        phone: String,
+        password: String,
+        confirmPassword: String,
+        vehicleNumbers: List<String>
+    ) {
+        // Validate input
+        val errors = validateInput(name, email, phone, password, vehicleNumbers)
+        if (errors.isNotEmpty()) {
+            _validationErrors.value = errors
+            return
+        }
+        
+        _registrationState.value = RegistrationState.Loading
+        
+        viewModelScope.launch {
+            try {
+                val hashedPassword = hashPassword(password)
+                val userRegistration = UserRegistration(
+                    name = name.trim(),
+                    email = email.trim().lowercase(),
+                    phone = phone.trim(),
+                    passwordHash = hashedPassword,
+                    vehicleNumbers = vehicleNumbers.filter { it.isNotBlank() }
+                )
+                
+                val response = userRepository.registerUser(userRegistration)
+                
+                if (response.isSuccessful) {
+                    response.body()?.let { user ->
+                        _registrationState.value = RegistrationState.Success(user)
+                    } ?: run {
+                        _registrationState.value = RegistrationState.Error("Registration successful but no user data received")
+                    }
+                } else {
+                    val errorMessage = response.errorBody()?.string() ?: "Registration failed"
+                    _registrationState.value = RegistrationState.Error(errorMessage)
+                }
+            } catch (e: Exception) {
+                _registrationState.value = RegistrationState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+    
+    private fun validateInput(
+        name: String,
+        email: String,
+        phone: String,
+        password: String,
+        vehicleNumbers: List<String>
+    ): Map<String, String> {
+        val errors = mutableMapOf<String, String>()
+        
+        if (name.isBlank()) {
+            errors["name"] = "Name is required"
+        }
+        
+        if (email.isBlank()) {
+            errors["email"] = "Email is required"
+        } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            errors["email"] = "Invalid email format"
+        }
+        
+        if (phone.isBlank()) {
+            errors["phone"] = "Phone number is required"
+        } else if (phone.length < 10) {
+            errors["phone"] = "Phone number must be at least 10 digits"
+        }
+        
+        if (password.isBlank()) {
+            errors["password"] = "Password is required"
+        } else if (password.length < 6) {
+            errors["password"] = "Password must be at least 6 characters"
+        }
+        
+        // Validate vehicle numbers
+        val nonEmptyVehicles = vehicleNumbers.filter { it.isNotBlank() }
+        if (nonEmptyVehicles.isEmpty()) {
+            errors["vehicle"] = "At least one vehicle number is required"
+        } else {
+            // Validate vehicle number format (basic Indian vehicle number pattern)
+            val vehiclePattern = Regex("^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$")
+            val invalidVehicles = nonEmptyVehicles.filter { !vehiclePattern.matches(it.uppercase()) }
+            if (invalidVehicles.isNotEmpty()) {
+                errors["vehicle"] = "Invalid vehicle number format (e.g., MH12AB1234)"
+            }
+            
+            // Check for duplicates
+            if (nonEmptyVehicles.size != nonEmptyVehicles.toSet().size) {
+                errors["vehicle"] = "Duplicate vehicle numbers not allowed"
+            }
+        }
+        
+        return errors
+    }
+    
+    private fun hashPassword(password: String): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(password.toByteArray())
+        return hash.fold("") { str, it -> str + "%02x".format(it) }
+    }
+    
+    fun clearErrors() {
+        _validationErrors.value = emptyMap()
+    }
+}
+
+sealed class RegistrationState {
+    object Loading : RegistrationState()
+    data class Success(val user: User) : RegistrationState()
+    data class Error(val message: String) : RegistrationState()
+}
