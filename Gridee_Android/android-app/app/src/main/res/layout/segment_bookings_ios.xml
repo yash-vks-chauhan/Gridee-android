@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- iOS-Style Glass Segmented Control - Professional & Neat -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/segmentContainer"
+    android:layout_width="330dp"
+    android:layout_height="52dp"
+    android:layout_gravity="center_horizontal"
+    android:layout_marginStart="22dp"
+    android:layout_marginEnd="22dp"
+    android:background="@drawable/glass_segment_container"
+    android:elevation="6dp"
+    android:clipToPadding="false"
+    android:clipChildren="false"
+    android:paddingStart="4dp"
+    android:paddingEnd="4dp">
+
+    <!-- Active Segment -->
+    <LinearLayout
+        android:id="@+id/segmentActive"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/segmentPending"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_chainStyle="spread"
+        app:layout_constraintHorizontal_weight="1">
+
+        <TextView
+            android:id="@+id/textActive"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Active"
+            android:textSize="16sp"
+            android:textColor="@color/bulky_glass_text_selected"
+            android:fontFamily="@font/inter_medium"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:includeFontPadding="false"
+            android:gravity="center"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Active bookings tab" />
+
+    </LinearLayout>
+
+    <!-- Pending Segment -->
+    <LinearLayout
+        android:id="@+id/segmentPending"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        app:layout_constraintStart_toEndOf="@id/segmentActive"
+        app:layout_constraintEnd_toStartOf="@id/segmentCompleted"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_weight="1">
+
+        <TextView
+            android:id="@+id/textPending"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pending"
+            android:textSize="16sp"
+            android:textColor="@color/bulky_glass_text_unselected"
+            android:fontFamily="@font/inter_medium"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:includeFontPadding="false"
+            android:gravity="center"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Pending bookings tab" />
+
+    </LinearLayout>
+
+    <!-- Completed Segment -->
+    <LinearLayout
+        android:id="@+id/segmentCompleted"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@android:color/transparent"
+        android:clickable="false"
+        android:focusable="false"
+        android:paddingVertical="12dp"
+        android:paddingHorizontal="8dp"
+        app:layout_constraintStart_toEndOf="@id/segmentPending"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintHorizontal_weight="1">
+
+        <TextView
+            android:id="@+id/textCompleted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Completed"
+            android:textSize="16sp"
+            android:textColor="@color/bulky_glass_text_unselected"
+            android:fontFamily="@font/inter_medium"
+            android:textStyle="bold"
+            android:letterSpacing="0.02"
+            android:includeFontPadding="false"
+            android:gravity="center"
+            android:importantForAccessibility="yes"
+            android:contentDescription="Completed bookings tab" />
+
+    </LinearLayout>
+
+    <!-- Glass Selection Indicator (Moving Pill) - Initially positioned on Active -->
+    <View
+        android:id="@+id/segmentIndicator"
+        android:layout_width="102dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginEnd="4dp"
+        android:background="@drawable/glass_segment_indicator"
+        android:visibility="visible"
+        app:layout_constraintStart_toStartOf="@id/segmentActive"
+        app:layout_constraintEnd_toEndOf="@id/segmentActive"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
