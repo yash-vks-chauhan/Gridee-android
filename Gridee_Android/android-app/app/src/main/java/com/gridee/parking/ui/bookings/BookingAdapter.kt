@@ -3,7 +3,9 @@ package com.gridee.parking.ui.bookings
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.gridee.parking.R
 import com.gridee.parking.ui.adapters.Booking
+import com.gridee.parking.ui.adapters.BookingStatus
 import com.gridee.parking.databinding.ItemBookingBinding
 import java.text.SimpleDateFormat
 import java.util.*
@@ -54,8 +56,24 @@ class BookingAdapter(
                 // Set amount/price
                 tvAmount.text = booking.amount
                 
-                // Set status (you can customize based on booking.status if available)
-                tvStatus.text = "ACTIVE"
+                // Set status with soft outlined styling
+                when (booking.status) {
+                    BookingStatus.ACTIVE -> {
+                        tvStatus.text = "ACTIVE"
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_active)
+                        tvStatus.setTextColor(android.graphics.Color.parseColor("#2E7D32"))
+                    }
+                    BookingStatus.PENDING -> {
+                        tvStatus.text = "PENDING"
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_pending)
+                        tvStatus.setTextColor(android.graphics.Color.parseColor("#E65100"))
+                    }
+                    BookingStatus.COMPLETED -> {
+                        tvStatus.text = "COMPLETED"
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_completed)
+                        tvStatus.setTextColor(android.graphics.Color.parseColor("#616161"))
+                    }
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.OvershootInterpolator
 import androidx.core.animation.doOnEnd
 import androidx.core.content.getSystemService
 import kotlin.math.abs
@@ -46,6 +47,7 @@ class EnhancedSegmentedControlGestureHandler(
     private var lastHapticTime = 0L
     private var currentSelectedIndex = 0 // Default to first segment (Active) to match layout
     private var dragStartX = 0f
+    private var hoveredSegmentIndex = currentSelectedIndex
     
     // Animation state
     private var currentAnimator: ValueAnimator? = null
@@ -87,6 +89,7 @@ class EnhancedSegmentedControlGestureHandler(
                 initialTouchX = event.x
                 dragStartX = event.x
                 isDragging = false
+                hoveredSegmentIndex = currentSelectedIndex
                 
                 // Cancel any ongoing animations
                 currentAnimator?.cancel()
@@ -172,6 +175,17 @@ class EnhancedSegmentedControlGestureHandler(
         val clampedX = max(minX, min(maxX, targetX))
         
         indicatorView.x = clampedX
+
+        if (indicatorWidth > 0) {
+            val indicatorCenter = clampedX + indicatorWidth / 2f
+            val hoverIndex = getSegmentIndexFromX(indicatorCenter)
+            if (hoverIndex != hoveredSegmentIndex) {
+                hoveredSegmentIndex = hoverIndex
+                if (hoverIndex != currentSelectedIndex) {
+                    triggerHapticFeedback()
+                }
+            }
+        }
     }
     
     /**
@@ -181,6 +195,7 @@ class EnhancedSegmentedControlGestureHandler(
         android.util.Log.d("SegmentedControl", "selectSegment called: index=$index, current=$currentSelectedIndex")
         val oldIndex = currentSelectedIndex
         currentSelectedIndex = index
+        hoveredSegmentIndex = index
         
         // Animate indicator to target position
         animateToSegment(index)
@@ -219,7 +234,7 @@ class EnhancedSegmentedControlGestureHandler(
         currentAnimator = ValueAnimator.ofFloat(indicatorView.x, targetX).apply {
             duration = ANIMATION_DURATION_MS
             // Cubic-bezier(0.20, 0.85, 0.20, 1.00) equivalent for heavier settle
-            interpolator = android.view.animation.DecelerateInterpolator(1.5f)
+            interpolator = OvershootInterpolator(0.8f)
             
             addUpdateListener { animator ->
                 indicatorView.x = animator.animatedValue as Float
@@ -227,6 +242,7 @@ class EnhancedSegmentedControlGestureHandler(
             
             doOnEnd {
                 currentAnimator = null
+                animateIndicatorBounce()
             }
         }
         
@@ -356,6 +372,7 @@ class EnhancedSegmentedControlGestureHandler(
         android.util.Log.d("SegmentedControl", "setSelectedIndex called: index=$index, animated=$animated")
         if (index in 0 until segments.size) {
             currentSelectedIndex = index
+            hoveredSegmentIndex = index
             android.util.Log.d("SegmentedControl", "Setting current index to: $index")
             if (animated) {
                 animateToSegment(index)
@@ -383,5 +400,23 @@ class EnhancedSegmentedControlGestureHandler(
     fun cleanup() {
         currentAnimator?.cancel()
         currentAnimator = null
+    }
+
+    private fun animateIndicatorBounce() {
+        indicatorView.animate().cancel()
+        indicatorView.animate()
+            .scaleX(1.06f)
+            .scaleY(1.06f)
+            .setDuration(140)
+            .setInterpolator(OvershootInterpolator(1.2f))
+            .withEndAction {
+                indicatorView.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(160)
+                    .setInterpolator(OvershootInterpolator(0.9f))
+                    .start()
+            }
+            .start()
     }
 }

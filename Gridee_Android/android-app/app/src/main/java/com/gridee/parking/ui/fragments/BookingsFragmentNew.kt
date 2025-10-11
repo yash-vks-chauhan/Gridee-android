@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.animation.OvershootInterpolator
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.animation.doOnEnd
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -20,6 +21,9 @@ import com.gridee.parking.ui.adapters.BookingStatus
 import com.gridee.parking.ui.adapters.BookingsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
 import com.gridee.parking.ui.components.EnhancedSegmentedControlGestureHandler
+import com.gridee.parking.databinding.BottomSheetBookingOverviewBinding
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -50,7 +54,6 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     override fun setupUI() {
         setupRecyclerView()
-        initializeSegmentedControlState()
         setupSegmentedControl()
         loadUserBookings() // Use real API instead of sample data
     }
@@ -81,19 +84,19 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private fun updateSegmentTabs(selectedStatus: BookingStatus) {
         when (selectedStatus) {
             BookingStatus.ACTIVE -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.white, null))
+                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
                 binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
                 binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
             }
             BookingStatus.PENDING -> {
                 binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.white, null))
+                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
                 binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
             }
             BookingStatus.COMPLETED -> {
                 binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
                 binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.white, null))
+                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
             }
             else -> {
                 // Handle other cases (CONFIRMED, CANCELLED, EXPIRED)
@@ -171,6 +174,8 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             else -> BookingStatus.ACTIVE
         }
         
+        updateSegmentTextColors(newStatus)
+
         android.util.Log.d("BookingsFragment", "Switching from ${currentTab} to ${newStatus}")
         if (newStatus != currentTab) {
             showToast("Switched to ${getSegmentTitle(newStatus)}")
@@ -314,19 +319,29 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
      * Initialize segmented control visual state
      */
     private fun initializeSegmentedControlState() {
-        // Set initial indicator width and position for pending segment
-        val pendingSegment = binding.segmentedControlContainer.segmentPending
-        val segmentWidth = pendingSegment.width - 16 // Account for 8dp margins on each side
-        val layoutParams = binding.segmentedControlContainer.segmentIndicator.layoutParams
-        layoutParams.width = segmentWidth
-        binding.segmentedControlContainer.segmentIndicator.layoutParams = layoutParams
-        
-        // Position indicator at pending segment
-        val pendingX = pendingSegment.x + 8f // Add 8dp margin
-        binding.segmentedControlContainer.segmentIndicator.x = pendingX
-        
-        // Set initial text colors
-        updateSegmentTextColors(BookingStatus.PENDING)
+        val indicatorMargin = resources.displayMetrics.density * 4f
+        val indicator = binding.segmentedControlContainer.segmentIndicator
+        val selectedSegment = when (currentTab) {
+            BookingStatus.ACTIVE -> binding.segmentedControlContainer.segmentActive
+            BookingStatus.PENDING -> binding.segmentedControlContainer.segmentPending
+            BookingStatus.COMPLETED -> binding.segmentedControlContainer.segmentCompleted
+        }
+
+        if (selectedSegment.width == 0) {
+            indicator.post { initializeSegmentedControlState() }
+            return
+        }
+
+        val targetWidth = (selectedSegment.width - indicatorMargin * 2).coerceAtLeast(0f)
+        val layoutParams = indicator.layoutParams
+        val targetWidthInt = targetWidth.toInt()
+        if (layoutParams.width != targetWidthInt) {
+            layoutParams.width = targetWidthInt
+            indicator.layoutParams = layoutParams
+        }
+
+        indicator.x = selectedSegment.x + indicatorMargin
+        updateSegmentTextColors(currentTab)
     }
     
     /**
@@ -733,9 +748,70 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun showBookingDetails(booking: Booking) {
-        // TODO: Create and show bottom sheet with booking details
-        // For now, just show a toast with booking info
-        showToast("Booking: ${booking.locationName} - ${booking.spotName}")
+        val dialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
+        val sheetBinding = BottomSheetBookingOverviewBinding.inflate(layoutInflater)
+        dialog.setContentView(sheetBinding.root)
+
+        sheetBinding.apply {
+            textLocationName.text = booking.locationName
+            textLocationInitial.text = booking.locationName.firstOrNull()?.uppercaseChar()?.toString() ?: "B"
+
+            textLocationAddress.text = when {
+                booking.locationAddress.isNotBlank() && booking.locationAddress != "Address TBD" -> booking.locationAddress
+                booking.spotId.isNotBlank() -> booking.spotId
+                else -> getString(R.string.booking_details)
+            }
+
+            textSpotName.text = booking.spotName
+            textVehicleNumber.text = booking.vehicleNumber
+            textBookingId.text = "#${booking.id}"
+
+            textCheckIn.text = getStringFormattedTime(booking.bookingDate, booking.startTime)
+            textCheckOut.text = getStringFormattedTime(booking.bookingDate, booking.endTime)
+
+            textDuration.text = booking.duration
+            textAmount.text = booking.amount
+
+            val (statusLabel, statusBackgroundRes, statusTextColor) = when (booking.status) {
+                BookingStatus.ACTIVE -> Triple("Active", R.drawable.status_outlined_active, R.color.booking_status_active_text)
+                BookingStatus.PENDING -> Triple("Pending", R.drawable.status_outlined_pending, R.color.booking_status_pending_text)
+                BookingStatus.COMPLETED -> Triple("Completed", R.drawable.status_outlined_completed, R.color.booking_status_completed_text)
+            }
+            textStatusChip.text = statusLabel
+            textStatusChip.background = ContextCompat.getDrawable(requireContext(), statusBackgroundRes)
+            textStatusChip.setTextColor(ContextCompat.getColor(requireContext(), statusTextColor))
+
+            locationBadgeContainer.background = ContextCompat.getDrawable(requireContext(), statusBackgroundRes)
+            textLocationInitial.setTextColor(ContextCompat.getColor(requireContext(), statusTextColor))
+        }
+
+        sheetBinding.buttonCloseSheet.setOnClickListener { dialog.dismiss() }
+        sheetBinding.buttonClose.setOnClickListener { dialog.dismiss() }
+        sheetBinding.buttonCancelBooking.setOnClickListener {
+            showToast("Cancel booking action coming soon")
+            dialog.dismiss()
+        }
+
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let {
+                val behavior = BottomSheetBehavior.from(it)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+                behavior.isFitToContents = true
+            }
+        }
+        dialog.behavior.isDraggable = true
+        dialog.window?.setDimAmount(0.55f)
+        dialog.show()
+    }
+
+    private fun getStringFormattedTime(date: String, time: String): String {
+        return if (date == "TBD" || time == "TBD") {
+            "TBD"
+        } else {
+            "$date · $time"
+        }
     }
 
     private fun getUserId(): String? {

@@ -1,8 +1,8 @@
 package com.gridee.parking.ui.adapters
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ItemBookingBinding
@@ -53,21 +53,22 @@ class BookingsAdapter(
                 tvAmount.text = booking.amount
 
                 // Set status with appropriate styling
+                val context = binding.root.context
                 when (booking.status) {
                     BookingStatus.ACTIVE -> {
                         tvStatus.text = "ACTIVE"
-                        tvStatus.setBackgroundResource(R.drawable.status_active_bg)
-                        tvStatus.setTextColor(binding.root.context.getColor(android.R.color.white))
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_active)
+                        tvStatus.setTextColor(ContextCompat.getColor(context, R.color.booking_status_active_text))
                     }
                     BookingStatus.PENDING -> {
                         tvStatus.text = "PENDING"
-                        tvStatus.setBackgroundResource(R.drawable.status_pending_bg)
-                        tvStatus.setTextColor(binding.root.context.getColor(android.R.color.white))
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_pending)
+                        tvStatus.setTextColor(ContextCompat.getColor(context, R.color.booking_status_pending_text))
                     }
                     BookingStatus.COMPLETED -> {
                         tvStatus.text = "COMPLETED"
-                        tvStatus.setBackgroundResource(R.drawable.status_completed_bg)
-                        tvStatus.setTextColor(binding.root.context.getColor(android.R.color.white))
+                        tvStatus.setBackgroundResource(R.drawable.status_outlined_completed)
+                        tvStatus.setTextColor(ContextCompat.getColor(context, R.color.booking_status_completed_text))
                     }
                 }
 
