@@ -1,8 +1,9 @@
 package com.parking.app.controller;
 
-import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
+import com.parking.app.model.Transactions;
 import com.parking.app.service.WalletService;
+import com.parking.app.service.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,10 @@ public class WalletController {
     @Autowired
     private WalletService walletService;
 
-    // Get wallet balance for user
+    @Autowired
+    private TransactionService transactionService;
+
+    // Get wallet details for a user
     @GetMapping("")
     public ResponseEntity<Wallet> getWallet(@PathVariable String userId) {
         return walletService.getWalletByUserId(userId)
@@ -25,10 +29,10 @@ public class WalletController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Get transaction history for user
+    // Get all transactions for a user
     @GetMapping("/transactions")
-    public ResponseEntity<List<Transactions>> getTransactions(@PathVariable String userId) {
-        return ResponseEntity.ok(walletService.getUserTransactions(userId));
+    public ResponseEntity<List<Transactions>> getUserTransactions(@PathVariable String userId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByUserId(userId));
     }
 
     // Top up wallet
@@ -43,8 +47,8 @@ public class WalletController {
         Wallet wallet = walletService.topUpWallet(userId, amount);
         return ResponseEntity.ok(wallet);
     }
-// Add this to WalletController
 
+    // Deduct penalty from wallet
     @PostMapping("/deduct-penalty")
     public ResponseEntity<?> deductPenalty(
             @PathVariable String userId,
@@ -52,14 +56,11 @@ public class WalletController {
         Double penalty = request.get("penalty");
         if (penalty == null || penalty <= 0) {
             return ResponseEntity.badRequest().body("Penalty must be positive.");
-        } 
+        }
         Wallet wallet = walletService.deductPenalty(userId, penalty);
         if (wallet == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Wallet not found or insufficient balance.");
         }
         return ResponseEntity.ok(wallet);
     }
-
-
-
 }

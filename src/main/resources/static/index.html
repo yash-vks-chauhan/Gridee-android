@@ -196,7 +196,6 @@
         <label>Available:</label><input type="number" id="spotAvailable" placeholder="Available Spots" /><br />
         <button onclick="createSpot()">Create Spot</button>
         <button onclick="resetAllSpots()">Reset All Spots</button>
-
     </div>
     <h3>Parking Spots List</h3>
     <table id="spotsTable">
@@ -243,6 +242,12 @@
         <label>User ID:</label><input type="text" id="topUpUserId" placeholder="User ID" /><br />
         <label>Amount:</label><input type="number" id="topUpAmount" placeholder="Top-up amount" /><br />
         <button onclick="topUpWallet()">Top-Up Wallet</button>
+    </div>
+    <div>
+        <h3>Deduct Penalty</h3>
+        <label>User ID:</label><input type="text" id="walletUserIdPenalty" placeholder="User ID" /><br />
+        <label>Penalty Amount:</label><input type="number" id="penaltyAmount" placeholder="Penalty amount" /><br />
+        <button onclick="deductPenalty()">Deduct Penalty</button>
     </div>
     <pre id="walletResponse" class="response"></pre>
     <h3>Wallet Balance</h3>

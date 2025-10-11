@@ -3,7 +3,6 @@ package com.parking.app.service;
 import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
 import com.parking.app.repository.WalletRepository;
-import com.parking.app.repository.TransactionsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +15,7 @@ public class WalletService {
     private WalletRepository walletRepository;
 
     @Autowired
-    private TransactionsRepository transactionRepository;
+    private TransactionService transactionService;
 
     // Get or create a user's wallet
     public Wallet getOrCreateWallet(String userId) {
@@ -37,7 +36,7 @@ public class WalletService {
 
     // List all wallet transactions by wallet/user
     public List<Transactions> getUserTransactions(String userId) {
-        return transactionRepository.findByUserId(userId);
+        return transactionService.getTransactionsByUserId(userId);
     }
 
     // Top up wallet and create a transaction (atomic)
@@ -52,7 +51,7 @@ public class WalletService {
         tx.setType("wallet_topup");
         tx.setStatus("completed");
         tx.setTimestamp(new Date());
-        transactionRepository.save(tx);
+        transactionService.recordTransaction(tx);
 
         // Update wallet
         wallet.setBalance(wallet.getBalance() + amount);
@@ -69,7 +68,6 @@ public class WalletService {
 
         return walletRepository.save(wallet);
     }
-// src/main/java/com/parking/app/service/WalletService.java
 
     public Wallet deductPenalty(String userId, double penaltyAmount) {
         Optional<Wallet> walletOpt = getWalletByUserId(userId);
@@ -84,7 +82,7 @@ public class WalletService {
                 tx.setType("penalty_deduction");
                 tx.setStatus("completed");
                 tx.setTimestamp(new Date());
-                transactionRepository.save(tx);
+                transactionService.recordTransaction(tx);
 
                 // Update wallet
                 wallet.setBalance(wallet.getBalance() - penaltyAmount);
@@ -104,5 +102,4 @@ public class WalletService {
         }
         return null;
     }
-
 }

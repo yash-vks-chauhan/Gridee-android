@@ -663,6 +663,163 @@ async function deleteLot(id) {
 }
 
 // WALLET
+//async function fetchWallet() {
+//    const userId = document.getElementById("walletUserId").value.trim();
+//    if (!userId) { alert("Enter User ID"); return; }
+//    try {
+//        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet`);
+//        if (!res.ok) { alert("Wallet not found"); return; }
+//        const wallet = await res.json();
+//        displayWallet(wallet);
+//        document.getElementById("walletResponse").textContent = "Wallet fetched successfully";
+//    } catch (e) {
+//        alert("Error: " + e.message);
+//    }
+//}
+//// Add to WALLET section
+//
+//// Initiate payment (calls backend, shows orderId)
+//async function initiateWalletPayment() {
+//    const userId = document.getElementById("topUpUserId").value.trim();
+//    const amount = parseFloat(document.getElementById("topUpAmount").value);
+//    if (!userId || isNaN(amount) || amount <= 0) {
+//        alert("Enter valid User ID and amount (positive number)");
+//        return;
+//    }
+//    try {
+//        const res = await fetch(`${baseUrl}/payments/initiate`, {
+//            method: "POST",
+//            headers: { "Content-Type": "application/json" },
+//            body: JSON.stringify({ userId, amount }),
+//        });
+//        const data = await res.json();
+//        if (res.ok && data.orderId) {
+//            document.getElementById("walletResponse").textContent = "Payment order created: " + data.orderId;
+//            // For demo: simulate payment success after 2s
+//            setTimeout(() => {
+//                handleWalletPaymentCallback(data.orderId, "payment_test_" + Date.now(), true, userId, amount);
+//            }, 2000);
+//        } else {
+//            alert("Failed to initiate payment: " + (data.error || ""));
+//        }
+//    } catch (e) {
+//        alert("Error: " + e.message);
+//    }
+//}
+//
+//// Simulate payment callback (in real, this is from Razorpay/webhook)
+//async function handleWalletPaymentCallback(orderId, paymentId, success, userId, amount) {
+//    try {
+//        const res = await fetch(`${baseUrl}/payments/callback`, {
+//            method: "POST",
+//            headers: { "Content-Type": "application/json" },
+//            body: JSON.stringify({ orderId, paymentId, success, userId, amount }),
+//        });
+//        const data = await res.json();
+//        if (res.ok && data.status === "success") {
+//            document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
+//            fetchWallet();
+//        } else {
+//            alert("Payment failed: " + (data.error || ""));
+//        }
+//    } catch (e) {
+//        alert("Error: " + e.message);
+//    }
+//}
+//
+//async function topUpWallet() {
+//    const userId = document.getElementById("topUpUserId").value.trim();
+//    const amount = parseFloat(document.getElementById("topUpAmount").value);
+//    if (!userId || isNaN(amount) || amount <= 0) {
+//        alert("Enter valid User ID and amount (positive number)");
+//        return;
+//    }
+//    try {
+//        const res = await fetch(`${baseUrl}/payments/initiate`, {
+//            method: "POST",
+//            headers: { "Content-Type": "application/json" },
+//            body: JSON.stringify({ userId, amount }),
+//        });
+//        const data = await res.json();
+//        if (res.ok && data.orderId) {
+//            const options = {
+//                key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay test key
+//                amount: amount * 100,
+//                currency: "INR",
+//                name: "Parking App Wallet Top-Up",
+//                description: "Wallet Recharge",
+//                order_id: data.orderId,
+//                handler: async function (response) {
+//                    await fetch(`${baseUrl}/payments/callback`, {
+//                        method: "POST",
+//                        headers: { "Content-Type": "application/json" },
+//                        body: JSON.stringify({
+//                            orderId: data.orderId,
+//                            paymentId: response.razorpay_payment_id,
+//                            success: true,
+//                            userId,
+//                            amount
+//                        }),
+//                    });
+//                    document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
+//                    fetchWallet();
+//                },
+//                prefill: { email: "", contact: "" },
+//                theme: { color: "#3399cc" }
+//            };
+//            const rzp = new Razorpay(options);
+//            rzp.open();
+//        } else {
+//            alert("Failed to initiate payment: " + (data.error || ""));
+//        }
+//    } catch (e) {
+//        alert("Error: " + e.message);
+//    }
+//}
+
+// Optionally, add a button in your HTML for "Simulate Payment Success" if you want manual control
+//function displayWallet(wallet) {
+//    const tbody = document.querySelector("#walletTable tbody");
+//    tbody.innerHTML = "";
+//    const tr = document.createElement("tr");
+//    tr.innerHTML = `
+//    <td>${wallet.id || ""}</td>
+//    <td>${wallet.userId || ""}</td>
+//    <td>${wallet.balance?.toFixed(2) || "0.00"}</td>
+//    <td>${wallet.lastUpdated ? new Date(wallet.lastUpdated).toLocaleString() : ""}</td>
+//`;
+//    tbody.appendChild(tr);
+//}
+//async function fetchWalletTransactions() {
+//    const userId = document.getElementById("walletUserId").value.trim();
+//    if (!userId) { alert("Enter User ID"); return; }
+//    try {
+//        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet/transactions`);
+//        if (!res.ok) { alert("Failed to fetch wallet transactions"); return; }
+//        const txs = await res.json();
+//        displayWalletTransactions(txs);
+//    } catch (e) {
+//        alert("Error: " + e.message);
+//    }
+//}
+//function displayWalletTransactions(txs) {
+//    const tbody = document.querySelector("#walletTxTable tbody");
+//    tbody.innerHTML = "";
+//    txs.forEach((tx) => {
+//        const tr = document.createElement("tr");
+//        tr.innerHTML = `
+//        <td>${tx.referenceId || ""}</td>
+//        <td>${tx.type || ""}</td>
+//        <td>${tx.amount?.toFixed(2) || "0.00"}</td>
+//        <td>${tx.method || ""}</td>
+//        <td>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ""}</td>
+//        <td>${tx.status || ""}</td>
+//    `;
+//        tbody.appendChild(tr);
+//    });
+//}
+// WALLET
+
 async function fetchWallet() {
     const userId = document.getElementById("walletUserId").value.trim();
     if (!userId) { alert("Enter User ID"); return; }
@@ -676,57 +833,8 @@ async function fetchWallet() {
         alert("Error: " + e.message);
     }
 }
-// Add to WALLET section
 
-// Initiate payment (calls backend, shows orderId)
-async function initiateWalletPayment() {
-    const userId = document.getElementById("topUpUserId").value.trim();
-    const amount = parseFloat(document.getElementById("topUpAmount").value);
-    if (!userId || isNaN(amount) || amount <= 0) {
-        alert("Enter valid User ID and amount (positive number)");
-        return;
-    }
-    try {
-        const res = await fetch(`${baseUrl}/payments/initiate`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ userId, amount }),
-        });
-        const data = await res.json();
-        if (res.ok && data.orderId) {
-            document.getElementById("walletResponse").textContent = "Payment order created: " + data.orderId;
-            // For demo: simulate payment success after 2s
-            setTimeout(() => {
-                handleWalletPaymentCallback(data.orderId, "payment_test_" + Date.now(), true, userId, amount);
-            }, 2000);
-        } else {
-            alert("Failed to initiate payment: " + (data.error || ""));
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
-}
-
-// Simulate payment callback (in real, this is from Razorpay/webhook)
-async function handleWalletPaymentCallback(orderId, paymentId, success, userId, amount) {
-    try {
-        const res = await fetch(`${baseUrl}/payments/callback`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ orderId, paymentId, success, userId, amount }),
-        });
-        const data = await res.json();
-        if (res.ok && data.status === "success") {
-            document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
-            fetchWallet();
-        } else {
-            alert("Payment failed: " + (data.error || ""));
-        }
-    } catch (e) {
-        alert("Error: " + e.message);
-    }
-}
-
+// Replace "YOUR_RAZORPAY_KEY" with your actual Razorpay key
 async function topUpWallet() {
     const userId = document.getElementById("topUpUserId").value.trim();
     const amount = parseFloat(document.getElementById("topUpAmount").value);
@@ -735,6 +843,7 @@ async function topUpWallet() {
         return;
     }
     try {
+        // Step 1: Initiate payment order from backend
         const res = await fetch(`${baseUrl}/payments/initiate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -742,15 +851,17 @@ async function topUpWallet() {
         });
         const data = await res.json();
         if (res.ok && data.orderId) {
+            // Step 2: Open Razorpay payment modal
             const options = {
-                key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay test key
+                key: "rzp_test_RS3SKqbTQFAamy", // <-- Set your Razorpay key here
                 amount: amount * 100,
                 currency: "INR",
                 name: "Parking App Wallet Top-Up",
                 description: "Wallet Recharge",
                 order_id: data.orderId,
                 handler: async function (response) {
-                    await fetch(`${baseUrl}/payments/callback`, {
+                    // Step 3: On payment success, notify backend to top up wallet
+                    const callbackRes = await fetch(`${baseUrl}/payments/callback`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
@@ -761,8 +872,12 @@ async function topUpWallet() {
                             amount
                         }),
                     });
-                    document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
-                    fetchWallet();
+                    if (callbackRes.ok) {
+                        document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
+                        fetchWallet();
+                    } else {
+                        alert("Payment succeeded but wallet top-up failed.");
+                    }
                 },
                 prefill: { email: "", contact: "" },
                 theme: { color: "#3399cc" }
@@ -777,19 +892,32 @@ async function topUpWallet() {
     }
 }
 
-// Optionally, add a button in your HTML for "Simulate Payment Success" if you want manual control
-function displayWallet(wallet) {
-    const tbody = document.querySelector("#walletTable tbody");
-    tbody.innerHTML = "";
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-    <td>${wallet.id || ""}</td>
-    <td>${wallet.userId || ""}</td>
-    <td>${wallet.balance?.toFixed(2) || "0.00"}</td>
-    <td>${wallet.lastUpdated ? new Date(wallet.lastUpdated).toLocaleString() : ""}</td>
-`;
-    tbody.appendChild(tr);
+async function deductPenalty() {
+    const userId = document.getElementById("walletUserId").value.trim();
+    const penalty = parseFloat(document.getElementById("penaltyAmount").value);
+    if (!userId || isNaN(penalty) || penalty <= 0) {
+        alert("Enter valid User ID and penalty amount (positive number)");
+        return;
+    }
+    try {
+        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet/deduct-penalty`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ penalty }),
+        });
+        if (res.ok) {
+            const wallet = await res.json();
+            displayWallet(wallet);
+            document.getElementById("walletResponse").textContent = "Penalty deducted successfully!";
+        } else {
+            const errorText = await res.text();
+            alert("Penalty deduction failed: " + errorText);
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
 }
+
 async function fetchWalletTransactions() {
     const userId = document.getElementById("walletUserId").value.trim();
     if (!userId) { alert("Enter User ID"); return; }
@@ -802,22 +930,37 @@ async function fetchWalletTransactions() {
         alert("Error: " + e.message);
     }
 }
+
+function displayWallet(wallet) {
+    const tbody = document.querySelector("#walletTable tbody");
+    tbody.innerHTML = "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+        <td>${wallet.id || ""}</td>
+        <td>${wallet.userId || ""}</td>
+        <td>${wallet.balance?.toFixed(2) || "0.00"}</td>
+        <td>${wallet.lastUpdated ? new Date(wallet.lastUpdated).toLocaleString() : ""}</td>
+    `;
+    tbody.appendChild(tr);
+}
+
 function displayWalletTransactions(txs) {
     const tbody = document.querySelector("#walletTxTable tbody");
     tbody.innerHTML = "";
     txs.forEach((tx) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-        <td>${tx.referenceId || ""}</td>
-        <td>${tx.type || ""}</td>
-        <td>${tx.amount?.toFixed(2) || "0.00"}</td>
-        <td>${tx.method || ""}</td>
-        <td>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ""}</td>
-        <td>${tx.status || ""}</td>
-    `;
+            <td>${tx.referenceId || ""}</td>
+            <td>${tx.type || ""}</td>
+            <td>${tx.amount?.toFixed(2) || "0.00"}</td>
+            <td>${tx.method || ""}</td>
+            <td>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ""}</td>
+            <td>${tx.status || ""}</td>
+        `;
         tbody.appendChild(tr);
     });
 }
+
 
 // Initialize on page load
 showSection("users");
