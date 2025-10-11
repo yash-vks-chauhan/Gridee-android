@@ -69,10 +69,28 @@
     <color name="bulky_glass_indicator_border">#80FFFFFF</color>
     <color name="bulky_glass_shadow">#2E000000</color>
     <color name="bulky_glass_highlight">#14FFFFFF</color>
-    <color name="bulky_glass_text_selected">#FFFFFF</color>
-    <color name="bulky_glass_text_unselected">#C7FFFFFF</color>
+    <color name="bulky_glass_text_selected">#191C19</color>
+    <color name="bulky_glass_text_unselected">#FFFFFFFF</color>
     <color name="bulky_glass_focus_ring">#3388CCFF</color>
     <color name="bulky_glass_pressed">#5AFFFFFF</color>
+
+    <!-- Booking status badge colors -->
+    <color name="booking_status_active_bg">#E8F5E9</color>
+    <color name="booking_status_active_text">#2E7D32</color>
+    <color name="booking_status_pending_bg">#FFF3E0</color>
+    <color name="booking_status_pending_text">#E65100</color>
+    <color name="booking_status_completed_bg">#F5F5F5</color>
+    <color name="booking_status_completed_text">#616161</color>
+    <color name="booking_card_border_default">#DCDCDC</color>
+    <color name="booking_card_border_pressed">#E0E0E0</color>
+    <color name="booking_card_background_pressed">#FAFAFA</color>
+    <color name="booking_card_ripple">#1AF5F5F5</color>
+    <color name="booking_sheet_background">#F4F5F8</color>
+    <color name="booking_sheet_card_surface">#FFFFFFFF</color>
+    <color name="booking_sheet_divider">#E5E7EB</color>
+    <color name="booking_sheet_icon_tint">#424242</color>
+    <color name="booking_sheet_secondary_text">#6B7280</color>
+    <color name="booking_sheet_chip_bg">#EEF2FF</color>
 
     <!-- Missing Colors -->
     <color name="segment_badge">#4CAF50</color>
