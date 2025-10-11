@@ -41,17 +41,21 @@ class BookingAdapter(
 
         fun bind(booking: Booking) {
             binding.apply {
-                // Set parking location at top left
-                tvParkingLocation.text = booking.locationName
+                // Set parking spot name
+                tvParkingSpot.text = booking.spotName
                 
-                // Set parking spot (instead of booking ID)
-                tvParkingSpot.text = "Spot ${booking.spotName}"
-                
-                // Set other booking details
-                tvVehicleNumber.text = booking.vehicleNumber
+                // Set booking date
                 tvBookingDate.text = booking.bookingDate
-                tvTimeSlot.text = "${booking.startTime} - ${booking.endTime}"
+                
+                // Set check-in and check-out times
+                tvCheckInTime.text = booking.startTime
+                tvCheckOutTime.text = booking.endTime
+                
+                // Set amount/price
                 tvAmount.text = booking.amount
+                
+                // Set status (you can customize based on booking.status if available)
+                tvStatus.text = "ACTIVE"
             }
         }
     }
