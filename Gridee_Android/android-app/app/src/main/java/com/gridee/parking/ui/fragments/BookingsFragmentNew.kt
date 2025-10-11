@@ -30,6 +30,11 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private var userBookings = mutableListOf<BackendBooking>()
     private var currentTab = BookingStatus.ACTIVE
     private lateinit var gestureHandler: EnhancedSegmentedControlGestureHandler
+    
+    // Cache for parking lot and spot names
+    private val parkingLotCache = mutableMapOf<String, String>() // lotId -> name
+    private val parkingSpotCache = mutableMapOf<String, String>() // spotId -> name
+    private var isCacheLoaded = false
 
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentBookingsNewBinding {
         return FragmentBookingsNewBinding.inflate(inflater, container, false)
@@ -473,6 +478,11 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         
         lifecycleScope.launch {
             try {
+                // Load parking lots and spots cache first
+                if (!isCacheLoaded) {
+                    loadParkingDataCache()
+                }
+                
                 // Get user bookings from backend using real user ID
                 val response = ApiClient.apiService.getUserBookings(userId)
                 
@@ -508,12 +518,97 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             }
         }
     }
+    
+    private suspend fun loadParkingDataCache() {
+        try {
+            // Load parking lots
+            val lotsResponse = ApiClient.apiService.getParkingLots()
+            if (lotsResponse.isSuccessful) {
+                lotsResponse.body()?.forEach { lot ->
+                    parkingLotCache[lot.id] = lot.name
+                    android.util.Log.d("BookingsFragment", "Cached lot: ${lot.id} -> ${lot.name}")
+                    
+                    // Also try to load spots for this lot
+                    try {
+                        val spotsForLot = ApiClient.apiService.getParkingSpotsByLot(lot.id)
+                        if (spotsForLot.isSuccessful) {
+                            spotsForLot.body()?.forEach { spot ->
+                                val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
+                                parkingSpotCache[spot.id] = spotName
+                                android.util.Log.d("BookingsFragment", "Cached spot from lot: ${spot.id} -> ${spotName}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("BookingsFragment", "Error loading spots for lot ${lot.id}: ${e.message}")
+                    }
+                }
+            }
+            
+            // Also load all parking spots directly
+            val spotsResponse = ApiClient.apiService.getParkingSpots()
+            if (spotsResponse.isSuccessful) {
+                spotsResponse.body()?.forEach { spot ->
+                    val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
+                    parkingSpotCache[spot.id] = spotName
+                    android.util.Log.d("BookingsFragment", "Cached spot: ${spot.id} -> ${spotName}")
+                }
+            }
+            
+            isCacheLoaded = true
+            android.util.Log.d("BookingsFragment", "Cache loaded: ${parkingLotCache.size} lots, ${parkingSpotCache.size} spots")
+        } catch (e: Exception) {
+            android.util.Log.e("BookingsFragment", "Error loading parking data cache: ${e.message}")
+            // Continue without cache - will use fallback names
+        }
+    }
 
     private fun loadSampleBookings() {
         // NOTE: This is fallback sample data shown only when:
         // 1. User is not logged in, OR
         // 2. API call fails due to network/server errors
         // In normal operation, real user bookings from the backend are displayed
+        
+        // Populate cache with sample location and spot names
+        if (!isCacheLoaded) {
+            parkingLotCache["Downtown Mall Parking"] = "Phoenix Mall"
+            parkingLotCache["Office Complex"] = "Tech Park Business Center"
+            parkingLotCache["Shopping Center"] = "City Square Mall"
+            
+            parkingSpotCache["A-12"] = "North Wing - A12"
+            parkingSpotCache["B-05"] = "South Wing - B05"
+            parkingSpotCache["C-08"] = "East Wing - C08"
+            
+            isCacheLoaded = true
+        }
+        
+        // Create sample date/time data
+        val calendar = Calendar.getInstance()
+        val today = calendar.time
+        
+        // Create active booking (started 1 hour ago, ends in 1 hour)
+        calendar.add(Calendar.HOUR, -1)
+        val activeStartTime = calendar.time
+        calendar.add(Calendar.HOUR, 2)
+        val activeEndTime = calendar.time
+        
+        // Create completed booking (yesterday)
+        calendar.add(Calendar.DAY_OF_MONTH, -1)
+        calendar.set(Calendar.HOUR_OF_DAY, 10)
+        calendar.set(Calendar.MINUTE, 0)
+        val completedStartTime = calendar.time
+        calendar.add(Calendar.HOUR, 2)
+        val completedEndTime = calendar.time
+        val completedCreatedAt = completedStartTime
+        
+        // Create pending booking (tomorrow)
+        calendar.time = today
+        calendar.add(Calendar.DAY_OF_MONTH, 1)
+        calendar.set(Calendar.HOUR_OF_DAY, 14)
+        calendar.set(Calendar.MINUTE, 0)
+        val pendingStartTime = calendar.time
+        calendar.add(Calendar.HOUR, 3)
+        val pendingEndTime = calendar.time
+        val pendingCreatedAt = today
         
         // Create sample bookings for demonstration using Booking model
         val sampleBookings = listOf(
@@ -524,7 +619,10 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 spotId = "A-12",
                 status = "active",
                 amount = 150.0,
-                vehicleNumber = "MH01AB1234"
+                vehicleNumber = "MH01AB1234",
+                checkInTime = activeStartTime,
+                checkOutTime = activeEndTime,
+                createdAt = today
             ),
             BackendBooking(
                 id = "BK002",
@@ -533,7 +631,10 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 spotId = "B-05",
                 status = "completed",
                 amount = 200.0,
-                vehicleNumber = "MH01AB1234"
+                vehicleNumber = "MH01AB1234",
+                checkInTime = completedStartTime,
+                checkOutTime = completedEndTime,
+                createdAt = completedCreatedAt
             ),
             BackendBooking(
                 id = "BK003",
@@ -542,7 +643,10 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 spotId = "C-08",
                 status = "pending",
                 amount = 180.0,
-                vehicleNumber = "MH01AB1234"
+                vehicleNumber = "MH01AB1234",
+                checkInTime = pendingStartTime,
+                checkOutTime = pendingEndTime,
+                createdAt = pendingCreatedAt
             )
         )
         
@@ -552,8 +656,8 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun convertToBooking(backendBooking: BackendBooking): Booking {
-        // Generate better parking location names based on lot ID
-        val parkingLocation = when (backendBooking.lotId) {
+        // Get parking location name from cache, fallback to generated name
+        val parkingLocation = parkingLotCache[backendBooking.lotId] ?: when (backendBooking.lotId) {
             "1", "101" -> "City Mall Parking"
             "2", "102" -> "Airport Terminal"
             "3", "103" -> "Shopping Center"
@@ -562,18 +666,45 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             else -> "Parking Lot ${backendBooking.lotId}"
         }
         
-        // Generate better spot names
-        val spotName = when {
-            backendBooking.spotId?.toIntOrNull() != null -> {
-                val spotNum = backendBooking.spotId.toInt()
-                when {
-                    spotNum <= 20 -> "A-${spotNum}"
-                    spotNum <= 40 -> "B-${spotNum - 20}"
-                    spotNum <= 60 -> "C-${spotNum - 40}"
-                    else -> "D-${spotNum - 60}"
+        // Get spot name from cache with debug logging
+        val spotId = backendBooking.spotId ?: "Unknown"
+        android.util.Log.d("BookingsFragment", "Looking up spot: $spotId in cache (${parkingSpotCache.size} entries)")
+        
+        val spotName = parkingSpotCache[spotId]?.also { 
+            android.util.Log.d("BookingsFragment", "Found spot name: $it for ID: $spotId")
+        } ?: run {
+            android.util.Log.d("BookingsFragment", "Spot $spotId not found in cache, using fallback")
+            // Fallback to generated name
+            when {
+                spotId.toIntOrNull() != null -> {
+                    val spotNum = spotId.toInt()
+                    when {
+                        spotNum <= 20 -> "A-${spotNum}"
+                        spotNum <= 40 -> "B-${spotNum - 20}"
+                        spotNum <= 60 -> "C-${spotNum - 40}"
+                        else -> "D-${spotNum - 60}"
+                    }
                 }
+                else -> spotId
             }
-            else -> backendBooking.spotId ?: "Unknown"
+        }
+        
+        // Format date and time from backend data
+        val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        
+        val bookingDate = backendBooking.createdAt?.let { dateFormat.format(it) } ?: "TBD"
+        val startTime = backendBooking.checkInTime?.let { timeFormat.format(it) } ?: "TBD"
+        val endTime = backendBooking.checkOutTime?.let { timeFormat.format(it) } ?: "TBD"
+        
+        // Calculate duration if both times are available
+        val duration = if (backendBooking.checkInTime != null && backendBooking.checkOutTime != null) {
+            val durationMillis = backendBooking.checkOutTime.time - backendBooking.checkInTime.time
+            val hours = durationMillis / (1000 * 60 * 60)
+            val minutes = (durationMillis % (1000 * 60 * 60)) / (1000 * 60)
+            "${hours}h ${minutes}m"
+        } else {
+            "TBD"
         }
         
         return Booking(
@@ -585,10 +716,10 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             status = mapBackendStatus(backendBooking.status),
             spotId = backendBooking.spotId ?: "Unknown",
             locationAddress = "Address TBD",
-            startTime = "TBD",
-            endTime = "TBD",
-            duration = "TBD",
-            bookingDate = "TBD"
+            startTime = startTime,
+            endTime = endTime,
+            duration = duration,
+            bookingDate = bookingDate
         )
     }
 
