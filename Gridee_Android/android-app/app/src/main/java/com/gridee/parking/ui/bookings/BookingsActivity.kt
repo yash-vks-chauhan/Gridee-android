@@ -12,7 +12,6 @@ import com.gridee.parking.data.model.Booking as BackendBooking
 import com.gridee.parking.databinding.ActivityBookingsBinding
 import com.gridee.parking.ui.base.BaseActivityWithBottomNav
 import com.gridee.parking.ui.components.CustomBottomNavigation
-import com.gridee.parking.ui.components.BookingDetailsBottomSheetSimple
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -126,9 +125,9 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
     }
 
     private fun showBookingDetails(booking: Booking) {
-        // Create and show bottom sheet with booking details
-        val bottomSheet = BookingDetailsBottomSheetSimple.newInstance(booking)
-        bottomSheet.show(supportFragmentManager, "BookingDetailsBottomSheet")
+        // TODO: Create and show bottom sheet with booking details
+        // For now, just show a toast
+        android.widget.Toast.makeText(this, "Booking: ${booking.locationName}", android.widget.Toast.LENGTH_SHORT).show()
     }
 
     private fun updateFilterCounts() {

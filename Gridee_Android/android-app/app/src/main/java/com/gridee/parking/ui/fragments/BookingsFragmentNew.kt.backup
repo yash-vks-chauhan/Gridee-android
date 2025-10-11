@@ -13,12 +13,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.gridee.parking.R
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.Booking as BackendBooking
-import com.gridee.parking.data.model.UIBooking
 import com.gridee.parking.databinding.FragmentBookingsNewBinding
 import com.gridee.parking.ui.adapters.Booking
 import com.gridee.parking.ui.adapters.BookingStatus
 import com.gridee.parking.ui.adapters.BookingsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.components.BookingDetailsBottomSheetSimple
 import com.gridee.parking.ui.components.EnhancedSegmentedControlGestureHandler
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -27,7 +27,7 @@ import java.util.*
 class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     private lateinit var bookingsAdapter: BookingsAdapter
-    private var userBookings = mutableListOf<BackendBooking>()
+    private var userBookings = mutableListOf<Booking>()
     private var currentTab = BookingStatus.ACTIVE
     private lateinit var gestureHandler: EnhancedSegmentedControlGestureHandler
 
@@ -45,18 +45,17 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     override fun setupUI() {
         setupRecyclerView()
-        initializeSegmentedControlState()
         setupSegmentedControl()
-        loadUserBookings() // Use real API instead of sample data
+        setupEnhancedGestureHandler()
+        loadBookingsFromAPI()
     }
 
     private fun setupRecyclerView() {
         val statuses = listOf(BookingStatus.ACTIVE, BookingStatus.PENDING, BookingStatus.COMPLETED)
         currentTab = statuses.first()
 
-        bookingsAdapter = BookingsAdapter(emptyList()) { booking ->
-            // Handle booking click (e.g., show details)
-            showBookingDetails(booking)
+        bookingsAdapter = BookingsAdapter(mutableListOf()) { booking ->
+            showToast("Booking clicked: ${booking.title}")
         }
         binding.rvBookings.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -64,12 +63,51 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         }
     }
 
+    private fun setupSegmentedControl() {
+        // Reset segment visibility
+        binding.segmentedControlContainer.segmentActive.visibility = View.VISIBLE
+        binding.segmentedControlContainer.segmentPending.visibility = View.VISIBLE
+        binding.segmentedControlContainer.segmentCompleted.visibility = View.VISIBLE
+
+        // Set initial selection
+        binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.white, null))
+        binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
+        binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
+        
+        // Set current tab
+        currentTab = BookingStatus.ACTIVE
+    }
+
+    private fun setupEnhancedGestureHandler() {
+        gestureHandler = EnhancedSegmentedControlGestureHandler(
+            context = requireContext(),
+            containerView = binding.segmentedControlContainer.segmentContainer,
+            indicatorView = binding.segmentedControlContainer.segmentIndicator,
+            segments = listOf(binding.segmentedControlContainer.segmentActive, binding.segmentedControlContainer.segmentPending, binding.segmentedControlContainer.segmentCompleted),
+            onSelectionChanged = { selectedIndex ->
+                handleSegmentSelection(selectedIndex)
+                // Accessibility announcement
+                val segmentText = when (selectedIndex) {
+                    0 -> "Active"
+                    1 -> "Pending" 
+                    2 -> "Completed"
+                    else -> "Unknown"
+                }
+                binding.root.announceForAccessibility("$segmentText segment selected")
+            }
+        )
+    }
+
+    override fun onDestroyView() {
+        gestureHandler?.cleanup()
+        super.onDestroyView()
+    }
+
     private fun getSegmentTitle(status: BookingStatus): String {
         return when (status) {
             BookingStatus.ACTIVE -> binding.segmentedControlContainer.textActive.text.toString()
             BookingStatus.PENDING -> binding.segmentedControlContainer.textPending.text.toString()
             BookingStatus.COMPLETED -> binding.segmentedControlContainer.textCompleted.text.toString()
-            else -> "Unknown" // Handle other cases
         }
     }
 
@@ -77,24 +115,18 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         when (selectedStatus) {
             BookingStatus.ACTIVE -> {
                 binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.white, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
+                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
+                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
             }
             BookingStatus.PENDING -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
+                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
                 binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.white, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
+                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
             }
             BookingStatus.COMPLETED -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
+                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
+                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_unselected_text, null))
                 binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.white, null))
-            }
-            else -> {
-                // Handle other cases (CONFIRMED, CANCELLED, EXPIRED)
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
             }
         }
 
@@ -106,7 +138,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         val toColor = if (isSelected) {
             ValueAnimator.ofArgb(fromColor, resources.getColor(R.color.white, null))
         } else {
-            ValueAnimator.ofArgb(fromColor, resources.getColor(R.color.bulky_glass_text_unselected, null))
+            ValueAnimator.ofArgb(fromColor, resources.getColor(R.color.bulky_glass_unselected_text, null))
         }
         toColor.duration = 240
         toColor.addUpdateListener { animation ->
@@ -138,27 +170,15 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun filterBookingsByStatus(status: BookingStatus) {
-        android.util.Log.d("BookingsFragment", "filterBookingsByStatus: status=$status, total bookings=${userBookings.size}")
-        val statusString = when (status) {
-            BookingStatus.ACTIVE -> "active"
-            BookingStatus.PENDING -> "pending"
-            BookingStatus.COMPLETED -> "completed"
-        }
-        val filteredBookings: List<BackendBooking> = userBookings.filter { it.status.lowercase() == statusString }
-        android.util.Log.d("BookingsFragment", "Filtered bookings count: ${filteredBookings.size}")
-        
-        // Convert to UI bookings before updating adapter
-        val uiBookings = filteredBookings.map { convertToBooking(it) }
-        updateAdapterWithBookings(uiBookings)
+        val filteredBookings = userBookings.filter { it.status == status }
+        bookingsAdapter.updateBookings(filteredBookings)
 
         // Update visibility
         binding.rvBookings.visibility = if (filteredBookings.isEmpty()) View.GONE else View.VISIBLE
         binding.layoutEmptyState.visibility = if (filteredBookings.isEmpty()) View.VISIBLE else View.GONE
-        android.util.Log.d("BookingsFragment", "RecyclerView visibility: ${binding.rvBookings.visibility}, EmptyState visibility: ${binding.layoutEmptyState.visibility}")
     }
 
     private fun handleSegmentSelection(index: Int) {
-        android.util.Log.d("BookingsFragment", "handleSegmentSelection called with index: $index")
         val newStatus = when (index) {
             0 -> BookingStatus.ACTIVE
             1 -> BookingStatus.PENDING
@@ -166,95 +186,141 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             else -> BookingStatus.ACTIVE
         }
         
-        android.util.Log.d("BookingsFragment", "Switching from ${currentTab} to ${newStatus}")
         if (newStatus != currentTab) {
             showToast("Switched to ${getSegmentTitle(newStatus)}")
             currentTab = newStatus
-            showBookingsForStatus(newStatus) // Use the correct method that handles empty states
+            filterBookingsByStatus(newStatus)
         }
     }
 
     private fun loadBookingsFromAPI() {
-        android.util.Log.d("BookingsFragment", "loadBookingsFromAPI called")
-        // TODO: Implement API loading when backend methods are available
-        // For now, load sample data to demonstrate the enhanced segmented control
-        // Load sample data for demonstration
-        loadSampleBookings()
-        filterBookingsByStatus(currentTab)
+        lifecycleScope.launch {
+            try {
+                val userID = ApiClient.getCurrentUserID()
+                if (userID.isNotEmpty()) {
+                    val response = ApiClient.instance.getUserBookings(userID)
+                    if (response.isSuccessful) {
+                        response.body()?.let { backendBookings ->
+                            val mappedBookings = backendBookings.map { backendBooking ->
+                                mapBackendBookingToUI(backendBooking)
+                            }
+                            userBookings.clear()
+                            userBookings.addAll(mappedBookings)
+                            filterBookingsByStatus(currentTab)
+                        }
+                    } else {
+                        showToast("Failed to load bookings")
+                    }
+                } else {
+                    showToast("User not logged in")
+                }
+            } catch (e: Exception) {
+                showToast("Error: ${e.message}")
+                binding.emptyStateLayout.visibility = View.VISIBLE
+            }
+        }
     }
 
     private fun generateSampleBookings(): List<Booking> {
         return listOf(
             Booking(
                 id = "1",
-                locationName = "Main Parking Lot",
-                spotName = "A1",
-                vehicleNumber = "ABC123",
-                amount = "₹50.00",
-                status = BookingStatus.ACTIVE,
-                spotId = "spot_1",
-                locationAddress = "123 Main St",
-                startTime = "10:00 AM",
-                endTime = "12:00 PM",
-                duration = "2h 0m",
-                bookingDate = "Today"
+                title = "Sample Active Booking",
+                location = "Sample Location",
+                price = "$5.00",
+                duration = "2 hours",
+                timeRange = "10:00 AM - 12:00 PM",
+                date = "Today",
+                status = BookingStatus.ACTIVE
             ),
             Booking(
                 id = "2", 
-                locationName = "Side Parking",
-                spotName = "B2",
-                vehicleNumber = "XYZ789",
-                amount = "₹30.00",
-                status = BookingStatus.PENDING,
-                spotId = "spot_2",
-                locationAddress = "456 Side St",
-                startTime = "2:00 PM",
-                endTime = "5:00 PM",
-                duration = "3h 0m",
-                bookingDate = "Tomorrow"
+                title = "Sample Upcoming Booking",
+                location = "Sample Location 2",
+                price = "$8.00", 
+                duration = "3 hours",
+                timeRange = "2:00 PM - 5:00 PM",
+                date = "Tomorrow",
+                status = BookingStatus.UPCOMING
             ),
             Booking(
                 id = "3",
-                locationName = "Back Parking",
-                spotName = "C3",
-                vehicleNumber = "PQR456",
-                amount = "₹25.00",
-                status = BookingStatus.COMPLETED,
-                spotId = "spot_3",
-                locationAddress = "789 Back St",
-                startTime = "9:00 AM",
-                endTime = "10:00 AM",
-                duration = "1h 0m",
-                bookingDate = "Yesterday"
+                title = "Sample Completed Booking",
+                location = "Sample Location 3", 
+                price = "$6.00",
+                duration = "1 hour",
+                timeRange = "9:00 AM - 10:00 AM",
+                date = "Yesterday",
+                status = BookingStatus.COMPLETED
             )
         )
     }
 
-        private fun mapBackendBookingToUI(backendBooking: BackendBooking): Booking {
-        // TODO: Implement proper mapping when all backend properties are available
-        return Booking(
-            id = backendBooking.id ?: "unknown",
-            locationName = "Sample Location",
-            spotName = backendBooking.spotId,
-            vehicleNumber = backendBooking.vehicleNumber ?: "N/A",
-            amount = "₹${backendBooking.amount}",
-            status = when (backendBooking.status) {
-                "active" -> BookingStatus.ACTIVE
-                "pending" -> BookingStatus.PENDING
-                "completed" -> BookingStatus.COMPLETED
-                else -> BookingStatus.PENDING
-            },
-            spotId = backendBooking.spotId,
-            locationAddress = "Address TBD",
-            startTime = "TBD",
-            endTime = "TBD",
-            duration = "TBD",
-            bookingDate = "TBD"
-        )
+    private fun mapBackendBookingToUI(backendBooking: BackendBooking): Booking {
+        val inputDateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val outputDateFormat = SimpleDateFormat("MMM dd", Locale.getDefault())
+
+        try {
+            val startDate = inputDateFormat.parse(backendBooking.startTime)
+            val endDate = inputDateFormat.parse(backendBooking.endTime)
+
+            val duration = if (startDate != null && endDate != null) {
+                val durationMillis = endDate.time - startDate.time
+                val hours = durationMillis / (1000 * 60 * 60)
+                val minutes = (durationMillis % (1000 * 60 * 60)) / (1000 * 60)
+                when {
+                    hours > 0 && minutes > 0 -> "${hours}h ${minutes}m"
+                    hours > 0 -> "${hours}h"
+                    else -> "${minutes}m"
+                }
+            } else "Unknown"
+
+            val timeRange = if (startDate != null && endDate != null) {
+                val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+                "${timeFormat.format(startDate)} - ${timeFormat.format(endDate)}"
+            } else "Unknown"
+
+            val date = startDate?.let { outputDateFormat.format(it) } ?: "Unknown"
+
+            val status = determineStatus(backendBooking.isActive, Date(), startDate, endDate)
+
+            return Booking(
+                id = backendBooking.id,
+                title = backendBooking.parkingLocation?.name ?: "Unknown Location",
+                location = "${backendBooking.parkingLocation?.address ?: "Unknown Address"}",
+                price = "$${backendBooking.totalCost}",
+                duration = duration,
+                timeRange = timeRange,
+                date = date,
+                status = status
+            )
+        } catch (e: Exception) {
+            return Booking(
+                id = backendBooking.id,
+                title = "Error Loading Booking",
+                location = "Unknown",
+                price = "$0.00",
+                duration = "Unknown",
+                timeRange = "Unknown",
+                date = "Unknown",
+                status = BookingStatus.COMPLETED
+            )
+        }
+    }
+
+    private fun determineStatus(isActive: Boolean, currentTime: Date, startTime: Date?, endTime: Date?): BookingStatus {
+        return when {
+            startTime == null || endTime == null -> BookingStatus.COMPLETED
+            isActive && currentTime.after(startTime) && currentTime.before(endTime) -> BookingStatus.ACTIVE
+            currentTime.before(startTime) -> BookingStatus.UPCOMING
+            currentTime.after(endTime) -> BookingStatus.COMPLETED
+            else -> BookingStatus.COMPLETED
+        }
     }
 
     private fun onBookingClicked(booking: Booking) {
-        showBookingDetails(booking)
+        val bottomSheet = BookingDetailsBottomSheetSimple.newInstance(booking)
+        bottomSheet.show(parentFragmentManager, "BookingDetailsBottomSheet")
     }
 
     override fun scrollToTop() {
@@ -268,6 +334,15 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     override fun onResume() {
         super.onResume()
         requireActivity().title = "My Bookings"
+    }
+}
+            showToast("Booking: ${booking.id}")
+        }
+        
+        binding.rvBookings.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = bookingsAdapter
+        }
     }
 
     private fun setupSegmentedControl() {
@@ -301,8 +376,8 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             }
         )
         
-        // Set initial selection to active (index 0) to match layout and currentTab
-        gestureHandler.setSelectedIndex(0, animated = false)
+        // Set initial selection to pending (index 1)
+        gestureHandler.setSelectedIndex(1, animated = false)
     }
     
     /**
@@ -327,6 +402,21 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     /**
      * Handle segment selection from gesture handler
      */
+    private fun handleSegmentSelection(index: Int) {
+        val newStatus = when (index) {
+            0 -> BookingStatus.ACTIVE
+            1 -> BookingStatus.PENDING
+            2 -> BookingStatus.COMPLETED
+            else -> BookingStatus.PENDING
+        }
+        
+        if (currentTab != newStatus) {
+            currentTab = newStatus
+            updateSegmentTextColors(newStatus)
+            showBookingsForStatus(newStatus)
+        }
+    }
+
     override fun onDestroyView() {
         if (::gestureHandler.isInitialized) {
             gestureHandler.cleanup()
@@ -363,12 +453,6 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 animateTextScale(binding.segmentedControlContainer.textCompleted, 1.02f, fadeDuration)
                 resetTextScale(binding.segmentedControlContainer.textActive, fadeDuration)
                 resetTextScale(binding.segmentedControlContainer.textPending, fadeDuration)
-            }
-            else -> {
-                // Handle other booking statuses (CONFIRMED, CANCELLED, EXPIRED)
-                resetTextScale(binding.segmentedControlContainer.textActive, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textPending, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textCompleted, fadeDuration)
             }
         }
     }
@@ -407,12 +491,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun showBookingsForStatus(status: BookingStatus) {
-        val statusString = when (status) {
-            BookingStatus.ACTIVE -> "active"
-            BookingStatus.PENDING -> "pending"
-            BookingStatus.COMPLETED -> "completed"
-        }
-        val filteredBookings = userBookings.filter { it.status.lowercase() == statusString }
+        val filteredBookings = userBookings.filter { it.status == status }
         
         if (filteredBookings.isEmpty()) {
             // Show empty state
@@ -433,29 +512,12 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     binding.tvEmptyTitle.text = "No Completed Bookings"
                     binding.tvEmptySubtitle.text = "Your booking history will appear here"
                 }
-                else -> {
-                    binding.tvEmptyTitle.text = "No Bookings"
-                    binding.tvEmptySubtitle.text = "Your bookings will appear here"
-                }
             }
         } else {
             // Show bookings list
             binding.rvBookings.visibility = View.VISIBLE
             binding.layoutEmptyState.visibility = View.GONE
-            
-            // Convert to UI bookings before updating adapter
-            val uiBookings = filteredBookings.map { convertToBooking(it) }
-            updateAdapterWithBookings(uiBookings)
-        }
-    }
-
-    private fun updateAdapterWithBookings(bookings: List<Booking>) {
-        android.util.Log.d("BookingsFragment", "updateAdapterWithBookings called with ${bookings.size} bookings")
-        bookingsAdapter.updateBookings(bookings)
-        
-        // Show bookings count in UI for now
-        if (bookings.isNotEmpty()) {
-            showToast("Found ${bookings.size} bookings")
+            bookingsAdapter.updateBookings(filteredBookings)
         }
     }
 
@@ -481,7 +543,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     
                     // Convert backend bookings to UI bookings
                     userBookings.clear()
-                    userBookings.addAll(backendBookings)
+                    userBookings.addAll(backendBookings.map { convertToUIBooking(it) })
                     
                     // Update UI for current tab
                     showBookingsForStatus(currentTab)
@@ -515,34 +577,49 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         // 2. API call fails due to network/server errors
         // In normal operation, real user bookings from the backend are displayed
         
-        // Create sample bookings for demonstration using Booking model
+        // Create sample bookings for demonstration
         val sampleBookings = listOf(
-            BackendBooking(
+            Booking(
                 id = "BK001",
-                userId = "user123",
-                lotId = "Downtown Mall Parking",
+                vehicleNumber = "MH01AB1234",
                 spotId = "A-12",
-                status = "active",
-                amount = 150.0,
-                vehicleNumber = "MH01AB1234"
+                spotName = "A-12",
+                locationName = "Downtown Mall Parking",
+                locationAddress = "123 Main Street",
+                startTime = "09:00 AM",
+                endTime = "06:00 PM",
+                duration = "9h 0m",
+                amount = "₹150.00",
+                bookingDate = "Today",
+                status = BookingStatus.ACTIVE
             ),
-            BackendBooking(
+            Booking(
                 id = "BK002",
-                userId = "user123",
-                lotId = "Office Complex",
+                vehicleNumber = "MH01AB1234",
                 spotId = "B-05",
-                status = "completed",
-                amount = 200.0,
-                vehicleNumber = "MH01AB1234"
+                spotName = "B-05",
+                locationName = "Office Complex",
+                locationAddress = "456 Business District",
+                startTime = "08:30 AM",
+                endTime = "05:30 PM",
+                duration = "9h 0m",
+                amount = "₹200.00",
+                bookingDate = "Yesterday",
+                status = BookingStatus.COMPLETED
             ),
-            BackendBooking(
+            Booking(
                 id = "BK003",
-                userId = "user123",
-                lotId = "Shopping Center",
+                vehicleNumber = "MH01AB1234",
                 spotId = "C-08",
-                status = "pending",
-                amount = 180.0,
-                vehicleNumber = "MH01AB1234"
+                spotName = "C-08",
+                locationName = "Shopping Center",
+                locationAddress = "789 Retail Plaza",
+                startTime = "02:00 PM",
+                endTime = "11:00 PM",
+                duration = "9h 0m",
+                amount = "₹180.00",
+                bookingDate = "Tomorrow",
+                status = BookingStatus.PENDING
             )
         )
         
@@ -551,7 +628,10 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         showBookingsForStatus(currentTab)
     }
 
-    private fun convertToBooking(backendBooking: BackendBooking): Booking {
+    private fun convertToUIBooking(backendBooking: BackendBooking): Booking {
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+        
         // Generate better parking location names based on lot ID
         val parkingLocation = when (backendBooking.lotId) {
             "1", "101" -> "City Mall Parking"
@@ -578,41 +658,55 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         
         return Booking(
             id = backendBooking.id ?: "Unknown",
-            locationName = parkingLocation,
-            spotName = spotName,
             vehicleNumber = backendBooking.vehicleNumber ?: "Vehicle not specified",
+            spotId = backendBooking.spotId ?: "Unknown", // Keep original spot ID
+            spotName = spotName, // Use the formatted spot name
+            locationName = parkingLocation, // Use the formatted location name
+            locationAddress = "Location for ${parkingLocation}", // Enhanced address
+            startTime = if (backendBooking.checkInTime != null) timeFormat.format(backendBooking.checkInTime) else "Not started",
+            endTime = if (backendBooking.checkOutTime != null) timeFormat.format(backendBooking.checkOutTime) else "TBD",
+            duration = calculateDuration(backendBooking.checkInTime, backendBooking.checkOutTime),
             amount = "₹${String.format("%.2f", backendBooking.amount)}",
-            status = mapBackendStatus(backendBooking.status),
-            spotId = backendBooking.spotId ?: "Unknown",
-            locationAddress = "Address TBD",
-            startTime = "TBD",
-            endTime = "TBD",
-            duration = "TBD",
-            bookingDate = "TBD"
+            bookingDate = if (backendBooking.createdAt != null) dateFormat.format(backendBooking.createdAt) else "Unknown",
+            status = mapBackendStatus(backendBooking.status)
         )
+    }
+
+    private fun calculateDuration(startTime: Date?, endTime: Date?): String {
+        if (startTime == null || endTime == null) return "N/A"
+        
+        val durationMs = endTime.time - startTime.time
+        val hours = durationMs / (1000 * 60 * 60)
+        val minutes = (durationMs % (1000 * 60 * 60)) / (1000 * 60)
+        
+        return "${hours}h ${minutes}m"
     }
 
     private fun mapBackendStatus(backendStatus: String?): BookingStatus {
         return when (backendStatus?.lowercase()) {
-            "active" -> BookingStatus.ACTIVE
+            "active", "confirmed" -> BookingStatus.ACTIVE
             "pending", "created" -> BookingStatus.PENDING
-            "completed", "finished", "cancelled", "confirmed", "expired" -> BookingStatus.COMPLETED
+            "completed", "finished", "cancelled" -> BookingStatus.COMPLETED
             else -> BookingStatus.PENDING
         }
     }
 
     private fun showBookingDetails(booking: Booking) {
-        // TODO: Create and show bottom sheet with booking details
-        // For now, just show a toast with booking info
-        showToast("Booking: ${booking.locationName} - ${booking.spotName}")
+        // Create and show bottom sheet with booking details
+        val bottomSheet = BookingDetailsBottomSheetSimple.newInstance(booking)
+        bottomSheet.show(parentFragmentManager, "BookingDetailsBottomSheet")
+    }
+
+    override fun scrollToTop() {
+        try {
+            binding.rvBookings.smoothScrollToPosition(0)
+        } catch (e: Exception) {
+            // Handle any exceptions
+        }
     }
 
     private fun getUserId(): String? {
         val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
         return sharedPref.getString("user_id", null)
-    }
-
-    private fun announceForAccessibility(message: String) {
-        binding.root.announceForAccessibility(message)
     }
 }

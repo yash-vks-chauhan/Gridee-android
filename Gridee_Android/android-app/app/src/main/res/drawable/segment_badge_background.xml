@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Ultra-subtle shadow for floating effect -->
+    <item android:top="2dp" android:left="1dp" android:right="1dp" android:bottom="3dp">
+        <shape android:shape="oval">
+            <solid android:color="#30000000" />
+            <size android:width="22dp" android:height="22dp" />
+        </shape>
+    </item>
+    
+    <item android:top="1dp" android:left="0dp" android:right="0dp" android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#15000000" />
+            <size android:width="22dp" android:height="22dp" />
+        </shape>
+    </item>
+    
+    <!-- Main vibrant badge background with gradient -->
+    <item android:bottom="1dp">
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#FF4757"
+                android:endColor="#FF3B30"
+                android:angle="135" />
+            <size android:width="22dp" android:height="22dp" />
+        </shape>
+    </item>
+    
+    <!-- Premium glass highlight effect -->
+    <item android:bottom="1dp" android:top="2dp" android:left="3dp" android:right="8dp">
+        <shape android:shape="oval">
+            <gradient
+                android:startColor="#50FFFFFF"
+                android:endColor="#20FFFFFF"
+                android:angle="135" />
+        </shape>
+    </item>
+    
+    <!-- Subtle inner glow for premium depth -->
+    <item android:bottom="1dp" android:top="6dp" android:left="6dp" android:right="6dp">
+        <shape android:shape="oval">
+            <solid android:color="#15FFFFFF" />
+        </shape>
+    </item>
+</layer-list>
