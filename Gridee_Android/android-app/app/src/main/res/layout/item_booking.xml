@@ -5,210 +5,156 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="3dp"
-    app:cardBackgroundColor="#FFFFFF"
-    android:foreground="?attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true">
+    android:layout_marginVertical="6dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    android:foreground="?attr/selectableItemBackground">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:orientation="vertical"
+        android:padding="18dp">
 
-        <!-- Booking ID -->
-                    <!-- Parking Location at top left -->
-            <TextView
-                android:id="@+id/tv_parking_location"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Mall Parking"
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary"
-                android:layout_marginBottom="4dp" />
+        <!-- Header: Spot Name and Status Label -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="14dp">
 
-            <!-- Parking Spot (instead of booking ID) -->
             <TextView
                 android:id="@+id/tv_parking_spot"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:text="Spot A-15"
-                android:textSize="16sp"
+                android:textSize="18sp"
+                android:textColor="@android:color/black"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary"
-                android:layout_marginBottom="8dp" />
-
-        <!-- Status -->
-        <TextView
-            android:id="@+id/tv_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ACTIVE"
-            android:textColor="#4CAF50"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif"
-            android:background="@drawable/status_background"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <!-- Vehicle Number -->
-        <LinearLayout
-            android:id="@+id/ll_vehicle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_parking_spot">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_car"
-                android:tint="#666666"
-                android:layout_marginEnd="6dp" />
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
-                android:id="@+id/tv_vehicle_number"
+                android:id="@+id/tv_status"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="MH01AB1234"
-                android:textColor="#666666"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif" />
-
+                android:text="ACTIVE"
+                android:textColor="@android:color/black"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.05"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="3dp"
+                android:background="@drawable/status_minimal_active" />
         </LinearLayout>
 
-        <!-- Spot ID -->
+        <!-- Date and Time Row -->
         <LinearLayout
-            android:id="@+id/ll_spot"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_vehicle">
+            android:layout_marginBottom="12dp">
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_parking_spot"
-                android:tint="#666666"
-                android:layout_marginEnd="6dp" />
-
-            <TextView
-                android:id="@+id/tv_spot_id"
-                android:layout_width="wrap_content"
+            <!-- Date -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="Spot: A12"
-                android:textColor="#666666"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif" />
+                android:layout_weight="1"
+                android:orientation="vertical">
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Date"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="3dp" />
+
+                <TextView
+                    android:id="@+id/tv_booking_date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10 Oct 2025"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Check-in Time -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Check-in"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="3dp" />
+
+                <TextView
+                    android:id="@+id/tv_check_in_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="10:00 AM"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+
+            <!-- Check-out Time -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Check-out"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    android:fontFamily="sans-serif"
+                    android:layout_marginBottom="3dp" />
+
+                <TextView
+                    android:id="@+id/tv_check_out_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="12:00 PM"
+                    android:textSize="14sp"
+                    android:textColor="@android:color/black"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
         </LinearLayout>
 
-        <!-- Date -->
-        <LinearLayout
-            android:id="@+id/ll_date"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_spot">
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F0F0F0"
+            android:layout_marginBottom="12dp" />
 
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_calendar"
-                android:tint="#666666"
-                android:layout_marginEnd="6dp" />
-
-            <TextView
-                android:id="@+id/tv_booking_date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Sep 30, 2024"
-                android:textColor="#666666"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif" />
-
-        </LinearLayout>
-
-        <!-- Time Slot -->
-        <LinearLayout
-            android:id="@+id/ll_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_date">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_timer"
-                android:tint="#666666"
-                android:layout_marginEnd="6dp" />
-
-            <TextView
-                android:id="@+id/tv_time_slot"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="10:00 AM - 02:00 PM"
-                android:textColor="#666666"
-                android:textSize="14sp"
-                android:fontFamily="sans-serif" />
-
-        </LinearLayout>
-
-        <!-- Amount -->
+        <!-- Price -->
         <TextView
             android:id="@+id/tv_amount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="₹150.00"
-            android:textColor="#1976D2"
-            android:textSize="18sp"
+            android:text="₹150"
+            android:textColor="@android:color/black"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:fontFamily="sans-serif"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_time" />
+            android:fontFamily="sans-serif-medium" />
 
-        <!-- Divider -->
-        <View
-            android:id="@+id/divider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:background="#E0E0E0"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_amount" />
-
-        <!-- Action hint -->
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Tap for details"
-            android:textColor="#999999"
-            android:textSize="12sp"
-            android:fontFamily="sans-serif"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/divider" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
 
 </androidx.cardview.widget.CardView>
