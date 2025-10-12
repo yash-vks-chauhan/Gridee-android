@@ -1,17 +1,26 @@
 package com.gridee.parking.ui.fragments
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
+import androidx.dynamicanimation.animation.DynamicAnimation
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
 import androidx.lifecycle.ViewModelProvider
 import com.gridee.parking.databinding.FragmentProfileBinding
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.bottomsheet.AddVehicleBottomSheet
+import com.gridee.parking.ui.bottomsheet.EditVehicleBottomSheet
 import com.gridee.parking.ui.profile.ProfileViewModel
+import com.gridee.parking.utils.NotificationHelper
 
 class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
     private lateinit var viewModel: ProfileViewModel
+    private var isVehiclesExpanded = false
 
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentProfileBinding {
         return FragmentProfileBinding.inflate(inflater, container, false)
@@ -27,9 +36,26 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
     override fun setupUI() {
         viewModel = ViewModelProvider(this)[ProfileViewModel::class.java]
+        
+        // Setup collapsing toolbar with smooth parallax
+        setupCollapsingToolbar()
+        
         setupObservers()
         setupClickListeners()
         loadUserData()
+    }
+    
+    private fun setupCollapsingToolbar() {
+        binding.collapsingToolbar.title = "Profile"
+        
+        // Add offset change listener for smooth transitions
+        binding.appBarLayout.addOnOffsetChangedListener { appBarLayout, verticalOffset ->
+            val totalScrollRange = appBarLayout.totalScrollRange.toFloat()
+            val scrollPercentage = Math.abs(verticalOffset / totalScrollRange)
+            
+            // Smooth alpha transition for better visual feedback
+            binding.collapsingToolbar.alpha = 1f - (scrollPercentage * 0.1f)
+        }
     }
 
     private fun showVehicleManagementDialog() {
@@ -57,7 +83,8 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
         builder.setTitle("My Vehicles")
         builder.setItems(vehicles.toTypedArray()) { _, which ->
-            showVehicleOptionsDialog(vehicles[which])
+            // Use the root view as anchor since this is from a dialog
+            showVehicleOptionsDialog(vehicles[which], binding.root)
         }
         builder.setPositiveButton("Add Vehicle") { _, _ ->
             showAddVehicleDialog()
@@ -79,7 +106,17 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                 binding.tvUserName.text = it.name
                 
                 // Update vehicle count 
-                binding.tvVehicleCount.text = "${it.vehicleNumbers.size} vehicles"
+                val vehicleCount = it.vehicleNumbers.size
+                binding.tvVehicleCount.text = if (vehicleCount == 1) {
+                    "$vehicleCount vehicle"
+                } else {
+                    "$vehicleCount vehicles"
+                }
+                
+                // Populate vehicles in accordion if it's already expanded
+                if (isVehiclesExpanded) {
+                    populateVehicles(it.vehicleNumbers)
+                }
             }
         }
 
@@ -132,9 +169,9 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             showToast("Notification Settings - Coming Soon!")
         }
 
-        // Vehicle Management category
+        // Vehicle Management category - Accordion Animation
         binding.btnMyVehicles.setOnClickListener {
-            showVehicleManagementDialog()
+            toggleVehiclesAccordion()
         }
 
         binding.btnParkingPreferences.setOnClickListener {
@@ -195,42 +232,75 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         }
     }
 
-    private fun showVehicleOptionsDialog(vehicleNumber: String) {
-        val options = arrayOf("Edit Vehicle", "Remove Vehicle")
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-        builder.setTitle("Vehicle Options")
-        builder.setItems(options) { _, which ->
-            when (which) {
-                0 -> editVehicle(vehicleNumber)
-                1 -> removeVehicle(vehicleNumber)
+    private fun showVehicleOptionsDialog(vehicleNumber: String, anchorView: View) {
+        // Create PopupMenu with custom styling
+        val wrapper = android.view.ContextThemeWrapper(requireContext(), com.gridee.parking.R.style.PopupMenuTheme)
+        val popup = android.widget.PopupMenu(wrapper, anchorView)
+        popup.menuInflater.inflate(com.gridee.parking.R.menu.menu_vehicle_options, popup.menu)
+        
+        // Force show icons in popup menu
+        try {
+            val fieldMPopup = android.widget.PopupMenu::class.java.getDeclaredField("mPopup")
+            fieldMPopup.isAccessible = true
+            val mPopup = fieldMPopup.get(popup)
+            mPopup.javaClass
+                .getDeclaredMethod("setForceShowIcon", Boolean::class.java)
+                .invoke(mPopup, true)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        
+        // Check if this vehicle is already default
+        val isDefault = viewModel.userProfile.value?.defaultVehicle == vehicleNumber
+        if (isDefault) {
+            // Change "Make Default" to "Default" and disable it
+            popup.menu.findItem(com.gridee.parking.R.id.action_make_default)?.apply {
+                title = "Default ✓"
+                isEnabled = false
             }
         }
-        builder.show()
+        
+        popup.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                com.gridee.parking.R.id.action_edit_vehicle -> {
+                    editVehicle(vehicleNumber)
+                    true
+                }
+                com.gridee.parking.R.id.action_make_default -> {
+                    setDefaultVehicle(vehicleNumber)
+                    true
+                }
+                com.gridee.parking.R.id.action_delete_vehicle -> {
+                    removeVehicle(vehicleNumber)
+                    true
+                }
+                else -> false
+            }
+        }
+        
+        popup.show()
     }
 
     private fun editVehicle(vehicleNumber: String) {
-        val input = android.widget.EditText(requireContext())
-        input.hint = "Enter new vehicle number"
-        input.setText(vehicleNumber) // Pre-fill with current vehicle number
-        input.selectAll() // Select all text for easy editing
-        
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-        builder.setTitle("Edit Vehicle")
-        builder.setMessage("Edit vehicle number:")
-        builder.setView(input)
-        builder.setPositiveButton("Update") { _, _ ->
-            val newVehicleNumber = input.text.toString().trim().uppercase()
-            if (newVehicleNumber.isNotEmpty()) {
-                viewModel.editVehicle(vehicleNumber, newVehicleNumber)
-            } else {
-                showToast("Please enter a valid vehicle number")
-            }
+        // Show the edit vehicle bottom sheet with spring animation
+        val bottomSheet = EditVehicleBottomSheet(vehicleNumber) { newVehicleNumber ->
+            // Update the vehicle in the backend
+            viewModel.editVehicle(vehicleNumber, newVehicleNumber.uppercase())
+            
+            // Show professional success notification
+            NotificationHelper.showSuccess(
+                parent = binding.root,
+                title = "Success",
+                message = "Vehicle number saved successfully",
+                duration = 3000L
+            )
         }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
         
-        // Focus on the input and show keyboard
-        input.requestFocus()
+        bottomSheet.show(childFragmentManager, EditVehicleBottomSheet.TAG)
+    }
+
+    private fun setDefaultVehicle(vehicleNumber: String) {
+        viewModel.setDefaultVehicle(vehicleNumber)
     }
 
     private fun removeVehicle(vehicleNumber: String) {
@@ -245,20 +315,21 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
     }
 
     private fun showAddVehicleDialog() {
-        val input = android.widget.EditText(requireContext())
-        input.hint = "Enter vehicle number (e.g., MH01AB1234)"
-        
-        val builder = androidx.appcompat.app.AlertDialog.Builder(requireContext())
-        builder.setTitle("Add Vehicle")
-        builder.setView(input)
-        builder.setPositiveButton("Add") { _, _ ->
-            val vehicleNumber = input.text.toString().trim().uppercase()
-            if (vehicleNumber.isNotEmpty()) {
-                viewModel.addVehicle(vehicleNumber)
-            }
+        // Show the add vehicle bottom sheet with spring animation
+        val bottomSheet = AddVehicleBottomSheet { newVehicleNumber ->
+            // Add the vehicle to the backend
+            viewModel.addVehicle(newVehicleNumber.uppercase())
+            
+            // Show professional success notification
+            NotificationHelper.showSuccess(
+                parent = binding.root,
+                title = "Success",
+                message = "Vehicle added successfully",
+                duration = 3000L
+            )
         }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
+        
+        bottomSheet.show(childFragmentManager, AddVehicleBottomSheet.TAG)
     }
 
     private fun showLogoutConfirmation() {
@@ -280,6 +351,213 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             requireActivity().finish()
         } catch (e: Exception) {
             showToast("Unable to logout at this time")
+        }
+    }
+
+    private fun populateVehicles(vehicles: List<String>) {
+        val container = binding.vehiclesContainer
+        container.removeAllViews()
+        
+        if (vehicles.isEmpty()) {
+            // Show empty state
+            val emptyView = layoutInflater.inflate(
+                android.R.layout.simple_list_item_1,
+                container,
+                false
+            ) as android.widget.TextView
+            emptyView.text = "No vehicles added yet\nTap here to add a vehicle"
+            emptyView.setTextColor(android.graphics.Color.parseColor("#757575"))
+            emptyView.textSize = 14f
+            emptyView.gravity = android.view.Gravity.CENTER
+            emptyView.setPadding(0, 24, 0, 24)
+            emptyView.setOnClickListener {
+                showAddVehicleDialog()
+            }
+            container.addView(emptyView)
+            return
+        }
+        
+        vehicles.forEachIndexed { index, vehicleNumber ->
+            val vehicleView = layoutInflater.inflate(
+                com.gridee.parking.R.layout.item_vehicle,
+                container,
+                false
+            )
+            
+            val tvVehicleNumber = vehicleView.findViewById<android.widget.TextView>(com.gridee.parking.R.id.tv_vehicle_number)
+            val tvVehicleLabel = vehicleView.findViewById<android.widget.TextView>(com.gridee.parking.R.id.tv_vehicle_label)
+            val ivVehicleMenu = vehicleView.findViewById<android.widget.ImageView>(com.gridee.parking.R.id.iv_vehicle_menu)
+            val ivDefaultIndicator = vehicleView.findViewById<android.widget.ImageView>(com.gridee.parking.R.id.iv_default_indicator)
+            
+            tvVehicleNumber.text = vehicleNumber
+            tvVehicleLabel.text = "Vehicle ${index + 1}"
+            
+            // Show default indicator if this is the default vehicle
+            val defaultVehicle = viewModel.userProfile.value?.defaultVehicle
+            if (vehicleNumber == defaultVehicle) {
+                ivDefaultIndicator.visibility = View.VISIBLE
+                tvVehicleLabel.text = "Default Vehicle"
+            } else {
+                ivDefaultIndicator.visibility = View.GONE
+            }
+            
+            // Add margin if not the first item
+            if (index > 0) {
+                val params = android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                params.topMargin = (8 * resources.displayMetrics.density).toInt()
+                vehicleView.layoutParams = params
+            }
+            
+            // Add click listener for the entire vehicle item
+            vehicleView.setOnClickListener {
+                // Optional: Can be used for selection or other actions
+            }
+            
+            // Add click listener for the three-dot menu
+            ivVehicleMenu.setOnClickListener {
+                showVehicleOptionsDialog(vehicleNumber, it)
+            }
+            
+            container.addView(vehicleView)
+        }
+        
+        // Add "Add New Vehicle" button at the end
+        val addVehicleView = layoutInflater.inflate(
+            com.gridee.parking.R.layout.item_add_vehicle,
+            container,
+            false
+        )
+        
+        // Add margin for spacing
+        val params = android.widget.LinearLayout.LayoutParams(
+            android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        params.topMargin = (16 * resources.displayMetrics.density).toInt()
+        addVehicleView.layoutParams = params
+        
+        // Add click listener
+        addVehicleView.setOnClickListener {
+            showAddVehicleDialog()
+        }
+        
+        container.addView(addVehicleView)
+    }
+    
+    private fun toggleVehiclesAccordion() {
+        isVehiclesExpanded = !isVehiclesExpanded
+        
+        val expandedLayout = binding.layoutVehiclesExpanded
+        val arrowIcon = binding.ivVehiclesExpand
+        
+        if (isVehiclesExpanded) {
+            // Populate vehicles with real data
+            val vehicles = viewModel.userProfile.value?.vehicleNumbers ?: emptyList()
+            populateVehicles(vehicles)
+            
+            // Expand animation
+            expandedLayout.visibility = View.VISIBLE
+            
+            // Measure the expanded height
+            expandedLayout.measure(
+                View.MeasureSpec.makeMeasureSpec(expandedLayout.width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+            )
+            val targetHeight = expandedLayout.measuredHeight
+            
+            // Height animation with spring physics
+            val heightAnimation = ValueAnimator.ofInt(0, targetHeight)
+            heightAnimation.addUpdateListener { animation ->
+                val value = animation.animatedValue as Int
+                val layoutParams = expandedLayout.layoutParams
+                layoutParams.height = value
+                expandedLayout.layoutParams = layoutParams
+            }
+            heightAnimation.duration = 400
+            heightAnimation.interpolator = DecelerateInterpolator()
+            heightAnimation.start()
+            
+            // Alpha animation with blur effect simulation
+            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 1f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_LOW
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
+                start()
+            }
+            
+            // Scale animation for professional effect
+            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 1f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                start()
+            }
+            
+            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 1f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                start()
+            }
+            
+            // Set initial scale for spring animation
+            expandedLayout.scaleX = 0.95f
+            expandedLayout.scaleY = 0.95f
+            
+            // Rotate arrow icon
+            arrowIcon.animate()
+                .rotation(180f)
+                .setDuration(300)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
+                
+        } else {
+            // Collapse animation
+            val initialHeight = expandedLayout.height
+            
+            // Height animation
+            val heightAnimation = ValueAnimator.ofInt(initialHeight, 0)
+            heightAnimation.addUpdateListener { animation ->
+                val value = animation.animatedValue as Int
+                val layoutParams = expandedLayout.layoutParams
+                layoutParams.height = value
+                expandedLayout.layoutParams = layoutParams
+                
+                // Hide when fully collapsed
+                if (value == 0) {
+                    expandedLayout.visibility = View.GONE
+                }
+            }
+            heightAnimation.duration = 350
+            heightAnimation.interpolator = DecelerateInterpolator()
+            heightAnimation.start()
+            
+            // Alpha animation with opacity
+            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 0f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
+                start()
+            }
+            
+            // Scale animation for smooth collapse
+            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 0.95f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                start()
+            }
+            
+            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 0.95f).apply {
+                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
+                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                start()
+            }
+            
+            // Rotate arrow icon back
+            arrowIcon.animate()
+                .rotation(0f)
+                .setDuration(300)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
         }
     }
 

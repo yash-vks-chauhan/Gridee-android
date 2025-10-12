@@ -185,6 +185,45 @@ class ProfileViewModel : ViewModel() {
         }
     }
 
+    fun setDefaultVehicle(vehicleNumber: String) {
+        val currentUser = _userProfile.value
+        if (currentUser == null) {
+            _errorMessage.value = "User profile not loaded"
+            return
+        }
+
+        // Check if vehicle exists in user's vehicle list
+        if (!currentUser.vehicleNumbers.contains(vehicleNumber)) {
+            _errorMessage.value = "Vehicle not found in your list"
+            return
+        }
+
+        // If already default, no need to update
+        if (currentUser.defaultVehicle == vehicleNumber) {
+            _errorMessage.value = "$vehicleNumber is already your default vehicle"
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val updatedUser = currentUser.copy(defaultVehicle = vehicleNumber)
+                val result = userRepository.updateUser(updatedUser)
+                
+                if (result) {
+                    _userProfile.value = updatedUser
+                    _errorMessage.value = "Default vehicle set to $vehicleNumber"
+                } else {
+                    _errorMessage.value = "Failed to set default vehicle"
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Error setting default vehicle: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun clearError() {
         _errorMessage.value = null
     }

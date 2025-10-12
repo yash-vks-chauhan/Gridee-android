@@ -1,12 +1,15 @@
 package com.gridee.parking.ui.adapters
 
+import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ItemTransactionBinding
-import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import kotlin.math.abs
 
 data class Transaction(
     val id: String,
@@ -30,52 +33,11 @@ class TransactionsAdapter(
     private var transactions: List<Transaction>
 ) : RecyclerView.Adapter<TransactionsAdapter.TransactionViewHolder>() {
 
-    private val dateFormat = SimpleDateFormat("MMM d, yyyy HH:mm", Locale.getDefault())
-
-    inner class TransactionViewHolder(private val binding: ItemTransactionBinding) : 
+    inner class TransactionViewHolder(private val binding: ItemTransactionBinding) :
         RecyclerView.ViewHolder(binding.root) {
-        
+
         fun bind(transaction: Transaction) {
-            binding.apply {
-                // Set transaction icon based on type
-                when (transaction.type) {
-                    TransactionType.TOP_UP -> {
-                        ivTransactionIcon.setImageResource(R.drawable.ic_add)
-                        ivTransactionIcon.backgroundTintList = 
-                            root.context.getColorStateList(R.color.success_green)
-                    }
-                    TransactionType.PARKING_PAYMENT -> {
-                        ivTransactionIcon.setImageResource(R.drawable.ic_parking)
-                        ivTransactionIcon.backgroundTintList = 
-                            root.context.getColorStateList(R.color.primary_blue)
-                    }
-                    TransactionType.REFUND -> {
-                        ivTransactionIcon.setImageResource(R.drawable.ic_refund)
-                        ivTransactionIcon.backgroundTintList = 
-                            root.context.getColorStateList(R.color.success_green)
-                    }
-                    TransactionType.BONUS -> {
-                        ivTransactionIcon.setImageResource(R.drawable.ic_gift)
-                        ivTransactionIcon.backgroundTintList = 
-                            root.context.getColorStateList(R.color.primary_blue)
-                    }
-                }
-
-                // Set transaction details
-                tvDescription.text = transaction.description
-                tvTimestamp.text = dateFormat.format(transaction.timestamp)
-                tvBalance.text = "Balance: ₹${String.format("%.2f", transaction.balanceAfter)}"
-
-                // Set amount with appropriate color
-                val amountText = if (transaction.amount >= 0) {
-                    tvAmount.setTextColor(root.context.getColor(R.color.success_green))
-                    "+₹${String.format("%.2f", transaction.amount)}"
-                } else {
-                    tvAmount.setTextColor(root.context.getColor(R.color.red))
-                    "-₹${String.format("%.2f", Math.abs(transaction.amount))}"
-                }
-                tvAmount.text = amountText
-            }
+            bindTransactionRow(binding, transaction)
         }
     }
 
@@ -97,5 +59,53 @@ class TransactionsAdapter(
     fun updateTransactions(newTransactions: List<Transaction>) {
         transactions = newTransactions
         notifyDataSetChanged()
+    }
+
+    companion object {
+        fun bindTransactionRow(binding: ItemTransactionBinding, transaction: Transaction) {
+            val context = binding.root.context
+
+            binding.tvDescription.text = transaction.description
+
+            val relativeTime = DateUtils.getRelativeTimeSpanString(
+                transaction.timestamp.time,
+                System.currentTimeMillis(),
+                DateUtils.MINUTE_IN_MILLIS
+            )
+            binding.tvTimestamp.text = relativeTime
+
+            binding.tvBalance.text = context.getString(
+                R.string.wallet_transaction_after,
+                transaction.balanceAfter
+            )
+
+            val amountPositive = transaction.amount >= 0
+            val amountColor = if (amountPositive) R.color.success_green else R.color.red
+            binding.tvAmount.setTextColor(ContextCompat.getColor(context, amountColor))
+            val absoluteAmount = abs(transaction.amount)
+            val formattedAmount = String.format(
+                Locale.getDefault(),
+                "%.2f",
+                absoluteAmount
+            )
+
+            val amountText = if (amountPositive) {
+                "+₹$formattedAmount"
+            } else {
+                "-₹$formattedAmount"
+            }
+            binding.tvAmount.text = amountText
+
+            binding.ivTransactionIcon.setImageResource(R.drawable.ic_wallet_outline)
+            binding.ivTransactionIcon.imageTintList =
+                ContextCompat.getColorStateList(context, R.color.text_secondary)
+            
+            binding.cardIconContainer.setCardBackgroundColor(
+                ContextCompat.getColor(context, R.color.background_primary)
+            )
+
+            val strokeColor = ContextCompat.getColor(context, R.color.border_light)
+            binding.cardIconContainer.strokeColor = strokeColor
+        }
     }
 }

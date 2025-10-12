@@ -1,39 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="4dp"
-    android:layout_marginVertical="4dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp"
-    android:background="@color/white">
+    android:layout_marginVertical="6dp"
+    android:clickable="false"
+    android:focusable="false"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/border_light"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp"
-        android:gravity="center_vertical">
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
 
-        <!-- Transaction Icon -->
-        <ImageView
-            android:id="@+id/iv_transaction_icon"
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/card_icon_container"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_wallet"
-            android:background="@drawable/circle_background"
-            android:backgroundTint="@color/background_light"
-            android:padding="8dp"
-            app:tint="@color/primary_color" />
+            android:clickable="false"
+            android:focusable="false"
+            app:cardBackgroundColor="@color/background_primary"
+            app:cardCornerRadius="12dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/border_light"
+            app:strokeWidth="1dp">
 
-        <!-- Transaction Details -->
+            <ImageView
+                android:id="@+id/iv_transaction_icon"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/wallet_transaction_icon_content_description"
+                android:src="@drawable/ic_wallet_outline"
+                android:tint="@color/text_secondary" />
+        </com.google.android.material.card.MaterialCardView>
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:orientation="vertical"
-            android:layout_marginStart="12dp">
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_description"
@@ -48,32 +63,29 @@
                 android:id="@+id/tv_timestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Oct 2, 2025 14:30"
+                android:layout_marginTop="2dp"
+                android:text="8 hours ago"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:layout_marginTop="2dp" />
+                android:textSize="13sp" />
 
             <TextView
                 android:id="@+id/tv_balance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Balance: ₹150.00"
+                android:layout_marginTop="2dp"
+                android:text="After: ₹0.00"
                 android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:layout_marginTop="2dp" />
-
+                android:textSize="13sp" />
         </LinearLayout>
 
-        <!-- Transaction Amount -->
         <TextView
             android:id="@+id/tv_amount"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="+₹100.00"
+            android:textColor="@color/success_green"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="@color/green" />
-
+            android:textStyle="bold" />
     </LinearLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

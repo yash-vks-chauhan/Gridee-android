@@ -32,4 +32,16 @@
     <string name="booking_details">Booking Details</string>
     <string name="booking_directions">Directions</string>
     <string name="booking_share">Share</string>
+
+    <!-- Wallet -->
+    <string name="wallet_transaction_icon_content_description">Transaction type icon</string>
+    <string name="wallet_transaction_after">After: ₹%1$.2f</string>
+    <string name="payment_filter_button_default">Payment Method</string>
+    <string name="payment_filter_title">Payment Method</string>
+    <string name="payment_filter_subtitle">Choose how you want to see transactions</string>
+    <string name="payment_filter_option_all">All payment methods</string>
+    <string name="payment_filter_option_upi">UPI</string>
+    <string name="payment_filter_option_card">Debit / Credit Card</string>
+    <string name="payment_filter_apply">Apply filter</string>
+    <string name="payment_filter_cancel">Cancel</string>
 </resources>

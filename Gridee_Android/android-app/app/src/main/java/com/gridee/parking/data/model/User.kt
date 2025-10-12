@@ -19,6 +19,9 @@ data class User(
     @SerializedName("vehicleNumbers")
     val vehicleNumbers: List<String> = emptyList(),
     
+    @SerializedName("defaultVehicle")
+    val defaultVehicle: String? = null,
+    
     @SerializedName("firstUser")
     val firstUser: Boolean = true,
     

@@ -1,6 +1,5 @@
 package com.gridee.parking.ui.fragments
 
-import android.app.Dialog
 import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
@@ -78,10 +77,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             processTopUp(200.0)
         }
         
-        binding.btnQuickAddCustom.setOnClickListener {
-            showCustomAmountDialog()
-        }
-        
         binding.tvViewAll.setOnClickListener {
             // Navigate to TransactionHistoryActivity to show all transactions
             val intent = Intent(requireContext(), TransactionHistoryActivity::class.java)
@@ -89,32 +84,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
         }
     }
     
-    private fun showCustomAmountDialog() {
-        val builder = android.app.AlertDialog.Builder(requireContext())
-        builder.setTitle("Enter Amount")
-        
-        val input = android.widget.EditText(requireContext())
-        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
-        input.hint = "Enter amount in ₹"
-        builder.setView(input)
-        
-        builder.setPositiveButton("Add") { dialog, _ ->
-            val amount = input.text.toString().toDoubleOrNull()
-            if (amount != null && amount > 0) {
-                processTopUp(amount)
-            } else {
-                showToast("Please enter a valid amount")
-            }
-            dialog.dismiss()
-        }
-        
-        builder.setNegativeButton("Cancel") { dialog, _ ->
-            dialog.cancel()
-        }
-        
-        builder.show()
-    }
-
     private fun loadWalletData() {
         val userId = getUserId()
         if (userId == null) {

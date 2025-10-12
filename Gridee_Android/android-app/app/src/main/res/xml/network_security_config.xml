@@ -2,9 +2,7 @@
 <network-security-config>
     <!-- AWS Domain Configuration -->
     <domain-config cleartextTrafficPermitted="true">
-    <domain includeSubdomains="true">65.2.80.78</domain>
-    <domain includeSubdomains="true">ec2-65-2-80-78.compute.amazonaws.com</domain>
-    <domain includeSubdomains="true">ec2-65-2-80-78.ap-south-1.compute.amazonaws.com</domain>
+    <domain includeSubdomains="true">15.206.211.142</domain>
         <trust-anchors>
             <certificates src="system"/>
             <certificates src="user"/>
