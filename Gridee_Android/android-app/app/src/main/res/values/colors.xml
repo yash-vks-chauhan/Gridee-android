@@ -91,6 +91,9 @@
     <color name="booking_sheet_icon_tint">#424242</color>
     <color name="booking_sheet_secondary_text">#6B7280</color>
     <color name="booking_sheet_chip_bg">#EEF2FF</color>
+    <color name="booking_sheet_overlay">#B0F6F7F9</color>
+    <color name="booking_sheet_action_surface">#F3F4F6</color>
+    <color name="booking_sheet_action_border">#E1E4EA</color>
 
     <!-- Missing Colors -->
     <color name="segment_badge">#4CAF50</color>

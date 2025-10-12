@@ -90,9 +90,6 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             binding.progressLoading.visibility = View.GONE
             return
         }
-        
-        // Load and display user name on credit card
-        loadUserName()
 
         lifecycleScope.launch {
             try {
@@ -459,14 +456,6 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         } catch (e: Exception) {
             // Handle any exceptions
         }
-    }
-
-    private fun loadUserName() {
-        val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        val userName = sharedPref.getString("user_name", "USER NAME") ?: "USER NAME"
-        
-        // Update the credit card with user's name (convert to uppercase for consistency)
-        binding.tvCardholderName.text = userName.uppercase()
     }
 
     private fun getUserId(): String? {

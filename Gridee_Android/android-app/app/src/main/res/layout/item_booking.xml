@@ -118,6 +118,16 @@
                     android:fontFamily="sans-serif-medium" />
             </LinearLayout>
 
+            <!-- Timeline Arrow -->
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="2dp"
+                android:layout_marginEnd="2dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_booking_timeline"
+                android:tint="#9E9E9E" />
+
             <!-- Check-out Time -->
             <LinearLayout
                 android:layout_width="0dp"
