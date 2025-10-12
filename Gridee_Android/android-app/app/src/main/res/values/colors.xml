@@ -8,7 +8,7 @@
     <color name="background_color">#F2F2F7</color>
     
     <!-- Apple-style backgrounds -->
-    <color name="background_primary">#F2F2F7</color>
+    <color name="background_primary">#F5F5F5</color>
     <color name="background_secondary">#FFFFFF</color>
     <color name="background_grouped">#F2F2F7</color>
     <color name="background_card">#FFFFFF</color>
@@ -94,6 +94,8 @@
     <color name="booking_sheet_overlay">#B0F6F7F9</color>
     <color name="booking_sheet_action_surface">#F3F4F6</color>
     <color name="booking_sheet_action_border">#E1E4EA</color>
+    <color name="quick_add_outline">#D7D9DF</color>
+    <color name="quick_add_ripple">#1A000000</color>
 
     <!-- Missing Colors -->
     <color name="segment_badge">#4CAF50</color>

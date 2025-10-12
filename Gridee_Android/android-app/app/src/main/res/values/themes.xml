@@ -57,19 +57,56 @@
         <item name="bottomSheetStyle">@style/BottomSheetStyle</item>
         <item name="android:windowIsFloating">false</item>
         <item name="android:windowSoftInputMode">adjustResize</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:backgroundDimAmount">0.5</item>
     </style>
     
     <style name="BottomSheetStyle" parent="Widget.Material3.BottomSheet">
         <item name="shapeAppearanceOverlay">@style/BottomSheetShapeAppearance</item>
-        <item name="behavior_hideable">true</item>
-        <item name="behavior_skipCollapsed">false</item>
-        <item name="behavior_peekHeight">0dp</item>
+        <item name="android:elevation">8dp</item>
     </style>
     
     <style name="BottomSheetShapeAppearance" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSizeTopLeft">16dp</item>
         <item name="cornerSizeTopRight">16dp</item>
+    </style>
+
+    <!-- Collapsing Toolbar Text Styles -->
+    <style name="ExpandedTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="CollapsedTitleText" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <!-- Popup Menu Style with White Background -->
+    <style name="PopupMenuStyle" parent="Widget.Material3.PopupMenu">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">8dp</item>
+        <item name="android:overlapAnchor">false</item>
+    </style>
+    
+    <!-- Popup Menu Theme with forced light colors -->
+    <style name="PopupMenuTheme" parent="Theme.Material3.Light">
+        <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:textColorPrimary">#000000</item>
+        <item name="android:textColorSecondary">#666666</item>
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="android:colorBackground">#FFFFFF</item>
+        <item name="android:textColor">#000000</item>
+        <item name="android:overlapAnchor">false</item>
+        <item name="android:dropDownSelector">@android:color/transparent</item>
     </style>
     
 </resources>

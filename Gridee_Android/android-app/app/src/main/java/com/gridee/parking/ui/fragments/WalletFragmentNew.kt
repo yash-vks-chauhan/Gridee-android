@@ -8,7 +8,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.gridee.parking.R
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.WalletTransaction
 import com.gridee.parking.databinding.FragmentWalletNewBinding
@@ -16,7 +15,8 @@ import com.gridee.parking.databinding.BottomSheetTopUpSimpleBinding
 import com.gridee.parking.ui.activities.TransactionHistoryActivity
 import com.gridee.parking.ui.adapters.Transaction
 import com.gridee.parking.ui.adapters.TransactionType
-import com.gridee.parking.ui.adapters.TransactionsAdapter
+import com.gridee.parking.ui.adapters.WalletTransactionGrouping
+import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import kotlinx.coroutines.launch
@@ -25,7 +25,7 @@ import java.util.*
 
 class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
 
-    private lateinit var transactionsAdapter: TransactionsAdapter
+    private lateinit var transactionsAdapter: WalletTransactionsAdapter
     private var currentBalance = 0.0
     private var userTransactions = mutableListOf<Transaction>()
 
@@ -48,7 +48,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun setupRecyclerView() {
-        transactionsAdapter = TransactionsAdapter(emptyList())
+        transactionsAdapter = WalletTransactionsAdapter(emptyList())
         
         binding.rvTransactions.apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -69,15 +69,15 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         
         // Quick Add buttons - direct top-up
         binding.btnQuickAdd10.setOnClickListener {
-            processTopUp(10.0)
+            processTopUp(50.0)
         }
         
         binding.btnQuickAdd20.setOnClickListener {
-            processTopUp(20.0)
+            processTopUp(100.0)
         }
         
         binding.btnQuickAdd100.setOnClickListener {
-            processTopUp(100.0)
+            processTopUp(200.0)
         }
     }
 
@@ -93,100 +93,60 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
 
         lifecycleScope.launch {
             try {
-                android.util.Log.d("WalletFragmentNew", "Loading wallet data for user: $userId")
-                
-                // Load wallet details (balance + transactions)
-                val response = ApiClient.apiService.getWalletDetails(userId)
-                android.util.Log.d("WalletFragmentNew", "Wallet API response: ${response.code()}")
-                
-                if (response.isSuccessful) {
-                    val walletDetails = response.body()
-                    android.util.Log.d("WalletFragmentNew", "Wallet details: balance=${walletDetails?.balance}, transactions=${walletDetails?.transactions?.size}")
-                    
-                    if (walletDetails != null) {
-                        // Update balance
-                        currentBalance = walletDetails.balance ?: 0.0
-                        updateBalanceDisplay()
-                        
-                        // Convert backend transactions to UI transactions
-                        val backendTransactions = walletDetails.transactions ?: emptyList()
-                        userTransactions.clear()
-                        
-                        // Convert and sort transactions by timestamp (newest first)
-                        val convertedTransactions = backendTransactions.map { convertToUITransaction(it) }
-                        userTransactions.addAll(convertedTransactions.sortedByDescending { it.timestamp })
-                        
-                        // Update UI
-                        updateTransactionsDisplay()
-                        android.util.Log.d("WalletFragmentNew", "Successfully loaded ${backendTransactions.size} transactions")
-                    } else {
-                        // Empty response - show zero balance and no transactions
-                        currentBalance = 0.0
-                        updateBalanceDisplay()
-                        userTransactions.clear()
-                        updateTransactionsDisplay()
-                        showToast("No wallet data found")
-                    }
-                } else {
-                    // API error - try to get transactions separately and show zero balance
-                    handleApiError(response.code(), userId)
-                }
-                
+                android.util.Log.d("WalletFragmentNew", "Loading wallet balance for user: $userId")
+                loadWalletBalance(userId)
+                android.util.Log.d("WalletFragmentNew", "Loading wallet transactions for user: $userId")
+                loadWalletTransactions(userId)
             } catch (e: Exception) {
-                // Network error - try fallback API call
-                handleNetworkError(e, userId)
+                android.util.Log.e("WalletFragmentNew", "Unexpected error loading wallet data", e)
+                showToast("Error loading wallet data: ${e.message}")
             } finally {
                 binding.progressLoading.visibility = View.GONE
             }
         }
     }
 
-    private fun handleApiError(errorCode: Int, userId: String) {
-        lifecycleScope.launch {
-            try {
-                // Try to get just the transactions if wallet details failed
-                val transactionResponse = ApiClient.apiService.getWalletTransactions(userId)
-                if (transactionResponse.isSuccessful) {
-                    val backendTransactions = transactionResponse.body() ?: emptyList()
-                    userTransactions.clear()
-                    
-                    // Convert and sort transactions by timestamp (newest first)
-                    val convertedTransactions = backendTransactions.map { convertToUITransaction(it) }
-                    userTransactions.addAll(convertedTransactions.sortedByDescending { it.timestamp })
-                    
-                    // Calculate balance from transactions if possible
-                    currentBalance = if (backendTransactions.isNotEmpty()) {
-                        backendTransactions.lastOrNull()?.balanceAfter ?: 0.0
-                    } else {
-                        0.0
-                    }
-                    
-                    updateBalanceDisplay()
-                    updateTransactionsDisplay()
-                    showToast("Wallet balance unavailable, showing transactions")
-                } else {
-                    // Both APIs failed - show zero balance
-                    showRealEmptyState()
-                    showToast("Error loading wallet data (Error: $errorCode)")
-                }
-            } catch (e: Exception) {
-                showRealEmptyState()
-                showToast("Error loading wallet data: ${e.message}")
+    private suspend fun loadWalletBalance(userId: String) {
+        try {
+            val response = ApiClient.apiService.getWalletDetails(userId)
+            android.util.Log.d("WalletFragmentNew", "Wallet balance API response: ${response.code()}")
+            if (response.isSuccessful) {
+                val walletDetails = response.body()
+                currentBalance = walletDetails?.balance ?: 0.0
+                updateBalanceDisplay()
+            } else {
+                showToast("Unable to load wallet balance (${response.code()})")
             }
+        } catch (e: Exception) {
+            android.util.Log.e("WalletFragmentNew", "Error loading wallet balance", e)
+            showToast("Error loading balance: ${e.message}")
         }
     }
 
-    private fun handleNetworkError(exception: Exception, userId: String) {
-        // Show empty state with zero balance for network errors
-        showRealEmptyState()
-        showToast("Network error: ${exception.message}")
-    }
-
-    private fun showRealEmptyState() {
-        currentBalance = 0.0
-        updateBalanceDisplay()
-        userTransactions.clear()
-        updateTransactionsDisplay()
+    private suspend fun loadWalletTransactions(userId: String) {
+        try {
+            val transactionResponse = ApiClient.apiService.getWalletTransactions(userId)
+            android.util.Log.d("WalletFragmentNew", "Wallet transactions API response: ${transactionResponse.code()}")
+            if (transactionResponse.isSuccessful) {
+                val backendTransactions = transactionResponse.body().orEmpty()
+                userTransactions.clear()
+                
+                val convertedTransactions = backendTransactions.map { convertToUITransaction(it) }
+                userTransactions.addAll(convertedTransactions.sortedByDescending { it.timestamp })
+                
+                android.util.Log.d("WalletFragmentNew", "Loaded ${userTransactions.size} transactions from API")
+                updateTransactionsDisplay()
+            } else {
+                userTransactions.clear()
+                updateTransactionsDisplay()
+                showToast("Unable to load transactions (${transactionResponse.code()})")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("WalletFragmentNew", "Error loading wallet transactions", e)
+            userTransactions.clear()
+            updateTransactionsDisplay()
+            showToast("Error loading transactions: ${e.message}")
+        }
     }
 
     private fun updateBalanceDisplay() {
@@ -197,19 +157,17 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         if (userTransactions.isEmpty()) {
             binding.rvTransactions.visibility = View.GONE
             binding.layoutEmptyState.visibility = View.VISIBLE
+            transactionsAdapter.updateItems(emptyList())
         } else {
             binding.rvTransactions.visibility = View.VISIBLE
             binding.layoutEmptyState.visibility = View.GONE
             
-            // Sort transactions by timestamp (newest first) and show only recent 5
-            val sortedTransactions = userTransactions.sortedByDescending { it.timestamp }
-            val recentTransactions = sortedTransactions.take(5)
-            
-            android.util.Log.d("WalletFragmentNew", "Total transactions: ${userTransactions.size}")
-            android.util.Log.d("WalletFragmentNew", "Displaying ${recentTransactions.size} recent transactions")
-            android.util.Log.d("WalletFragmentNew", "Recent transaction IDs: ${recentTransactions.map { it.id }}")
-            
-            transactionsAdapter.updateTransactions(recentTransactions)
+            val groupedItems = WalletTransactionGrouping.buildGroupedItems(
+                userTransactions,
+                MAX_RECENT_TRANSACTIONS
+            )
+            android.util.Log.d("WalletFragmentNew", "Rendering ${groupedItems.size} grouped transaction items")
+            transactionsAdapter.updateItems(groupedItems)
         }
     }
 
@@ -404,10 +362,10 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             return
         }
 
-        // Show loading
         binding.progressLoading.visibility = View.VISIBLE
 
         lifecycleScope.launch {
+            var shouldRefreshWallet = false
             try {
                 // Call the top-up API
                 val response = ApiClient.apiService.topUpWallet(
@@ -420,25 +378,8 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                     currentBalance += amount
                     updateBalanceDisplay()
                     
-                    // Add the transaction to the list with current timestamp
-                    val newTransaction = Transaction(
-                        id = "TXN${System.currentTimeMillis()}",
-                        type = TransactionType.TOP_UP,
-                        amount = amount,
-                        description = "Wallet Top-up - ₹${amount.toInt()}",
-                        timestamp = Date(), // This ensures current date/time
-                        balanceAfter = currentBalance
-                    )
-                    
-                    // Add to beginning and re-sort to maintain order
-                    userTransactions.add(0, newTransaction)
-                    userTransactions.sortByDescending { it.timestamp }
-                    updateTransactionsDisplay()
-                    
                     showToast("₹${amount.toInt()} added successfully!")
-                    
-                    // Reload wallet data to get updated info from server (this will refresh with server data)
-                    loadWalletData()
+                    shouldRefreshWallet = true
                 } else {
                     showToast("Failed to add money. Please try again.")
                 }
@@ -446,6 +387,9 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 showToast("Error: ${e.message}")
             } finally {
                 binding.progressLoading.visibility = View.GONE
+                if (shouldRefreshWallet) {
+                    loadWalletData()
+                }
             }
         }
     }
@@ -461,5 +405,8 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
     private fun getUserId(): String? {
         val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
         return sharedPref.getString("user_id", null)
+    }
+    private companion object {
+        private const val MAX_RECENT_TRANSACTIONS = 5
     }
 }
