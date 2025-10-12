@@ -28,6 +28,8 @@
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="sign_up_link">Don\'t have an account? Sign Up</string>
     <string name="close">Close</string>
-    <string name="cancel_booking">Cancel Booking</string>
+    <string name="cancel_booking">Cancel</string>
     <string name="booking_details">Booking Details</string>
+    <string name="booking_directions">Directions</string>
+    <string name="booking_share">Share</string>
 </resources>

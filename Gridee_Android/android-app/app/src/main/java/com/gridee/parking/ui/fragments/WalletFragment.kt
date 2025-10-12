@@ -55,9 +55,31 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun setupClickListeners() {
-        // Add top-up functionality to the wallet balance card
+        // Add money button
+        binding.btnAddMoney.setOnClickListener {
+            showTopUpDialog()
+        }
+        
+        // Tap balance to show/hide (privacy feature)
         binding.tvBalanceAmount.setOnClickListener {
             showTopUpDialog()
+        }
+        
+        // Quick add buttons
+        binding.btnQuickAdd10.setOnClickListener {
+            processTopUp(50.0)
+        }
+        
+        binding.btnQuickAdd20.setOnClickListener {
+            processTopUp(100.0)
+        }
+        
+        binding.btnQuickAdd100.setOnClickListener {
+            processTopUp(200.0)
+        }
+        
+        binding.btnQuickAddCustom.setOnClickListener {
+            showCustomAmountDialog()
         }
         
         binding.tvViewAll.setOnClickListener {
@@ -65,6 +87,32 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             val intent = Intent(requireContext(), TransactionHistoryActivity::class.java)
             startActivity(intent)
         }
+    }
+    
+    private fun showCustomAmountDialog() {
+        val builder = android.app.AlertDialog.Builder(requireContext())
+        builder.setTitle("Enter Amount")
+        
+        val input = android.widget.EditText(requireContext())
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+        input.hint = "Enter amount in ₹"
+        builder.setView(input)
+        
+        builder.setPositiveButton("Add") { dialog, _ ->
+            val amount = input.text.toString().toDoubleOrNull()
+            if (amount != null && amount > 0) {
+                processTopUp(amount)
+            } else {
+                showToast("Please enter a valid amount")
+            }
+            dialog.dismiss()
+        }
+        
+        builder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.cancel()
+        }
+        
+        builder.show()
     }
 
     private fun loadWalletData() {
@@ -146,7 +194,10 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun updateBalanceDisplay() {
-        binding.tvBalanceAmount.text = "$${String.format("%.2f", currentBalance)}"
+        binding.tvBalanceAmount.text = "₹${String.format("%.2f", currentBalance)}"
+        
+        // Update last updated time
+        binding.tvLastUpdated.text = "Updated now"
         
         // Save balance to cache
         val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)

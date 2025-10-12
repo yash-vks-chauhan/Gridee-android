@@ -2,9 +2,15 @@ package com.gridee.parking.ui.fragments
 
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
+import android.graphics.Color
+import android.graphics.RenderEffect
+import android.graphics.Shader
+import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.OvershootInterpolator
 import android.widget.TextView
 import androidx.core.content.ContextCompat
@@ -24,6 +30,7 @@ import com.gridee.parking.ui.components.EnhancedSegmentedControlGestureHandler
 import com.gridee.parking.databinding.BottomSheetBookingOverviewBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import android.view.WindowManager
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,6 +41,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private var userBookings = mutableListOf<BackendBooking>()
     private var currentTab = BookingStatus.ACTIVE
     private lateinit var gestureHandler: EnhancedSegmentedControlGestureHandler
+    private var blurOverlayView: View? = null
     
     // Cache for parking lot and spot names
     private val parkingLotCache = mutableMapOf<String, String>() // lotId -> name
@@ -351,6 +359,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         if (::gestureHandler.isInitialized) {
             gestureHandler.cleanup()
         }
+        toggleBackgroundBlur(false)
         super.onDestroyView()
     }
 
@@ -751,6 +760,26 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         val dialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
         val sheetBinding = BottomSheetBookingOverviewBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
+        dialog.window?.let { window ->
+            window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+            when {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+                    window.setBackgroundBlurRadius(80)
+                    window.setDimAmount(0f)
+                }
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.R -> {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                    window.setDimAmount(0f)
+                }
+                else -> {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                    window.setDimAmount(0.25f)
+                }
+            }
+        }
+
+        toggleBackgroundBlur(true)
 
         sheetBinding.apply {
             textLocationName.text = booking.locationName
@@ -768,6 +797,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
             textCheckIn.text = getStringFormattedTime(booking.bookingDate, booking.startTime)
             textCheckOut.text = getStringFormattedTime(booking.bookingDate, booking.endTime)
+            textBookingDate.text = booking.bookingDate
 
             textDuration.text = booking.duration
             textAmount.text = booking.amount
@@ -786,8 +816,13 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         }
 
         sheetBinding.buttonCloseSheet.setOnClickListener { dialog.dismiss() }
-        sheetBinding.buttonClose.setOnClickListener { dialog.dismiss() }
-        sheetBinding.buttonCancelBooking.setOnClickListener {
+        sheetBinding.actionDirections.setOnClickListener {
+            showToast("Directions action coming soon")
+        }
+        sheetBinding.actionShare.setOnClickListener {
+            showToast("Share action coming soon")
+        }
+        sheetBinding.actionCancel.setOnClickListener {
             showToast("Cancel booking action coming soon")
             dialog.dismiss()
         }
@@ -795,6 +830,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         dialog.setOnShowListener {
             val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
             bottomSheet?.let {
+                it.setBackgroundColor(Color.TRANSPARENT)
                 val behavior = BottomSheetBehavior.from(it)
                 behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 behavior.skipCollapsed = true
@@ -802,8 +838,14 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             }
         }
         dialog.behavior.isDraggable = true
-        dialog.window?.setDimAmount(0.55f)
         dialog.show()
+
+        dialog.setOnDismissListener {
+            toggleBackgroundBlur(false)
+        }
+        dialog.setOnCancelListener {
+            toggleBackgroundBlur(false)
+        }
     }
 
     private fun getStringFormattedTime(date: String, time: String): String {
@@ -811,6 +853,38 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             "TBD"
         } else {
             "$date · $time"
+        }
+    }
+
+    private fun toggleBackgroundBlur(show: Boolean) {
+        val activityRoot = requireActivity().findViewById<ViewGroup>(android.R.id.content) ?: return
+        val contentRoot = activityRoot.getChildAt(0)
+        if (show) {
+            if (blurOverlayView == null) {
+                blurOverlayView = View(requireContext()).apply {
+                    layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+                    setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.booking_sheet_overlay))
+                    alpha = 0f
+                    isClickable = true
+                    isFocusable = true
+                }
+                activityRoot.addView(blurOverlayView)
+            }
+            blurOverlayView?.bringToFront()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                contentRoot?.setRenderEffect(RenderEffect.createBlurEffect(32f, 32f, Shader.TileMode.CLAMP))
+            }
+            blurOverlayView?.animate()?.alpha(1f)?.setDuration(180L)?.start()
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                contentRoot?.setRenderEffect(null)
+            }
+            blurOverlayView?.animate()?.alpha(0f)?.setDuration(140L)?.withEndAction {
+                blurOverlayView?.let { overlay ->
+                    (overlay.parent as? ViewGroup)?.removeView(overlay)
+                    blurOverlayView = null
+                }
+            }?.start()
         }
     }
 
