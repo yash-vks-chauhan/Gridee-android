@@ -113,6 +113,25 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/users/{userId}/bookings/{bookingId}/breakup")
+    public ResponseEntity<?> getBookingBreakup(
+            @PathVariable String userId,
+            @PathVariable String bookingId
+    ) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                logger.warn("User {} tried to access breakup for booking {} not belonging to them", userId, bookingId);
+                return ResponseEntity.notFound().build();
+            }
+            Map<String, Object> breakup = bookingService.getBookingBreakup(bookingId);
+            return ResponseEntity.ok(breakup);
+        } catch (Exception e) {
+            logger.error("Error fetching booking breakup: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Error fetching booking breakup");
+        }
+    }
+
 
 
     @PostMapping("/users/{userId}/bookings/{bookingId}/cancel")

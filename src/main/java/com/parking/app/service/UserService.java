@@ -105,10 +105,6 @@ public class UserService {
             existingUser.setPhone(userDetails.getPhone());
         }
 
-        if (userDetails.getVehicleNumbers() != null && !userDetails.getVehicleNumbers().isEmpty()) {
-            existingUser.setVehicleNumbers(userDetails.getVehicleNumbers());
-        }
-
 
         if (userDetails.getPasswordHash() != null && !userDetails.getPasswordHash().isEmpty()) {
             String hashedPassword = BCrypt.hashpw(userDetails.getPasswordHash(), BCrypt.gensalt());
@@ -117,6 +113,26 @@ public class UserService {
 
         return userRepository.save(existingUser);
     }
+    public Users addUserVehicles(String userId, List<String> vehicleNumbers) {
+        Users existingUser = userRepository.findById(userId).orElse(null);
+        if (existingUser == null) return null;
+        if (vehicleNumbers == null || vehicleNumbers.isEmpty()) {
+            throw new IllegalArgumentException("Vehicle numbers list cannot be empty.");
+        }
+        List<String> currentVehicles = existingUser.getVehicleNumbers();
+        if (currentVehicles == null) {
+            currentVehicles = new java.util.ArrayList<>();
+        }
+        for (String v : vehicleNumbers) {
+            if (v != null && !v.trim().isEmpty() && !currentVehicles.contains(v.trim())) {
+                currentVehicles.add(v.trim());
+            }
+        }
+        existingUser.setVehicleNumbers(currentVehicles);
+        return userRepository.save(existingUser);
+    }
+
+
 
 
     public void deleteUser(String id) {

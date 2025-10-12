@@ -51,10 +51,16 @@
         <label>Name:</label><input type="text" id="updateUserName" placeholder="Name" /><br />
         <label>Email:</label><input type="email" id="updateUserEmail" placeholder="Email" /><br />
         <label>Phone:</label><input type="text" id="updateUserPhone" placeholder="Phone" /><br />
-        <label>Vehicle Numbers:</label>
-        <input type="text" id="updateUserVehicleNumbers" placeholder="Comma-separated" /><br />
+        <!-- Vehicle Numbers field removed from updateUser as per new API separation -->
         <label>New Password (optional):</label><input type="password" id="updateUserPassword" placeholder="Password" /><br />
         <button onclick="updateUser()">Update</button>
+    </div>
+    <div>
+        <h3>Update User Vehicles</h3>
+        <label>User ID:</label><input type="text" id="updateUserVehiclesUserId" placeholder="User ID" /><br />
+        <label>Vehicle Numbers:</label>
+        <input type="text" id="updateUserVehiclesNumbers" placeholder="Comma-separated, e.g. KA01AB1234, KA02CD5678" /><br />
+        <button onclick="updateUserVehicles()">Update Vehicles</button>
     </div>
     <div>
         <h3>Delete User</h3>
@@ -172,6 +178,15 @@
         <h3>Get All Bookings (Admin)</h3>
         <button onclick="fetchAllBookings()">Get All Bookings</button>
     </div>
+    <div>
+        <h3>Booking Price Breakup</h3>
+        <label>User ID:</label><input type="text" id="breakupUserId" placeholder="User ID" />
+        <label>Booking ID:</label><input type="text" id="breakupBookingId" placeholder="Booking ID" />
+        <button onclick="fetchBookingBreakup(
+            document.getElementById('breakupUserId').value,
+            document.getElementById('breakupBookingId').value
+        )">Get Price Breakup</button>
+    </div>
     <pre id="bookingsResponse" class="response"></pre>
     <h3>Bookings List</h3>
     <table id="bookingsTable">
@@ -196,6 +211,13 @@
         <label>Available:</label><input type="number" id="spotAvailable" placeholder="Available Spots" /><br />
         <button onclick="createSpot()">Create Spot</button>
         <button onclick="resetAllSpots()">Reset All Spots</button>
+    </div>
+    <div>
+        <h3>Parking Spot Details</h3>
+        <label>Spot ID:</label><input type="text" id="parkingSpotDetailsId" placeholder="Spot ID" />
+        <button onclick="fetchParkingSpotDetails(
+            document.getElementById('parkingSpotDetailsId').value
+        )">Get Spot Details</button>
     </div>
     <h3>Parking Spots List</h3>
     <table id="spotsTable">

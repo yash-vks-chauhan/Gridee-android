@@ -27,6 +27,7 @@ public class Bookings {
     private String vehicleNumber;   // just the one picked for this booking
     private boolean qrCodeScanned;
     private Date actualCheckInTime;
+    private Boolean autoCompleted;
 
     public Bookings() {
         this.status = "pending";  // initialize status as pending

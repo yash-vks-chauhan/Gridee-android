@@ -43,6 +43,17 @@ public class UserController {
         }
         return ResponseEntity.ok(user);
     }
+    @PutMapping("/{userId}/vehicles")
+    public ResponseEntity<?> addUserVehicles(@PathVariable String userId, @RequestBody List<String> vehicleNumbers) {
+        try {
+            Users updatedUser = userService.addUserVehicles(userId, vehicleNumbers);
+            if (updatedUser == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            return ResponseEntity.ok(updatedUser.getVehicleNumbers());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
+
 
 
     // Get all users

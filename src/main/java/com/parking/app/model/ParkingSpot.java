@@ -17,7 +17,11 @@ public class ParkingSpot {
     private String zoneName;    // Zone like "TP Avenue Parking"
     private int capacity;       // Total slots in this zone
     private int available;      // Current available slots
-    private String status;      // available | held | active
+    private String status;// available | held | active
+    private double bookingRate;         // Rate per hour or unit
+    private double checkInPenaltyRate;  // Penalty rate per minute for late check-in
+    private double checkOutPenaltyRate;
+    private String description; // Optional description
 
     public ParkingSpot() {}
 }

@@ -102,13 +102,11 @@ async function updateUser() {
     const name = document.getElementById("updateUserName").value.trim();
     const email = document.getElementById("updateUserEmail").value.trim();
     const phone = document.getElementById("updateUserPhone").value.trim();
-    const vehicleNumbers = document.getElementById("updateUserVehicleNumbers").value.split(",").map((v) => v.trim()).filter(Boolean);
     const password = document.getElementById("updateUserPassword").value;
     const payload = {};
     if (name) payload.name = name;
     if (email) payload.email = email;
     if (phone) payload.phone = phone;
-    if (vehicleNumbers.length > 0) payload.vehicleNumbers = vehicleNumbers;
     if (password) payload.passwordHash = password;
     try {
         const res = await fetch(`${baseUrl}/users/${encodeURIComponent(id)}`, {
@@ -120,6 +118,33 @@ async function updateUser() {
             fetchUsers();
         } else {
             alert("Failed to update user");
+        }
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+async function updateUserVehicles() {
+    const userId = document.getElementById("updateUserVehiclesUserId").value.trim();
+    const vehicleNumbers = document.getElementById("updateUserVehiclesNumbers").value
+        .split(",")
+        .map((v) => v.trim())
+        .filter(Boolean);
+    if (!userId || vehicleNumbers.length === 0) {
+        alert("Enter User ID and at least one vehicle number.");
+        return;
+    }
+    try {
+        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/vehicles`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(vehicleNumbers),
+        });
+        if (res.ok) {
+            alert("Vehicle numbers updated successfully!");
+            fetchUsers();
+        } else {
+            const errorText = await res.text();
+            alert("Failed to update vehicles: " + errorText);
         }
     } catch (e) {
         alert("Error: " + e.message);
@@ -159,71 +184,33 @@ async function fetchBookings() {
     }
 }
 function displayBookings(bookings) {
-    const statuses = {
-        pending: [],
-        active: [],
-        completed: []
-    };
+    const tbody = document.querySelector("#bookingsTable tbody");
+    tbody.innerHTML = "";
     bookings.forEach((b) => {
-        const status = (b.status || "").toLowerCase();
-        if (status === "pending") statuses.pending.push(b);
-        else if (status === "active") statuses.active.push(b);
-        else statuses.completed.push(b);
-    });
-
-    function renderTable(bookings, tableId, title) {
-        let section = document.getElementById(tableId);
-        if (!section) {
-            section = document.createElement("div");
-            section.id = tableId;
-            section.innerHTML = `<h3>${title}</h3><table><thead>
-                <tr>
-                    <th>ID</th><th>User</th><th>Spot</th><th>Lot</th>
-                    <th>Check-In</th><th>Check-Out</th><th>Status</th>
-                    <th>Amount</th><th>Vehicle</th><th>QR</th><th>Actions</th>
-                </tr>
-            </thead><tbody></tbody></table>`;
-            document.getElementById("bookingsTable").parentNode.appendChild(section);
+        const qrImg = b.id ? `<img src="https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(b.id)}" alt="QR" width="80" height="80"/>` : "N/A";
+        let actions = "";
+        if (b.status === "pending") {
+            actions = `<button onclick="checkIn('${b.userId}','${b.id}')">Check-in</button>
+                       <button onclick="cancelBooking('${b.userId}','${b.id}')">Cancel</button>`;
+        } else if (b.status === "active") {
+            actions = `<button onclick="checkOut('${b.userId}','${b.id}')">Check-out</button>`;
         }
-        const tbody = section.querySelector("tbody");
-        tbody.innerHTML = "";
-        bookings.forEach((b) => {
-            // QR code is just the booking ID
-            const qrImg = b.id ? `<img src="${getQrCodeImageUrl(b.id)}" alt="QR" width="80" height="80"/>` : "N/A";
-            const tr = document.createElement("tr");
-            let actions = "";
-            if (b.status === "pending") {
-                actions += `<button onclick="checkIn('${b.userId}','${b.id}')">Check In</button> `;
-                actions += `<button onclick="cancelBooking('${b.userId}','${b.id}')">Cancel</button>`;
-            } else if (b.status === "active") {
-                actions += `<button onclick="checkOut('${b.userId}','${b.id}')">Check Out</button> `;
-                actions += `<button onclick="fetchPenaltyInfo('${b.userId}','${b.id}')">Penalty Info</button>`;
-            }
-            tr.innerHTML = `
-                <td>${b.id || ""}</td>
-                <td>${b.userId || ""}</td>
-                <td>${b.spotId || ""}</td>
-                <td>${b.lotId || ""}</td>
-                <td>${b.checkInTime || ""}</td>
-                <td>${b.checkOutTime || ""}</td>
-                <td>${b.status || ""}</td>
-                <td>${b.amount?.toFixed(2) || "0.00"}</td>
-                <td>${b.vehicleNumber || ""}</td>
-                <td>${qrImg}</td>
-                <td>${actions}</td>
-            `;
-            tbody.appendChild(tr);
-        });
-    }
-
-    ["pendingBookings", "activeBookings", "completedBookings"].forEach(id => {
-        const old = document.getElementById(id);
-        if (old) old.remove();
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${b.id || ""}</td>
+            <td>${b.userId || ""}</td>
+            <td>${b.spotId || ""}</td>
+            <td>${b.lotId || ""}</td>
+            <td>${b.checkInTime || ""}</td>
+            <td>${b.checkOutTime || ""}</td>
+            <td>${b.status || ""}</td>
+            <td>${b.amount?.toFixed(2) || "0.00"}</td>
+            <td>${b.vehicleNumber || ""}</td>
+            <td>${qrImg}</td>
+            <td>${actions}</td>
+        `;
+        tbody.appendChild(tr);
     });
-
-    renderTable(statuses.pending, "pendingBookings", "Pending Bookings");
-    renderTable(statuses.active, "activeBookings", "Active Bookings");
-    renderTable(statuses.completed, "completedBookings", "Completed Bookings");
 }
 async function fetchUserVehicles() {
     const userId = bookingsUserIdInput();
@@ -439,7 +426,6 @@ async function fetchFilteredBookings(status, lotId, fromDate, toDate, page, size
 async function checkIn(userId, bookingId) {
     try {
         const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/checkin`;
-        // Send bookingId as qrCode in body
         const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -458,7 +444,6 @@ async function checkIn(userId, bookingId) {
 async function checkOut(userId, bookingId) {
     try {
         const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/checkout`;
-        // Send bookingId as qrCode in body
         const res = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -504,6 +489,34 @@ async function fetchPenaltyInfo(userId, bookingId) {
     }
 }
 
+// Booking Price Breakup
+async function fetchBookingBreakup(userId, bookingId) {
+    if (!userId || !bookingId) {
+        alert("User ID and Booking ID required for price breakup.");
+        return;
+    }
+    try {
+        const url = `${baseUrl}/users/${encodeURIComponent(userId)}/bookings/${encodeURIComponent(bookingId)}/breakup`;
+        const res = await fetch(url);
+        if (!res.ok) {
+            const errorText = await res.text();
+            alert("Failed to fetch price breakup: " + errorText);
+            return;
+        }
+        const breakup = await res.json();
+        displayBookingBreakup(breakup);
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+function displayBookingBreakup(breakup) {
+    let msg = "Price Breakup:\n";
+    for (const [key, value] of Object.entries(breakup)) {
+        msg += `${key}: ${value}\n`;
+    }
+    alert(msg);
+}
+
 // Get all bookings
 async function fetchAllBookings() {
     try {
@@ -527,7 +540,7 @@ async function resetAllSpots() {
         const res = await fetch(`${baseUrl}/admin/reset-spots`, { method: "POST" });
         if (res.ok) {
             alert("All parking spots have been reset.");
-            fetchSpots(); // Refresh the spots table
+            fetchSpots();
         } else {
             const errorText = await res.text();
             alert("Failed to reset spots: " + errorText);
@@ -536,7 +549,6 @@ async function resetAllSpots() {
         alert("Error: " + e.message);
     }
 }
-
 async function fetchSpots() {
     const res = await fetch(`${baseUrl}/parking-spots`);
     if (!res.ok) { alert("Failed to fetch parking spots"); return; }
@@ -598,6 +610,32 @@ async function deleteSpot(id) {
     } catch (e) {
         alert("Error: " + e.message);
     }
+}
+async function fetchParkingSpotDetails(spotId) {
+    if (!spotId) {
+        alert("Enter Spot ID to fetch details.");
+        return;
+    }
+    try {
+        const res = await fetch(`${baseUrl}/parking-spots/${encodeURIComponent(spotId)}`);
+        if (!res.ok) {
+            alert("Failed to fetch parking spot details.");
+            return;
+        }
+        const spot = await res.json();
+        displayParkingSpotDetails(spot);
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+function displayParkingSpotDetails(spot) {
+    let msg = `Spot Details:
+ID: ${spot.id}
+Lot ID: ${spot.lotId}
+Zone: ${spot.zoneName}
+Capacity: ${spot.capacity}
+Available: ${spot.available}`;
+    alert(msg);
 }
 
 // LOTS
@@ -663,163 +701,6 @@ async function deleteLot(id) {
 }
 
 // WALLET
-//async function fetchWallet() {
-//    const userId = document.getElementById("walletUserId").value.trim();
-//    if (!userId) { alert("Enter User ID"); return; }
-//    try {
-//        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet`);
-//        if (!res.ok) { alert("Wallet not found"); return; }
-//        const wallet = await res.json();
-//        displayWallet(wallet);
-//        document.getElementById("walletResponse").textContent = "Wallet fetched successfully";
-//    } catch (e) {
-//        alert("Error: " + e.message);
-//    }
-//}
-//// Add to WALLET section
-//
-//// Initiate payment (calls backend, shows orderId)
-//async function initiateWalletPayment() {
-//    const userId = document.getElementById("topUpUserId").value.trim();
-//    const amount = parseFloat(document.getElementById("topUpAmount").value);
-//    if (!userId || isNaN(amount) || amount <= 0) {
-//        alert("Enter valid User ID and amount (positive number)");
-//        return;
-//    }
-//    try {
-//        const res = await fetch(`${baseUrl}/payments/initiate`, {
-//            method: "POST",
-//            headers: { "Content-Type": "application/json" },
-//            body: JSON.stringify({ userId, amount }),
-//        });
-//        const data = await res.json();
-//        if (res.ok && data.orderId) {
-//            document.getElementById("walletResponse").textContent = "Payment order created: " + data.orderId;
-//            // For demo: simulate payment success after 2s
-//            setTimeout(() => {
-//                handleWalletPaymentCallback(data.orderId, "payment_test_" + Date.now(), true, userId, amount);
-//            }, 2000);
-//        } else {
-//            alert("Failed to initiate payment: " + (data.error || ""));
-//        }
-//    } catch (e) {
-//        alert("Error: " + e.message);
-//    }
-//}
-//
-//// Simulate payment callback (in real, this is from Razorpay/webhook)
-//async function handleWalletPaymentCallback(orderId, paymentId, success, userId, amount) {
-//    try {
-//        const res = await fetch(`${baseUrl}/payments/callback`, {
-//            method: "POST",
-//            headers: { "Content-Type": "application/json" },
-//            body: JSON.stringify({ orderId, paymentId, success, userId, amount }),
-//        });
-//        const data = await res.json();
-//        if (res.ok && data.status === "success") {
-//            document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
-//            fetchWallet();
-//        } else {
-//            alert("Payment failed: " + (data.error || ""));
-//        }
-//    } catch (e) {
-//        alert("Error: " + e.message);
-//    }
-//}
-//
-//async function topUpWallet() {
-//    const userId = document.getElementById("topUpUserId").value.trim();
-//    const amount = parseFloat(document.getElementById("topUpAmount").value);
-//    if (!userId || isNaN(amount) || amount <= 0) {
-//        alert("Enter valid User ID and amount (positive number)");
-//        return;
-//    }
-//    try {
-//        const res = await fetch(`${baseUrl}/payments/initiate`, {
-//            method: "POST",
-//            headers: { "Content-Type": "application/json" },
-//            body: JSON.stringify({ userId, amount }),
-//        });
-//        const data = await res.json();
-//        if (res.ok && data.orderId) {
-//            const options = {
-//                key: "YOUR_RAZORPAY_KEY", // Replace with your Razorpay test key
-//                amount: amount * 100,
-//                currency: "INR",
-//                name: "Parking App Wallet Top-Up",
-//                description: "Wallet Recharge",
-//                order_id: data.orderId,
-//                handler: async function (response) {
-//                    await fetch(`${baseUrl}/payments/callback`, {
-//                        method: "POST",
-//                        headers: { "Content-Type": "application/json" },
-//                        body: JSON.stringify({
-//                            orderId: data.orderId,
-//                            paymentId: response.razorpay_payment_id,
-//                            success: true,
-//                            userId,
-//                            amount
-//                        }),
-//                    });
-//                    document.getElementById("walletResponse").textContent = "Wallet top-up successful!";
-//                    fetchWallet();
-//                },
-//                prefill: { email: "", contact: "" },
-//                theme: { color: "#3399cc" }
-//            };
-//            const rzp = new Razorpay(options);
-//            rzp.open();
-//        } else {
-//            alert("Failed to initiate payment: " + (data.error || ""));
-//        }
-//    } catch (e) {
-//        alert("Error: " + e.message);
-//    }
-//}
-
-// Optionally, add a button in your HTML for "Simulate Payment Success" if you want manual control
-//function displayWallet(wallet) {
-//    const tbody = document.querySelector("#walletTable tbody");
-//    tbody.innerHTML = "";
-//    const tr = document.createElement("tr");
-//    tr.innerHTML = `
-//    <td>${wallet.id || ""}</td>
-//    <td>${wallet.userId || ""}</td>
-//    <td>${wallet.balance?.toFixed(2) || "0.00"}</td>
-//    <td>${wallet.lastUpdated ? new Date(wallet.lastUpdated).toLocaleString() : ""}</td>
-//`;
-//    tbody.appendChild(tr);
-//}
-//async function fetchWalletTransactions() {
-//    const userId = document.getElementById("walletUserId").value.trim();
-//    if (!userId) { alert("Enter User ID"); return; }
-//    try {
-//        const res = await fetch(`${baseUrl}/users/${encodeURIComponent(userId)}/wallet/transactions`);
-//        if (!res.ok) { alert("Failed to fetch wallet transactions"); return; }
-//        const txs = await res.json();
-//        displayWalletTransactions(txs);
-//    } catch (e) {
-//        alert("Error: " + e.message);
-//    }
-//}
-//function displayWalletTransactions(txs) {
-//    const tbody = document.querySelector("#walletTxTable tbody");
-//    tbody.innerHTML = "";
-//    txs.forEach((tx) => {
-//        const tr = document.createElement("tr");
-//        tr.innerHTML = `
-//        <td>${tx.referenceId || ""}</td>
-//        <td>${tx.type || ""}</td>
-//        <td>${tx.amount?.toFixed(2) || "0.00"}</td>
-//        <td>${tx.method || ""}</td>
-//        <td>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : ""}</td>
-//        <td>${tx.status || ""}</td>
-//    `;
-//        tbody.appendChild(tr);
-//    });
-//}
-// WALLET
-
 async function fetchWallet() {
     const userId = document.getElementById("walletUserId").value.trim();
     if (!userId) { alert("Enter User ID"); return; }
@@ -833,8 +714,6 @@ async function fetchWallet() {
         alert("Error: " + e.message);
     }
 }
-
-// Replace "YOUR_RAZORPAY_KEY" with your actual Razorpay key
 async function topUpWallet() {
     const userId = document.getElementById("topUpUserId").value.trim();
     const amount = parseFloat(document.getElementById("topUpAmount").value);
@@ -843,7 +722,6 @@ async function topUpWallet() {
         return;
     }
     try {
-        // Step 1: Initiate payment order from backend
         const res = await fetch(`${baseUrl}/payments/initiate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -851,16 +729,14 @@ async function topUpWallet() {
         });
         const data = await res.json();
         if (res.ok && data.orderId) {
-            // Step 2: Open Razorpay payment modal
             const options = {
-                key: "rzp_test_RS3SKqbTQFAamy", // <-- Set your Razorpay key here
+                key: "rzp_test_RS3SKqbTQFAamy",
                 amount: amount * 100,
                 currency: "INR",
                 name: "Parking App Wallet Top-Up",
                 description: "Wallet Recharge",
                 order_id: data.orderId,
                 handler: async function (response) {
-                    // Step 3: On payment success, notify backend to top up wallet
                     const callbackRes = await fetch(`${baseUrl}/payments/callback`, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -891,7 +767,6 @@ async function topUpWallet() {
         alert("Error: " + e.message);
     }
 }
-
 async function deductPenalty() {
     const userId = document.getElementById("walletUserId").value.trim();
     const penalty = parseFloat(document.getElementById("penaltyAmount").value);
@@ -917,7 +792,6 @@ async function deductPenalty() {
         alert("Error: " + e.message);
     }
 }
-
 async function fetchWalletTransactions() {
     const userId = document.getElementById("walletUserId").value.trim();
     if (!userId) { alert("Enter User ID"); return; }
@@ -930,7 +804,6 @@ async function fetchWalletTransactions() {
         alert("Error: " + e.message);
     }
 }
-
 function displayWallet(wallet) {
     const tbody = document.querySelector("#walletTable tbody");
     tbody.innerHTML = "";
@@ -943,7 +816,6 @@ function displayWallet(wallet) {
     `;
     tbody.appendChild(tr);
 }
-
 function displayWalletTransactions(txs) {
     const tbody = document.querySelector("#walletTxTable tbody");
     tbody.innerHTML = "";
@@ -960,7 +832,6 @@ function displayWalletTransactions(txs) {
         tbody.appendChild(tr);
     });
 }
-
 
 // Initialize on page load
 showSection("users");

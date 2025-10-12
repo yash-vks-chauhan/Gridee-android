@@ -41,6 +41,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-actuator-autoconfigure'
     implementation 'org.json:json:20240303'
     implementation 'com.razorpay:razorpay-java:1.4.4'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    
 
 }
 

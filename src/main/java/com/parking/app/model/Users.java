@@ -1,3 +1,4 @@
+// src/main/java/com/parking/app/model/Users.java
 package com.parking.app.model;
 
 import lombok.Getter;
@@ -22,11 +23,17 @@ public class Users {
     private int walletCoins;
     private Date createdAt;
     private String passwordHash;  // Store hashed password securely
+    private Role role;            // Add this field
 
     public Users() {
         this.createdAt = new Date();
         this.walletCoins = 0;
         this.firstUser = true;
+        this.role = Role.USER;    // Default role
+    }
+
+    public enum Role {
+        USER,
+        ADMIN
     }
 }
-
