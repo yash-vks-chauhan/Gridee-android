@@ -1,6 +1,8 @@
 package com.parking.app.controller;
 
+import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
+import com.parking.app.service.BookingService;
 import com.parking.app.service.ParkingSpotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,6 +19,8 @@ public class ParkingSpotController {
 
     @Autowired
     private ParkingSpotService parkingSpotService;
+    @Autowired
+    private BookingService bookingService;
 
     @GetMapping
     public ResponseEntity<List<ParkingSpot>> getAllParkingSpots() {
@@ -90,7 +94,8 @@ public class ParkingSpotController {
             @RequestParam String lotId,
             @RequestParam ZonedDateTime startTime,
             @RequestParam ZonedDateTime endTime) {
-        List<ParkingSpot> availableSpots = parkingSpotService.getAvailableSpots(lotId, startTime, endTime);
+        List<Bookings> overlappingBookings = bookingService.findByLotIdAndTimeWindow(lotId, startTime, endTime);
+        List<ParkingSpot> availableSpots = parkingSpotService.getAvailableSpots(lotId, startTime, endTime,overlappingBookings);
         return ResponseEntity.ok(availableSpots);
     }
 
@@ -104,5 +109,15 @@ public class ParkingSpotController {
     @Scheduled(cron = "0 0 20 * * *") // Runs every day at 8 pm server time
     public void scheduledResetAllSpotsCapacity() {
         resetAllSpotsCapacity();
+    }
+
+    @PostMapping("/admin/reset-spots")
+    public ResponseEntity<String> resetAllSpots() {
+        try {
+            parkingSpotService.resetParkingSpotsAvailability();
+            return ResponseEntity.ok("All parking spots have been reset to max capacity.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");
+        }
     }
 }

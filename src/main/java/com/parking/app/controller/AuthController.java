@@ -3,7 +3,10 @@ package com.parking.app.controller;
 import com.parking.app.config.JwtUtil;
 import com.parking.app.model.Users;
 import com.parking.app.service.UserService;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,18 +33,38 @@ public class AuthController {
                 "token", token,
                 "id", user.getId(),
                 "name", user.getName(),
-                "role", user.getRole().name()
+                "role", user.getRole().name(),
+                "parkingLotId", user.getParkingLotId(),
+                "parkingLotName", user.getParkingLotName()
         );
         return ResponseEntity.ok(response);
     }
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@RequestBody Users user) {
+        try {
+            String parkingLotName = user.getParkingLotName();
+            Users createdUser = userService.createUser(user, parkingLotName);
+            String token = jwtUtil.generateToken(createdUser.getId(), createdUser.getRole().name());
+            System.out.println(token);
+            Map<String, Object> response = Map.of(
+                    "token", token,
+                    "id", createdUser.getId(),
+                    "name", createdUser.getName(),
+                    "role", createdUser.getRole().name(),
+                    "parkingLotName", createdUser.getParkingLotName()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
+        }
+    }
 
+    @Getter
+    @Setter
     public static class LoginRequest {
         private String email;
         private String password;
-
-        public String getEmail() { return email; }
-        public void setEmail(String email) { this.email = email; }
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
     }
 }

@@ -1,6 +1,16 @@
 // src/main/resources/static/script.js
 
 const baseUrl = window.location.origin + "/api";
+fetch('/api/protected-endpoint', {
+  headers: {
+    'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+  }
+})
+.then(response => response.json())
+.then(data => {
+  // handle data
+});
+
 
 function pad(n) { return n < 10 ? "0" + n : n; }
 function toBackendIsoString(dtStr) {
@@ -57,6 +67,8 @@ function clearResponseAndTable(name) {
 
 // USERS
 async function fetchUsers() {
+    const jwt = localStorage.getItem('jwtToken');
+    const headers = jwt ? { 'Authorization': 'Bearer ' + jwt } : {};
     const res = await fetch(`${baseUrl}/users`);
     const data = await res.json();
     displayUsers(data);
@@ -84,7 +96,7 @@ async function createUser() {
         return;
     }
     try {
-        const res = await fetch(`${baseUrl}/users/register`, {
+        const res = await fetch(`${baseUrl}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, email, phone, passwordHash: password, role, parkingLotName }), // <-- Add parkingLotName here

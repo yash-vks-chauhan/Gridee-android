@@ -276,16 +276,6 @@ public class BookingController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
     }
-    @PostMapping("/admin/reset-spots")
-    public ResponseEntity<String> resetAllSpots() {
-        try {
-            bookingService.resetParkingSpotsAvailability();
-            return ResponseEntity.ok("All parking spots have been reset to max capacity.");
-        } catch (Exception e) {
-            logger.error("Error resetting parking spots: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");
-        }
-    }
 
     // --- QR validation for check-in: expects { "qrCode": "..." } in body ---
     @PostMapping("/users/{userId}/bookings/{bookingId}/validate-qr-checkin")

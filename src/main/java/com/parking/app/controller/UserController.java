@@ -22,26 +22,6 @@ public class UserController {
 
     // Register user - create with validation and hashing handled in service
 
-    @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@RequestBody Users user) {
-        try {
-            String parkingLotName = user.getParkingLotName();
-            Users createdUser = userService.createUser(user, parkingLotName);
-            String token = jwtUtil.generateToken(createdUser.getId(), createdUser.getRole().name());
-            Map<String, Object> response = Map.of(
-                    "token", token,
-                    "id", createdUser.getId(),
-                    "name", createdUser.getName(),
-                    "role", createdUser.getRole().name()
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
-        }
-    }
-
 
 
     // Login user - authenticate by email/phone and password (accepts JSON)

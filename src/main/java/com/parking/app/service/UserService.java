@@ -101,6 +101,9 @@ public class UserService {
     public Users getUserById(String id) {
         return userRepository.findById(id).orElse(null);
     }
+    public java.util.Optional<Users> findById(String userId) {
+        return userRepository.findById(userId);
+    }
 
     public Users updateUser(String id, Users userDetails) {
         Users existingUser = userRepository.findById(id).orElse(null);

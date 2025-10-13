@@ -1,36 +1,25 @@
 package com.parking.app.service;
 
 import com.parking.app.exception.ConflictException;
+import com.parking.app.exception.IllegalStateException;
 import com.parking.app.exception.InsufficientFundsException;
 import com.parking.app.exception.NotFoundException;
-import com.parking.app.exception.IllegalStateException;
-import com.parking.app.model.Bookings;
-import com.parking.app.model.ParkingSpot;
-import com.parking.app.model.Users;
-import com.parking.app.model.Wallet;
-import com.parking.app.model.Transactions;
+import com.parking.app.model.*;
 import com.parking.app.repository.BookingRepository;
-import com.parking.app.repository.UserRepository;
-import com.parking.app.repository.WalletRepository;
-import com.parking.app.repository.TransactionsRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -40,24 +29,26 @@ public class BookingService {
     private static final int NO_SHOW_MINUTES = 30;
 
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
-    private final WalletRepository walletRepository;
-    private final TransactionsRepository transactionsRepository;
     private final MongoOperations mongoOperations;
+    private final UserService userService;
+    private final WalletService walletService;
+    private final TransactionService transactionService;
+    private final ParkingSpotService parkingSpotService;
 
-    @Autowired
     public BookingService(
             BookingRepository bookingRepository,
-            UserRepository userRepository,
-            WalletRepository walletRepository,
-            TransactionsRepository transactionsRepository,
-            MongoOperations mongoOperations
+            MongoOperations mongoOperations,
+            UserService userService,
+            WalletService walletService,
+            TransactionService transactionService,
+            ParkingSpotService parkingSpotService
     ) {
         this.bookingRepository = bookingRepository;
-        this.userRepository = userRepository;
-        this.walletRepository = walletRepository;
-        this.transactionsRepository = transactionsRepository;
         this.mongoOperations = mongoOperations;
+        this.userService = userService;
+        this.walletService = walletService;
+        this.transactionService = transactionService;
+        this.parkingSpotService = parkingSpotService;
     }
 
     private Bookings findBookingOrThrow(String bookingId) {
@@ -114,21 +105,29 @@ public class BookingService {
         validateTimes(checkInTime, checkOutTime);
         validateBookingWindow(checkInTime, checkOutTime);
 
-        ParkingSpot spot = mongoOperations.findById(spotId, ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.getParkingSpotById(spotId);
         if (spot == null) throw new NotFoundException("Parking spot not found");
 
         double amount = calculateCharge(checkInTime, checkOutTime, spot.getBookingRate());
 
-        Users user = userRepository.findById(userId)
+        Users user = userService.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
 
-        Wallet wallet = walletRepository.findByUserId(userId)
+        Wallet wallet = walletService.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("Wallet not found"));
 
         if (!hasSufficientBalance(wallet, amount)) {
             throw new InsufficientFundsException();
         }
 
+        ensureNoBookingOverlap(spotId, checkInTime, checkOutTime);
+        parkingSpotService.decrementSpotAvailability(spotId);
+        deductWalletBalance(wallet,amount);
+        recordWalletTransaction(userId, -amount, "Booking charge");
+        return createAndSaveBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber, amount);
+    }
+
+    private void ensureNoBookingOverlap(String spotId, ZonedDateTime checkInTime, ZonedDateTime checkOutTime) {
         Query overlapQuery = new Query(
                 Criteria.where("spotId").is(spotId)
                         .andOperator(
@@ -140,23 +139,19 @@ public class BookingService {
         if (mongoOperations.exists(overlapQuery, Bookings.class)) {
             throw new ConflictException("Booking time overlaps with an existing booking for this spot");
         }
+    }
 
-        Query spotQuery = new Query(Criteria.where("_id").is(spotId).and("available").gt(0));
-        Update decUpdate = new Update().inc("available", -1);
-
-        ParkingSpot updatedSpot = mongoOperations.findAndModify(
-                spotQuery, decUpdate, ParkingSpot.class);
-
-        if (updatedSpot == null) {
-            throw new ConflictException("No spots available");
-        }
-
-        // Deduct booking amount at booking time
+    private void deductWalletBalance(Wallet wallet, double amount) {
         wallet.setBalance(wallet.getBalance() - amount);
         wallet.setLastUpdated(new Date());
-        walletRepository.save(wallet);
-        transactionsRepository.save(new Transactions(userId, -amount, "Booking charge", new Date()));
+        walletService.save(wallet);
+    }
 
+    private void recordWalletTransaction(String userId, double amount, String description) {
+        transactionService.save(new Transactions(userId, amount, description, new Date()));
+    }
+
+    private Bookings createAndSaveBooking(String spotId, String userId, String lotId, ZonedDateTime checkInTime, ZonedDateTime checkOutTime, String vehicleNumber, double amount) {
         Bookings booking = new Bookings();
         booking.setSpotId(spotId);
         booking.setUserId(userId);
@@ -171,14 +166,6 @@ public class BookingService {
         booking.setActualCheckInTime(null);
         booking.setAutoCompleted(false);
         return bookingRepository.save(booking);
-    }
-
-    private void ensureAvailableNotExceedCapacity(String spotId) {
-        ParkingSpot spot = mongoOperations.findById(spotId, ParkingSpot.class);
-        if (spot != null && spot.getAvailable() > spot.getCapacity()) {
-            spot.setAvailable(spot.getCapacity());
-            mongoOperations.save(spot);
-        }
     }
 
     public Bookings confirmBooking(String bookingId) {
@@ -206,7 +193,7 @@ public class BookingService {
             throw new ConflictException("User already has an active booking");
         }
 
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
 
         ZonedDateTime now = ZonedDateTime.now();
@@ -231,7 +218,7 @@ public class BookingService {
             throw new java.lang.IllegalStateException("Invalid QR code for checkout");
         }
 
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
 
         ZonedDateTime now = ZonedDateTime.now();
@@ -243,45 +230,47 @@ public class BookingService {
 
         double lateCheckInPenalty = calculatePenaltyWithGrace(scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
         double lateCheckOutPenalty = calculatePenaltyWithGrace(scheduledEnd, now, spot.getCheckOutPenaltyRate());
-
-        // Penalties are charged at check-out
         double totalPenalty = lateCheckInPenalty + lateCheckOutPenalty;
 
         if (totalPenalty > 0) {
-            Wallet wallet = walletRepository.findByUserId(booking.getUserId())
-                    .orElseThrow(() -> new NotFoundException("Wallet not found"));
-            if (!hasSufficientBalance(wallet, totalPenalty)) {
-                throw new InsufficientFundsException();
-            }
-            wallet.setBalance(wallet.getBalance() - totalPenalty);
-            wallet.setLastUpdated(new Date());
-            walletRepository.save(wallet);
-
-            if (lateCheckInPenalty > 0) {
-                transactionsRepository.save(new Transactions(booking.getUserId(), -lateCheckInPenalty, "Late check-in penalty", new Date()));
-            }
-            if (lateCheckOutPenalty > 0) {
-                transactionsRepository.save(new Transactions(booking.getUserId(), -lateCheckOutPenalty, "Late check-out penalty", new Date()));
-            }
+            applyPenaltyToWalletAndTransactions(booking.getUserId(), totalPenalty, lateCheckInPenalty, lateCheckOutPenalty);
         }
 
+        updateBookingForCheckout(booking, now);
+        parkingSpotService.incrementSpotAvailability(booking.getSpotId());
+        applyBreakupAndRefund(booking);
+        return bookingRepository.save(booking);
+    }
+
+    private void applyPenaltyToWalletAndTransactions(String userId, double totalPenalty, double lateCheckInPenalty, double lateCheckOutPenalty) {
+        Wallet wallet = walletService.findByUserId(userId)
+                .orElseThrow(() -> new NotFoundException("Wallet not found"));
+        if (!hasSufficientBalance(wallet, totalPenalty)) {
+            throw new InsufficientFundsException();
+        }
+        wallet.setBalance(wallet.getBalance() - totalPenalty);
+        wallet.setLastUpdated(new Date());
+        walletService.save(wallet);
+        if (lateCheckInPenalty > 0) {
+            transactionService.save(new Transactions(userId, -lateCheckInPenalty, "Late check-in penalty", new Date()));
+        }
+        if (lateCheckOutPenalty > 0) {
+            transactionService.save(new Transactions(userId, -lateCheckOutPenalty, "Late check-out penalty", new Date()));
+        }
+    }
+
+    private void updateBookingForCheckout(Bookings booking, ZonedDateTime now) {
         booking.setStatus("completed");
         booking.setCheckOutTime(Date.from(now.toInstant()));
         booking.setQrCodeScanned(true);
         booking.setActualCheckInTime(booking.getActualCheckInTime());
         booking.setAutoCompleted(false);
-
-        Update incUpdate = new Update().inc("available", 1);
-        mongoOperations.updateFirst(new Query(Criteria.where("_id").is(booking.getSpotId())), incUpdate, ParkingSpot.class);
-        ensureAvailableNotExceedCapacity(booking.getSpotId());
-
-        // Generate breakup and apply subtotal/refund
-        generateAndApplyBookingBreakup(booking);
-
-        return bookingRepository.save(booking);
     }
 
-    @Scheduled(cron = "0 * * * * *")
+    private void applyBreakupAndRefund(Bookings booking) {
+        generateAndApplyBookingBreakup(booking);
+    }
+
     public void autoCompleteLateBookings() {
         ZonedDateTime now = ZonedDateTime.now();
         Query query = new Query(Criteria.where("status").is("active")
@@ -289,143 +278,44 @@ public class BookingService {
                 .and("qrCodeScanned").ne(true));
         List<Bookings> lateBookings = mongoOperations.find(query, Bookings.class);
         for (Bookings booking : lateBookings) {
-            ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
-            if (spot == null) continue;
-
-            ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(booking.getCheckInTime().toInstant(), now.getZone());
-            ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), now.getZone());
-            ZonedDateTime actualCheckIn = booking.getActualCheckInTime() != null
-                    ? ZonedDateTime.ofInstant(booking.getActualCheckInTime().toInstant(), now.getZone())
-                    : scheduledCheckIn;
-
-            double lateCheckInPenalty = calculatePenaltyWithGrace(scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
-            double lateCheckOutPenalty = calculatePenaltyWithGrace(scheduledEnd, now, spot.getCheckOutPenaltyRate());
-            double totalPenalty = lateCheckInPenalty + lateCheckOutPenalty;
-
-            if (totalPenalty > 0) {
-                Wallet wallet = walletRepository.findByUserId(booking.getUserId()).orElse(null);
-                if (wallet != null && hasSufficientBalance(wallet, totalPenalty)) {
-                    wallet.setBalance(wallet.getBalance() - totalPenalty);
-                    wallet.setLastUpdated(new Date());
-                    walletRepository.save(wallet);
-
-                    if (lateCheckInPenalty > 0) {
-                        transactionsRepository.save(new Transactions(booking.getUserId(), -lateCheckInPenalty, "Late check-in penalty", new Date()));
-                    }
-                    if (lateCheckOutPenalty > 0) {
-                        transactionsRepository.save(new Transactions(booking.getUserId(), -lateCheckOutPenalty, "Late check-out penalty", new Date()));
-                    }
-                }
-            }
-            booking.setStatus("completed");
-            booking.setQrCodeScanned(false);
-            booking.setAutoCompleted(true);
-            bookingRepository.save(booking);
-
-            Update incUpdate = new Update().inc("available", 1);
-            mongoOperations.updateFirst(new Query(Criteria.where("_id").is(booking.getSpotId())), incUpdate, ParkingSpot.class);
-            ensureAvailableNotExceedCapacity(booking.getSpotId());
-
-            // Generate breakup and apply subtotal/refund
-            generateAndApplyBookingBreakup(booking);
+            autoCompleteSingleLateBooking(booking, now);
         }
         // Auto-cancel no-shows (no refund)
         Query noShowQuery = new Query(Criteria.where("status").is("pending")
                 .and("checkInTime").lt(Date.from(now.minusMinutes(NO_SHOW_MINUTES).toInstant())));
         List<Bookings> noShowBookings = mongoOperations.find(noShowQuery, Bookings.class);
         for (Bookings booking : noShowBookings) {
-            booking.setStatus("cancelled");
-            bookingRepository.save(booking);
-
-            Update incUpdate = new Update().inc("available", 1);
-            mongoOperations.updateFirst(new Query(Criteria.where("_id").is(booking.getSpotId())), incUpdate, ParkingSpot.class);
-            ensureAvailableNotExceedCapacity(booking.getSpotId());
-
-            // Generate breakup and apply subtotal/refund
-            generateAndApplyBookingBreakup(booking);
+            autoCancelNoShowBooking(booking);
         }
     }
 
-    public Bookings extendBooking(String bookingId, ZonedDateTime newCheckOutTime) {
-        Bookings booking = findBookingOrThrow(bookingId);
-        if (!"active".equalsIgnoreCase(booking.getStatus())) {
-            throw new java.lang.IllegalStateException("Only active bookings can be extended");
+    private void autoCompleteSingleLateBooking(Bookings booking, ZonedDateTime now) {
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
+        if (spot == null) return;
+        ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(booking.getCheckInTime().toInstant(), now.getZone());
+        ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), now.getZone());
+        ZonedDateTime actualCheckIn = booking.getActualCheckInTime() != null
+                ? ZonedDateTime.ofInstant(booking.getActualCheckInTime().toInstant(), now.getZone())
+                : scheduledCheckIn;
+        double lateCheckInPenalty = calculatePenaltyWithGrace(scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
+        double lateCheckOutPenalty = calculatePenaltyWithGrace(scheduledEnd, now, spot.getCheckOutPenaltyRate());
+        double totalPenalty = lateCheckInPenalty + lateCheckOutPenalty;
+        if (totalPenalty > 0) {
+            applyPenaltyToWalletAndTransactions(booking.getUserId(), totalPenalty, lateCheckInPenalty, lateCheckOutPenalty);
         }
-        ZonedDateTime currentCheckOut = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), newCheckOutTime.getZone());
-        if (!newCheckOutTime.isAfter(currentCheckOut)) {
-            throw new IllegalArgumentException("New check-out time must be after current check-out time");
-        }
-        Query overlapQuery = new Query(
-                Criteria.where("spotId").is(booking.getSpotId())
-                        .andOperator(
-                                Criteria.where("status").in("pending", "active"),
-                                Criteria.where("checkInTime").lt(Date.from(newCheckOutTime.toInstant())),
-                                Criteria.where("checkOutTime").gt(Date.from(currentCheckOut.toInstant())),
-                                Criteria.where("_id").ne(bookingId)
-                        )
-        );
-        if (mongoOperations.exists(overlapQuery, Bookings.class)) {
-            throw new ConflictException("Cannot extend: spot is booked for the requested time");
-        }
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
-        if (spot == null) throw new NotFoundException("Parking spot not found");
-
-        double newAmount = calculateCharge(
-                ZonedDateTime.ofInstant(booking.getCheckInTime().toInstant(), newCheckOutTime.getZone()),
-                newCheckOutTime,
-                spot.getBookingRate()
-        );
-        double diff = newAmount - booking.getAmount();
-        if (diff > 0) {
-            Wallet wallet = walletRepository.findByUserId(booking.getUserId())
-                    .orElseThrow(() -> new NotFoundException("Wallet not found"));
-            if (!hasSufficientBalance(wallet, diff)) {
-                throw new InsufficientFundsException();
-            }
-            wallet.setBalance(wallet.getBalance() - diff);
-            wallet.setLastUpdated(new Date());
-            walletRepository.save(wallet);
-            transactionsRepository.save(new Transactions(booking.getUserId(), -diff, "Booking extension charge", new Date()));
-        }
-        booking.setCheckOutTime(Date.from(newCheckOutTime.toInstant()));
-        booking.setAmount(newAmount);
-        return bookingRepository.save(booking);
+        booking.setStatus("completed");
+        booking.setQrCodeScanned(false);
+        booking.setAutoCompleted(true);
+        bookingRepository.save(booking);
+        parkingSpotService.incrementSpotAvailability(booking.getSpotId());
+        applyBreakupAndRefund(booking);
     }
 
-    public boolean cancelBooking(String bookingId) {
-        Bookings booking = findBookingOrThrow(bookingId);
-        if ("cancelled".equalsIgnoreCase(booking.getStatus())) {
-            return false;
-        }
-        // Only refund if not auto-cancelled (no-show)
-        if ("pending".equalsIgnoreCase(booking.getStatus()) || "active".equalsIgnoreCase(booking.getStatus())) {
-            Wallet wallet = walletRepository.findByUserId(booking.getUserId())
-                    .orElseThrow(() -> new NotFoundException("Wallet not found"));
-            wallet.setBalance(wallet.getBalance() + booking.getAmount());
-            wallet.setLastUpdated(new Date());
-            walletRepository.save(wallet);
-            transactionsRepository.save(new Transactions(booking.getUserId(), booking.getAmount(), "Booking refund", new Date()));
-        }
-
-        Update incUpdate = new Update().inc("available", 1);
-        mongoOperations.updateFirst(new Query(Criteria.where("_id").is(booking.getSpotId())), incUpdate, ParkingSpot.class);
-        ensureAvailableNotExceedCapacity(booking.getSpotId());
+    private void autoCancelNoShowBooking(Bookings booking) {
         booking.setStatus("cancelled");
         bookingRepository.save(booking);
-
-        // Generate breakup and apply subtotal/refund
-        generateAndApplyBookingBreakup(booking);
-
-        return true;
-    }
-
-    @Scheduled(cron = "0 0 20 * * *", zone = "Asia/Kolkata")
-    public void resetParkingSpotsAvailability() {
-        List<ParkingSpot> spots = mongoOperations.findAll(ParkingSpot.class);
-        for (ParkingSpot spot : spots) {
-            spot.setAvailable(spot.getCapacity());
-            mongoOperations.save(spot);
-        }
+        parkingSpotService.incrementSpotAvailability(booking.getSpotId());
+        applyBreakupAndRefund(booking);
     }
 
     public List<Bookings> getAllBookingsFiltered(
@@ -457,7 +347,7 @@ public class BookingService {
     }
 
     public List<String> getVehicleNumbersByUserId(String userId) {
-        Users user = userRepository.findById(userId)
+        Users user = userService.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
         return user.getVehicleNumbers();
     }
@@ -468,6 +358,52 @@ public class BookingService {
 
     public Bookings getBookingById(String id) {
         return bookingRepository.findById(id).orElse(null);
+    }
+
+    public Bookings extendBooking(String bookingId, ZonedDateTime newCheckOutTime) {
+        Bookings booking = findBookingOrThrow(bookingId);
+        if (!"active".equalsIgnoreCase(booking.getStatus())) {
+            throw new java.lang.IllegalStateException("Only active bookings can be extended");
+        }
+        ZonedDateTime currentCheckOut = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), newCheckOutTime.getZone());
+        if (!newCheckOutTime.isAfter(currentCheckOut)) {
+            throw new IllegalArgumentException("New check-out time must be after current check-out time");
+        }
+        Query overlapQuery = new Query(
+                Criteria.where("spotId").is(booking.getSpotId())
+                        .andOperator(
+                                Criteria.where("status").in("pending", "active"),
+                                Criteria.where("checkInTime").lt(Date.from(newCheckOutTime.toInstant())),
+                                Criteria.where("checkOutTime").gt(Date.from(currentCheckOut.toInstant())),
+                                Criteria.where("_id").ne(bookingId)
+                        )
+        );
+        if (mongoOperations.exists(overlapQuery, Bookings.class)) {
+            throw new ConflictException("Cannot extend: spot is booked for the requested time");
+        }
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
+        if (spot == null) throw new NotFoundException("Parking spot not found");
+
+        double newAmount = calculateCharge(
+                ZonedDateTime.ofInstant(booking.getCheckInTime().toInstant(), newCheckOutTime.getZone()),
+                newCheckOutTime,
+                spot.getBookingRate()
+        );
+        double diff = newAmount - booking.getAmount();
+        if (diff > 0) {
+            Wallet wallet = walletService.findByUserId(booking.getUserId())
+                    .orElseThrow(() -> new NotFoundException("Wallet not found"));
+            if (!hasSufficientBalance(wallet, diff)) {
+                throw new InsufficientFundsException();
+            }
+            wallet.setBalance(wallet.getBalance() - diff);
+            wallet.setLastUpdated(new Date());
+            walletService.save(wallet);
+            transactionService.save(new Transactions(booking.getUserId(), -diff, "Booking extension charge", new Date()));
+        }
+        booking.setCheckOutTime(Date.from(newCheckOutTime.toInstant()));
+        booking.setAmount(newAmount);
+        return bookingRepository.save(booking);
     }
 
     public Bookings updateBookingStatus(String id, String status) {
@@ -500,7 +436,7 @@ public class BookingService {
         if (!bookingId.equals(qrCode)) {
             return new QrValidationResult(false, 0, "Invalid QR code for check-in");
         }
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) return new QrValidationResult(false, 0, "Parking spot not found");
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(booking.getCheckInTime().toInstant(), now.getZone());
@@ -521,7 +457,7 @@ public class BookingService {
         if (!bookingId.equals(qrCode)) {
             return new QrValidationResult(false, 0, "Invalid QR code for checkout");
         }
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) return new QrValidationResult(false, 0, "Parking spot not found");
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), now.getZone());
@@ -564,14 +500,14 @@ public class BookingService {
         double refund = (double) breakup.get("refundAmount");
         double totalDeducted = (double) breakup.get("totalDeducted");
 
-        Wallet wallet = walletRepository.findByUserId(booking.getUserId()).orElse(null);
+        Wallet wallet = walletService.findByUserId(booking.getUserId()).orElse(null);
         if (wallet != null) {
             // Apply refund if any
             if (refund > 0) {
                 wallet.setBalance(wallet.getBalance() + refund);
                 wallet.setLastUpdated(new Date());
-                walletRepository.save(wallet);
-                transactionsRepository.save(new Transactions(booking.getUserId(), refund, "Booking refund", new Date()));
+                walletService.save(wallet);
+                transactionService.save(new Transactions(booking.getUserId(), refund, "Booking refund", new Date()));
             }
             // If subtotal is positive and not already deducted, deduct it (should not happen if already deducted at booking/penalty time)
             // If subtotal is negative (should not happen), add to wallet
@@ -588,7 +524,7 @@ public class BookingService {
     }
 
     private Map<String, Object> getBookingBreakupInternal(Bookings booking) {
-        ParkingSpot spot = mongoOperations.findById(booking.getSpotId(), ParkingSpot.class);
+        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
 
         ZonedDateTime now = ZonedDateTime.now();
@@ -645,5 +581,29 @@ public class BookingService {
         breakup.put("checkOutPenaltyRate", spot.getCheckOutPenaltyRate());
         breakup.put("autoCompleted", isAutoCompleted);
         return breakup;
+    }
+
+    public List<Bookings> findByLotIdAndTimeWindow(String lotId, ZonedDateTime startTime, ZonedDateTime endTime) {
+        return bookingRepository.findByLotIdAndTimeWindow(lotId, startTime, endTime);
+    }
+
+    public boolean cancelBooking(String bookingId) {
+        Bookings booking = findBookingOrThrow(bookingId);
+        if ("cancelled".equalsIgnoreCase(booking.getStatus())) {
+            return false;
+        }
+        if ("pending".equalsIgnoreCase(booking.getStatus()) || "active".equalsIgnoreCase(booking.getStatus())) {
+            walletService.refundWalletAndRecordTransaction(booking);
+            transactionService.save(new Transactions(booking.getUserId(), booking.getAmount(), "Booking refund", new Date()));
+        }
+        setBookingCancelled(booking);
+        parkingSpotService.incrementSpotAvailability(booking.getSpotId());
+        applyBreakupAndRefund(booking);
+        return true;
+    }
+
+    private void setBookingCancelled(Bookings booking) {
+        booking.setStatus("cancelled");
+        bookingRepository.save(booking);
     }
 }

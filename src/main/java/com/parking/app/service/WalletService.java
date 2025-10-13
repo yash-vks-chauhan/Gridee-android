@@ -1,5 +1,7 @@
 package com.parking.app.service;
 
+import com.parking.app.exception.NotFoundException;
+import com.parking.app.model.Bookings;
 import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
 import com.parking.app.repository.WalletRepository;
@@ -69,6 +71,11 @@ public class WalletService {
         return walletRepository.save(wallet);
     }
 
+    // Save wallet (encapsulate repository access)
+    public Wallet saveWallet(Wallet wallet) {
+        return walletRepository.save(wallet);
+    }
+
     public Wallet deductPenalty(String userId, double penaltyAmount) {
         Optional<Wallet> walletOpt = getWalletByUserId(userId);
         if (walletOpt.isPresent()) {
@@ -101,5 +108,21 @@ public class WalletService {
             }
         }
         return null;
+    }
+
+    public java.util.Optional<Wallet> findByUserId(String userId) {
+        return walletRepository.findByUserId(userId);
+    }
+
+    public Wallet save(Wallet wallet) {
+        return walletRepository.save(wallet);
+    }
+
+    public void refundWalletAndRecordTransaction(Bookings booking) {
+        Wallet wallet = walletRepository.findByUserId(booking.getUserId())
+                .orElseThrow(() -> new NotFoundException("Wallet not found"));
+        wallet.setBalance(wallet.getBalance() + booking.getAmount());
+        wallet.setLastUpdated(new Date());
+        walletRepository.save(wallet);
     }
 }
