@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -33,6 +34,10 @@ public class ParkingSpotService {
 
     @Autowired
     private BookingRepository bookingRepository;
+
+    public ParkingSpot findById(String id) {
+        return parkingSpotRepository.findById(id).orElse(null);
+    }
 
     public ParkingSpot createParkingSpot(ParkingSpot spot) {
         if (spot.getAvailable() == 0) {
@@ -193,14 +198,45 @@ public class ParkingSpotService {
     }
 
     // NEW: Get available spots for a time window
-    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime) {
+    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime,List<Bookings> overlappingBookings) {
         List<ParkingSpot> allSpots = parkingSpotRepository.findByLotId(lotId);
-        List<Bookings> overlappingBookings = bookingRepository.findByLotIdAndTimeWindow(lotId, startTime, endTime);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)
                 .collect(Collectors.toSet());
         return allSpots.stream()
                 .filter(spot -> !bookedSpotIds.contains(spot.getId()))
                 .collect(Collectors.toList());
+    }
+
+    public void decrementSpotAvailability(String spotId) {
+        Query spotQuery = new Query(Criteria.where("_id").is(spotId).and("available").gt(0));
+        Update decUpdate = new Update().inc("available", -1);
+        ParkingSpot updatedSpot = mongoOperations.findAndModify(
+                spotQuery, decUpdate, ParkingSpot.class);
+        if (updatedSpot == null) {
+            throw new RuntimeException("No spots available");
+        }
+    }
+
+    public void incrementSpotAvailability(String spotId) {
+        Update incUpdate = new Update().inc("available", 1);
+        mongoOperations.updateFirst(new Query(Criteria.where("_id").is(spotId)), incUpdate, ParkingSpot.class);
+        ensureAvailableNotExceedCapacity(spotId);
+    }
+
+    public void ensureAvailableNotExceedCapacity(String spotId) {
+        Optional<ParkingSpot> spot = parkingSpotRepository.findById(spotId);
+        if (spot.isPresent() && spot.get().getAvailable() > spot.get().getCapacity()) {
+            spot.get().setAvailable(spot.get().getCapacity());
+            mongoOperations.save(spot);
+        }
+    }
+
+    public void resetParkingSpotsAvailability() {
+        List<ParkingSpot> spots = mongoOperations.findAll(ParkingSpot.class);
+        for (ParkingSpot spot : spots) {
+            spot.setAvailable(spot.getCapacity());
+            mongoOperations.save(spot);
+        }
     }
 }

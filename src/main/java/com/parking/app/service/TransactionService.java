@@ -87,4 +87,8 @@ public class TransactionService {
     public void deleteTransaction(String id) {
         transactionRepository.deleteById(id);
     }
+
+    public Transactions save(Transactions transaction) {
+        return transactionRepository.save(transaction);
+    }
 }
