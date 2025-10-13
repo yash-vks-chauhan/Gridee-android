@@ -1,5 +1,6 @@
 package com.parking.app.controller;
 
+import com.parking.app.config.JwtUtil;
 import com.parking.app.model.Users;
 import com.parking.app.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,33 +17,37 @@ public class UserController {
 
     @Autowired
     private  UserService userService;
+    @Autowired
+    private JwtUtil jwtUtil;
 
     // Register user - create with validation and hashing handled in service
+
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@RequestBody Users user) {
         try {
-            Users createdUser = userService.createUser(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+            String parkingLotName = user.getParkingLotName();
+            Users createdUser = userService.createUser(user, parkingLotName);
+            String token = jwtUtil.generateToken(createdUser.getId(), createdUser.getRole().name());
+            Map<String, Object> response = Map.of(
+                    "token", token,
+                    "id", createdUser.getId(),
+                    "name", createdUser.getName(),
+                    "role", createdUser.getRole().name()
+            );
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
-            // Return bad request with validation error message
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal server error");
         }
     }
 
+
+
     // Login user - authenticate by email/phone and password (accepts JSON)
-    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody Map<String, String> payload) {
-        String emailOrPhone = payload.get("email");
-        String password = payload.get("password");
-        System.out.println(password);
-        Users user = userService.authenticate(emailOrPhone, password);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
-        return ResponseEntity.ok(user);
-    }
+    // src/main/java/com/parking/app/controller/UserController.java
+
+
     @PutMapping("/{userId}/vehicles")
     public ResponseEntity<?> addUserVehicles(@PathVariable String userId, @RequestBody List<String> vehicleNumbers) {
         try {

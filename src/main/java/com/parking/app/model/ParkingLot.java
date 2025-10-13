@@ -22,4 +22,5 @@ public class ParkingLot {
     private double longitude;
 
     public ParkingLot() {}
+
 }

@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/parking-lots")
@@ -39,6 +40,17 @@ public class ParkingLotController {
         }
         return ResponseEntity.ok(lot);
     }
+    // In ParkingLotController.java
+
+    @GetMapping("/list/by-names")
+    public ResponseEntity<List<String>> getAllParkingLotNames() {
+        List<String> names = parkingLotService.getAllParkingLots()
+                .stream()
+                .map(ParkingLot::getName)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(names);
+    }
+
 
     @PostMapping
     public ResponseEntity<ParkingLot> createParkingLot(@RequestBody ParkingLot parkingLot) {
