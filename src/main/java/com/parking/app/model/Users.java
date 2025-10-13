@@ -23,7 +23,9 @@ public class Users {
     private int walletCoins;
     private Date createdAt;
     private String passwordHash;  // Store hashed password securely
-    private Role role;            // Add this field
+    private Role role;
+    private String parkingLotId;
+    private String parkingLotName;// Add this field
 
     public Users() {
         this.createdAt = new Date();

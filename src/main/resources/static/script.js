@@ -67,7 +67,7 @@ function displayUsers(users) {
     tbody.innerHTML = "";
     users.forEach((user) => {
         const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${user.id || ""}</td><td>${user.name || ""}</td><td>${user.email || ""}</td><td>${user.phone || ""}</td><td>${Array.isArray(user.vehicleNumbers) ? user.vehicleNumbers.join(", ") : user.vehicleNumber || ""}</td><td>${user.walletCoins || 0}</td>`;
+        tr.innerHTML = `<td>${user.id || ""}</td><td>${user.name || ""}</td><td>${user.email || ""}</td><td>${user.phone || ""}</td><td>${Array.isArray(user.vehicleNumbers) ? user.vehicleNumbers.join(", ") : user.vehicleNumber || ""}</td><td>${user.role || ""}</td>`;
         tbody.appendChild(tr);
     });
 }
@@ -75,17 +75,19 @@ async function createUser() {
     const name = document.getElementById("userName").value.trim();
     const email = document.getElementById("userEmail").value.trim();
     const phone = document.getElementById("userPhone").value.trim();
-    const vehicleNumbers = document.getElementById("userVehicleNumbers").value.split(",").map((v) => v.trim()).filter(Boolean);
     const password = document.getElementById("userPassword").value;
-    if (!name || !email || !phone || !password || vehicleNumbers.length === 0) {
-        alert("Fill all required fields (name, email, phone, password, at least one vehicle number).");
+    const role = document.getElementById("userRole").value.trim();
+    const parkingLotName = document.getElementById("userParkingLotName").value.trim(); // <-- Add this line
+
+    if (!name || !email || !phone || !password || !role || !parkingLotName) {
+        alert("Fill all required fields (name, email, phone, password, at least one vehicle number, role, parking lot name).");
         return;
     }
     try {
         const res = await fetch(`${baseUrl}/users/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, vehicleNumbers, password }),
+            body: JSON.stringify({ name, email, phone, passwordHash: password, role, parkingLotName }), // <-- Add parkingLotName here
         });
         if (res.ok) {
             fetchUsers();
@@ -96,6 +98,22 @@ async function createUser() {
         alert("Error: " + e.message);
     }
 }
+async function loadParkingLotNames() {
+    const res = await fetch(`${baseUrl}/parking-lots/list/by-names`);
+    const names = await res.json();
+    const select = document.getElementById("userParkingLotName");
+    select.innerHTML = '<option value="">Select Parking Lot</option>';
+    names.forEach(name => {
+        const opt = document.createElement("option");
+        opt.value = name;
+        opt.textContent = name;
+        select.appendChild(opt);
+    });
+}
+window.addEventListener("DOMContentLoaded", loadParkingLotNames);
+
+
+
 async function updateUser() {
     const id = document.getElementById("updateUserId").value.trim();
     if (!id) { alert("Please enter user ID"); return; }
