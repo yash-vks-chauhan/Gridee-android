@@ -1,13 +1,22 @@
 package com.gridee.parking.ui.bottomsheet
 
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ImageView
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import com.google.android.material.card.MaterialCardView
+import com.gridee.parking.R
 import com.gridee.parking.databinding.BottomSheetAddVehicleBinding
 
 class AddVehicleBottomSheet(
@@ -16,6 +25,7 @@ class AddVehicleBottomSheet(
 
     private var _binding: BottomSheetAddVehicleBinding? = null
     private val binding get() = _binding!!
+    private var closeButton: MaterialCardView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +55,7 @@ class AddVehicleBottomSheet(
         
         setupUI()
         setupClickListeners()
+        createFloatingCloseButton()
         animateEntry()
     }
 
@@ -61,6 +72,66 @@ class AddVehicleBottomSheet(
 
         binding.btnCancel.setOnClickListener {
             dismiss()
+        }
+    }
+
+    private fun createFloatingCloseButton() {
+        // Post to ensure the bottom sheet is fully laid out
+        view?.post {
+            val dialogWindow = dialog?.window
+            val decorView = dialogWindow?.decorView as? ViewGroup
+            
+            decorView?.let { parent ->
+                // Find the bottom sheet container
+                val bottomSheetContainer = parent.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+                
+                bottomSheetContainer?.let { bottomSheet ->
+                    // Create close button
+                    closeButton = MaterialCardView(requireContext()).apply {
+                        // Position the button dynamically based on bottom sheet position
+                        val buttonSize = resources.getDimensionPixelSize(R.dimen.close_button_size)
+                        val margin = resources.getDimensionPixelSize(R.dimen.close_button_bottom_margin)
+                        
+                        layoutParams = FrameLayout.LayoutParams(buttonSize, buttonSize).apply {
+                            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+                            // Position above the bottom sheet
+                            topMargin = bottomSheet.y.toInt() - buttonSize - margin
+                        }
+                        
+                        setCardBackgroundColor(ContextCompat.getColor(context, R.color.white))
+                        radius = resources.getDimensionPixelSize(R.dimen.close_button_radius).toFloat()
+                        cardElevation = resources.getDimensionPixelSize(R.dimen.close_button_elevation).toFloat()
+                        strokeColor = ContextCompat.getColor(context, R.color.text_primary)
+                        strokeWidth = 1
+                        isClickable = true
+                        isFocusable = true
+                        
+                        // Add ripple effect
+                        val typedValue = android.util.TypedValue()
+                        context.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, typedValue, true)
+                        foreground = ContextCompat.getDrawable(context, typedValue.resourceId)
+                        
+                        // Add close icon
+                        val closeIcon = ImageView(context).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                resources.getDimensionPixelSize(R.dimen.close_icon_size),
+                                resources.getDimensionPixelSize(R.dimen.close_icon_size)
+                            ).apply {
+                                gravity = Gravity.CENTER
+                            }
+                            setImageResource(R.drawable.ic_close)
+                            setColorFilter(ContextCompat.getColor(context, R.color.text_primary))
+                            contentDescription = "Close modal"
+                        }
+                        addView(closeIcon)
+                        
+                        setOnClickListener { dismiss() }
+                    }
+                    
+                    // Add to parent
+                    parent.addView(closeButton)
+                }
+            }
         }
     }
 
@@ -136,6 +207,12 @@ class AddVehicleBottomSheet(
     }
 
     override fun onDestroyView() {
+        // Remove close button from parent
+        closeButton?.let { button ->
+            (button.parent as? ViewGroup)?.removeView(button)
+        }
+        closeButton = null
+        
         super.onDestroyView()
         _binding = null
     }

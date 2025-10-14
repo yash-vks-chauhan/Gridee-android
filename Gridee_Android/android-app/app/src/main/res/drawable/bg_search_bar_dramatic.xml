@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Outer atmospheric shadow for dramatic depth -->
+    <item android:top="8dp" android:left="4dp" android:right="4dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp" />
+            <solid android:color="#12000000" />
+        </shape>
+    </item>
+
+    <!-- Mid-level ambient shadow -->
+    <item android:top="5dp" android:left="3dp" android:right="3dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="19dp" />
+            <solid android:color="#1A000000" />
+        </shape>
+    </item>
+
+    <!-- Near-contact shadow for perceived lift -->
+    <item android:top="3dp" android:left="1dp" android:right="1dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="18dp" />
+            <solid android:color="#26000000" />
+        </shape>
+    </item>
+
+    <!-- Glass container -->
+    <item android:bottom="2dp">
+        <layer-list>
+
+            <!-- Frosted glass base with light blue tint -->
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="17dp" />
+                    <gradient
+                        android:type="linear"
+                        android:angle="135"
+                        android:startColor="#E0F0F8FF"
+                        android:centerColor="#CCF0F8FF"
+                        android:endColor="#B8F0F8FF" />
+                </shape>
+            </item>
+
+            <!-- Soft glass overlay for translucency -->
+            <item android:inset="1dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="16dp" />
+                    <solid android:color="#80FFFFFF" />
+                </shape>
+            </item>
+
+            <!-- Specular highlight along the top edge -->
+            <item android:top="-1dp" android:bottom="28dp">
+                <shape android:shape="rectangle">
+                    <corners
+                        android:topLeftRadius="17dp"
+                        android:topRightRadius="17dp"
+                        android:bottomLeftRadius="6dp"
+                        android:bottomRightRadius="6dp" />
+                    <gradient
+                        android:type="linear"
+                        android:angle="90"
+                        android:startColor="#55FFFFFF"
+                        android:endColor="#00FFFFFF" />
+                </shape>
+            </item>
+
+            <!-- Enhanced outer border -->
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="17dp" />
+                    <stroke
+                        android:width="2dp"
+                        android:color="#80FFFFFF" />
+                </shape>
+            </item>
+
+            <!-- Inner glow to reinforce the glass rim -->
+            <item android:inset="2.5dp">
+                <shape android:shape="rectangle">
+                    <corners android:radius="14.5dp" />
+                    <stroke
+                        android:width="1dp"
+                        android:color="#40FFFFFF" />
+                </shape>
+            </item>
+
+        </layer-list>
+    </item>
+
+</layer-list>

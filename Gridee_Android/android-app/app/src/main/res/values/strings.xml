@@ -44,4 +44,15 @@
     <string name="payment_filter_option_card">Debit / Credit Card</string>
     <string name="payment_filter_apply">Apply filter</string>
     <string name="payment_filter_cancel">Cancel</string>
+
+    <!-- Search -->
+    <string name="transition_search_bar">home_search_bar</string>
+    <string name="search_expanded_hint">Search parking spots, zones or locations</string>
+    <string name="search_home_hint">Search for parking spots...</string>
+    <string name="search_recent_header">Recent searches</string>
+    <string name="search_popular_header">Popular near you</string>
+    <string name="search_clear_recent">Clear history</string>
+    <string name="content_description_close_search">Close search</string>
+    <string name="content_description_clear_query">Clear search query</string>
+    <string name="search_empty_state">Start typing to find parking zones, garages, and offers around you.</string>
 </resources>

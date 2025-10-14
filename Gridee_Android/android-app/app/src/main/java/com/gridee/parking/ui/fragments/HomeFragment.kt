@@ -4,11 +4,13 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ScrollView
+import androidx.core.app.ActivityOptionsCompat
 import androidx.lifecycle.ViewModelProvider
+import com.gridee.parking.R
 import com.gridee.parking.databinding.FragmentHomeBinding
 import com.gridee.parking.ui.MainViewModel
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.search.SearchActivity
 
 class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
 
@@ -30,6 +32,26 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         setupUserWelcome()
         setupClickListeners()
+        animateSearchBarEntrance()
+    }
+    
+    private fun animateSearchBarEntrance() {
+        // Set initial state
+        binding.cardSearch.alpha = 0f
+        binding.cardSearch.translationY = 40f
+        binding.cardSearch.scaleX = 0.95f
+        binding.cardSearch.scaleY = 0.95f
+        
+        // Animate to final state
+        binding.cardSearch.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(600)
+            .setStartDelay(200)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
     }
 
     private fun setupUserWelcome() {
@@ -43,16 +65,32 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     }
 
     private fun setupClickListeners() {
+        setupSearchBarInteractions()
+        setupFabListener()
+    }
+    
+    private fun setupSearchBarInteractions() {
         binding.cardSearch.setOnClickListener {
-            // Navigate to Find Parking screen
-            try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.discovery.ParkingDiscoveryActivity"))
-                startActivity(intent)
-            } catch (e: Exception) {
-                showToast("Find Parking feature coming soon!")
-            }
+            openSearchExperience()
         }
-        
+        binding.ivSearchIcon.setOnClickListener { binding.cardSearch.performClick() }
+        binding.tvSearchPlaceholder.setOnClickListener { binding.cardSearch.performClick() }
+        binding.ivSearchArrow.setOnClickListener { binding.cardSearch.performClick() }
+    }
+
+    private fun openSearchExperience() {
+        val context = requireContext()
+        val intent = Intent(context, SearchActivity::class.java)
+        val transitionName = binding.cardSearch.transitionName ?: getString(R.string.transition_search_bar)
+        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+            requireActivity(),
+            binding.cardSearch,
+            transitionName
+        )
+        startActivity(intent, options.toBundle())
+    }
+    
+    private fun setupFabListener() {
         // FAB click listener - parking lot selection
         binding.fabBookParking.setOnClickListener {
             try {

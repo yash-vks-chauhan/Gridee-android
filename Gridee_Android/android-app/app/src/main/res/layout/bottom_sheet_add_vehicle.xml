@@ -7,6 +7,7 @@
     android:paddingTop="12dp"
     android:paddingBottom="32dp">
 
+
     <!-- Drag Handle -->
     <View
         android:id="@+id/dragHandle"
@@ -18,31 +19,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Close Button -->
-        <!-- Close Button -->
-    <androidx.cardview.widget.CardView
-        android:id="@+id/btnClose"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:foreground="@drawable/bg_close_button"
-        app:cardBackgroundColor="#FFFFFF"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="0dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:layout_gravity="center"
-            android:src="@android:drawable/ic_menu_close_clear_cancel"
-            android:tint="#666666" />
-    </androidx.cardview.widget.CardView>
-
     <!-- Title -->
     <TextView
         android:id="@+id/tvTitle"
@@ -50,7 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
-        android:layout_marginEnd="60dp"
+        android:layout_marginEnd="24dp"
         android:text="Add New Vehicle"
         android:textColor="@android:color/black"
         android:textSize="24sp"

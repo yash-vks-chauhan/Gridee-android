@@ -6,8 +6,11 @@ import android.text.Editable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.gridee.parking.R
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.WalletTransaction
 import com.gridee.parking.databinding.FragmentWalletNewBinding
@@ -18,7 +21,11 @@ import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.WalletTransactionGrouping
 import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import androidx.dynamicanimation.animation.DynamicAnimation
+import androidx.dynamicanimation.animation.SpringAnimation
+import androidx.dynamicanimation.animation.SpringForce
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -250,9 +257,39 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         try {
             android.util.Log.d("WalletFragmentNew", "showTopUpDialog called")
             
-            val bottomSheetDialog = BottomSheetDialog(requireContext())
+            val bottomSheetDialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
             val bottomSheetBinding = BottomSheetTopUpSimpleBinding.inflate(layoutInflater)
             bottomSheetDialog.setContentView(bottomSheetBinding.root)
+
+            bottomSheetDialog.window?.apply {
+                setWindowAnimations(R.style.BottomSheetSpringAnimation)
+                setDimAmount(0.45f)
+            }
+
+            bottomSheetDialog.behavior.apply {
+                skipCollapsed = true
+                state = BottomSheetBehavior.STATE_EXPANDED
+                isFitToContents = true
+            }
+
+            bottomSheetDialog.setOnShowListener {
+                val bottomSheet = bottomSheetDialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+                bottomSheet?.post {
+                    bottomSheet.translationY = 120f
+                    bottomSheet.alpha = 0f
+                    val spring = SpringAnimation(bottomSheet, DynamicAnimation.TRANSLATION_Y, 0f).apply {
+                        spring = SpringForce(0f).apply {
+                            dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
+                            stiffness = SpringForce.STIFFNESS_LOW
+                        }
+                    }
+                    bottomSheet.animate()
+                        .alpha(1f)
+                        .setDuration(220)
+                        .start()
+                    spring.start()
+                }
+            }
             
             android.util.Log.d("WalletFragmentNew", "Bottom sheet dialog created")
             
@@ -299,7 +336,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             
             // Close button
             bottomSheetBinding.btnClose.setOnClickListener {
-                bottomSheetDialog.dismiss()
+                animateAndDismiss(bottomSheetDialog)
             }
             
             // Add money button
@@ -310,7 +347,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                     if (amount != null && amount > 0) {
                         showToast("Processing payment via $selectedPaymentMethod...")
                         processTopUp(amount)
-                        bottomSheetDialog.dismiss()
+                        animateAndDismiss(bottomSheetDialog)
                     } else {
                         showToast("Please enter a valid amount")
                     }
@@ -331,15 +368,21 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
     }
     
     private fun selectPaymentMethod(binding: BottomSheetTopUpSimpleBinding, method: String) {
-        // Reset all radio buttons (only UPI and Card now)
-        binding.radioUpi.isChecked = false
-        binding.radioCard.isChecked = false
-        
-        // Select the chosen method
-        when (method) {
-            "UPI" -> binding.radioUpi.isChecked = true
-            "CARD" -> binding.radioCard.isChecked = true
-        }
+        val activeStroke = ContextCompat.getColor(requireContext(), R.color.text_primary)
+        val inactiveStroke = ContextCompat.getColor(requireContext(), R.color.quick_add_outline)
+        val activeBackground = ContextCompat.getColor(requireContext(), R.color.gray_50)
+        val inactiveBackground = ContextCompat.getColor(requireContext(), R.color.background_secondary)
+
+        val isUpiSelected = method == "UPI"
+        val isCardSelected = method == "CARD"
+
+        binding.radioUpi.isChecked = isUpiSelected
+        binding.layoutUpi.strokeColor = if (isUpiSelected) activeStroke else inactiveStroke
+        binding.layoutUpi.setCardBackgroundColor(if (isUpiSelected) activeBackground else inactiveBackground)
+
+        binding.radioCard.isChecked = isCardSelected
+        binding.layoutCard.strokeColor = if (isCardSelected) activeStroke else inactiveStroke
+        binding.layoutCard.setCardBackgroundColor(if (isCardSelected) activeBackground else inactiveBackground)
     }
     
     private fun updateAddButtonState(binding: BottomSheetTopUpSimpleBinding) {
@@ -353,6 +396,24 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         } else {
             "Add Money"
         }
+    }
+    
+    private fun animateAndDismiss(dialog: BottomSheetDialog) {
+        val bottomSheet = dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+        if (bottomSheet == null) {
+            dialog.dismiss()
+            return
+        }
+        bottomSheet.animate()
+            .translationY(bottomSheet.height * 0.25f)
+            .alpha(0f)
+            .setDuration(200)
+            .withEndAction {
+                dialog.dismiss()
+                bottomSheet.translationY = 0f
+                bottomSheet.alpha = 1f
+            }
+            .start()
     }
     
     private fun processTopUp(amount: Double) {

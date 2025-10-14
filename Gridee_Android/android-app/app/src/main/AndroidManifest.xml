@@ -140,7 +140,13 @@
             android:name=".ui.wallet.WalletActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
-        
+
+        <activity
+            android:name=".ui.search.SearchActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Gridee.Search"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+
     </application>
 
 </manifest>
