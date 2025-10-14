@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.gridee.parking.data.model.User
 import com.gridee.parking.data.repository.UserRepository
 import kotlinx.coroutines.launch
@@ -78,11 +79,68 @@ class LoginViewModel : ViewModel() {
         _validationErrors.value = emptyMap()
     }
     
+    fun handleGoogleSignInSuccess(account: GoogleSignInAccount) {
+        _loginState.value = LoginState.Loading
+        
+        viewModelScope.launch {
+            try {
+                // Send Google account data to your backend for verification
+                val response = userRepository.googleSignIn(
+                    idToken = account.idToken ?: "",
+                    email = account.email ?: "",
+                    name = account.displayName ?: "",
+                    profilePicture = account.photoUrl?.toString()
+                )
+                
+                if (response.isSuccessful) {
+                    response.body()?.let { user ->
+                        _loginState.value = LoginState.Success(user)
+                    } ?: run {
+                        _loginState.value = LoginState.Error("Sign in successful but no user data received")
+                    }
+                } else {
+                    _loginState.value = LoginState.Error("Google Sign In failed: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                _loginState.value = LoginState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+    
+    fun handleAppleSignInSuccess(authorizationCode: String) {
+        _loginState.value = LoginState.Loading
+        
+        viewModelScope.launch {
+            try {
+                // Send Apple authorization code to your backend for verification
+                val response = userRepository.appleSignIn(authorizationCode)
+                
+                if (response.isSuccessful) {
+                    response.body()?.let { user ->
+                        _loginState.value = LoginState.Success(user)
+                    } ?: run {
+                        _loginState.value = LoginState.Error("Sign in successful but no user data received")
+                    }
+                } else {
+                    _loginState.value = LoginState.Error("Apple Sign In failed: ${response.errorBody()?.string()}")
+                }
+            } catch (e: Exception) {
+                _loginState.value = LoginState.Error("Network error: ${e.message}")
+            }
+        }
+    }
+    
+    fun handleSignInError(message: String) {
+        _loginState.value = LoginState.Error(message)
+    }
+    
+    @Deprecated("Use handleGoogleSignInSuccess instead")
     fun signInWithApple() {
         // TODO: Implement Apple Sign In
         _loginState.value = LoginState.Error("Apple Sign In not implemented yet")
     }
     
+    @Deprecated("Use handleAppleSignInSuccess instead")
     fun signInWithGoogle() {
         // TODO: Implement Google Sign In
         _loginState.value = LoginState.Error("Google Sign In not implemented yet")

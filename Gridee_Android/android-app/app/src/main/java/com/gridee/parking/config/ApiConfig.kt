@@ -10,7 +10,7 @@ object ApiConfig {
     const val USE_LOCALHOST = false  // Changed back to false for AWS
     
     // AWS Configuration
-    const val AWS_BASE_URL = "https://35.154.192.24:8443/"
+    const val AWS_BASE_URL = "https://43.204.107.18:8443/"
     const val AWS_USERNAME = "rajeev"
     const val AWS_PASSWORD = "parking"
     

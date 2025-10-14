@@ -5,8 +5,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityMainContainerBinding
 import com.gridee.parking.ui.base.BaseActivityWithBottomNav
@@ -17,6 +15,12 @@ import com.gridee.parking.ui.fragments.ProfileFragment
 import com.gridee.parking.ui.fragments.WalletFragmentNew
 
 class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBinding>() {
+
+    companion object {
+        const val EXTRA_TARGET_TAB = "extra_target_tab"
+        const val EXTRA_SHOW_PENDING = "extra_show_pending"
+        const val EXTRA_HIGHLIGHT_BOOKING_ID = "extra_highlight_booking_id"
+    }
 
     private var currentFragment: Fragment? = null
     private var currentTabId = CustomBottomNavigation.TAB_HOME
@@ -54,13 +58,23 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         // Setup bottom navigation manually using binding
         setupBottomNavigationManually(binding.bottomNavigation)
         
-        // Load initial fragment if no saved state
-        if (savedInstanceState == null) {
-            switchToFragment(homeFragment, CustomBottomNavigation.TAB_HOME)
+        val initialTab = if (savedInstanceState == null) {
+            intent?.getIntExtra(EXTRA_TARGET_TAB, CustomBottomNavigation.TAB_HOME)
+                ?: CustomBottomNavigation.TAB_HOME
         } else {
-            // Restore current tab from saved state
-            currentTabId = savedInstanceState.getInt("current_tab", CustomBottomNavigation.TAB_HOME)
+            savedInstanceState.getInt("current_tab", CustomBottomNavigation.TAB_HOME)
         }
+
+        if (savedInstanceState == null) {
+            bottomNavigation.setActiveTab(initialTab)
+            switchToFragment(getFragmentForTab(initialTab), initialTab)
+        } else {
+            currentTabId = initialTab
+            bottomNavigation.setActiveTab(currentTabId)
+            currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+        }
+
+        handleNavigationIntent(intent, currentTabId)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -79,14 +93,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
             return
         }
 
-        val targetFragment = when (tabId) {
-            CustomBottomNavigation.TAB_HOME -> homeFragment
-            CustomBottomNavigation.TAB_BOOKINGS -> bookingsFragment
-            CustomBottomNavigation.TAB_WALLET -> walletFragment
-            CustomBottomNavigation.TAB_PROFILE -> profileFragment
-            else -> homeFragment
-        }
-
+        val targetFragment = getFragmentForTab(tabId)
         switchToFragment(targetFragment, tabId)
     }
 
@@ -168,6 +175,39 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent?) {
+        super.onNewIntent(intent)
+        intent ?: return
+
+        setIntent(intent)
+
+        val targetTab = intent.getIntExtra(EXTRA_TARGET_TAB, currentTabId)
+        if (targetTab != currentTabId) {
+            bottomNavigation.setActiveTab(targetTab)
+            onTabSelected(targetTab)
+        }
+
+        handleNavigationIntent(intent, targetTab)
+    }
+
+    private fun getFragmentForTab(tabId: Int): Fragment {
+        return when (tabId) {
+            CustomBottomNavigation.TAB_HOME -> homeFragment
+            CustomBottomNavigation.TAB_BOOKINGS -> bookingsFragment
+            CustomBottomNavigation.TAB_WALLET -> walletFragment
+            CustomBottomNavigation.TAB_PROFILE -> profileFragment
+            else -> homeFragment
+        }
+    }
+
+    private fun handleNavigationIntent(intent: android.content.Intent?, targetTab: Int) {
+        if (targetTab != CustomBottomNavigation.TAB_BOOKINGS) return
+
+        val showPending = intent?.getBooleanExtra(EXTRA_SHOW_PENDING, false) ?: false
+        val highlightBookingId = intent?.getStringExtra(EXTRA_HIGHLIGHT_BOOKING_ID)
+        bookingsFragment.handleExternalNavigation(showPending, highlightBookingId)
     }
 
     // Handle back button to navigate to home or exit

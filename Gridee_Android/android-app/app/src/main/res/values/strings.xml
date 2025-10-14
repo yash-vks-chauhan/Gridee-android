@@ -27,6 +27,7 @@
     <string name="sign_in_with_apple">Sign in with Apple</string>
     <string name="sign_in_with_google">Sign in with Google</string>
     <string name="sign_up_link">Don\'t have an account? Sign Up</string>
+    <string name="back">Back</string>
     <string name="close">Close</string>
     <string name="cancel_booking">Cancel</string>
     <string name="booking_details">Booking Details</string>
@@ -55,4 +56,8 @@
     <string name="content_description_close_search">Close search</string>
     <string name="content_description_clear_query">Clear search query</string>
     <string name="search_empty_state">Start typing to find parking zones, garages, and offers around you.</string>
+    
+    <!-- Google Sign In -->
+    <!-- TODO: Replace this with your actual Web Client ID from Google Cloud Console -->
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
 </resources>

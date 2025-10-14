@@ -3,16 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:layout_marginStart="12dp"
+    android:layout_marginEnd="12dp"
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="14dp"
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="6dp"
+    app:cardUseCompatPadding="true"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="20dp">
 
         <!-- Header -->
         <LinearLayout
@@ -29,7 +34,8 @@
                 android:text="SRM University Parking"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/text_primary"
+                android:fontFamily="sans-serif-medium" />
 
             <TextView
                 android:id="@+id/tvAvailability"
@@ -38,7 +44,8 @@
                 android:text="8/8 spots available"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/primary_green" />
+                android:textColor="@color/primary_green"
+                android:fontFamily="sans-serif-medium" />
 
         </LinearLayout>
 
@@ -50,6 +57,7 @@
             android:text="Kattankulathur, SRM Nagar, Chennai"
             android:textSize="14sp"
             android:textColor="@color/text_secondary"
+            android:fontFamily="sans-serif"
             android:layout_marginTop="8dp"
             android:maxLines="2"
             android:ellipsize="end" />
@@ -60,15 +68,16 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="16dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Tap to view available spots"
-                android:textSize="12sp"
-                android:textColor="@color/text_secondary" />
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:fontFamily="sans-serif" />
 
             <TextView
                 android:layout_width="wrap_content"
@@ -76,7 +85,8 @@
                 android:text="View Spots →"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/primary_blue" />
+                android:textColor="@color/primary_blue"
+                android:fontFamily="sans-serif-medium" />
 
         </LinearLayout>
 

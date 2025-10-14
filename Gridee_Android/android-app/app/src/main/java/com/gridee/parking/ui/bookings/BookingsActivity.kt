@@ -20,6 +20,7 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
     private lateinit var viewModel: BookingsViewModel
     private lateinit var bookingAdapter: BookingAdapter
     private var allBookings = listOf<Booking>()
+    private var highlightBookingId: String? = null
     private var currentFilter = "active"
 
     override fun getViewBinding(): ActivityBookingsBinding {
@@ -36,11 +37,17 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         setupRecyclerView()
         setupObservers()
         setupClickListeners()
-        
-        // Set initial tab selection
-        selectFilter("active")
-        
+        handleIntent(intent)
         loadBookings()
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent?.let {
+            setIntent(it)
+            handleIntent(it)
+            loadBookings()
+        }
     }
 
     override fun setupUI() {
@@ -167,6 +174,16 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         filterBookings(filter)
     }
 
+    private fun handleIntent(intent: Intent) {
+        highlightBookingId = intent.getStringExtra("BOOKING_ID")?.takeIf { it.isNotBlank() }
+        val defaultFilter = if (intent.getBooleanExtra("SHOW_PENDING", false)) {
+            "pending"
+        } else {
+            "active"
+        }
+        selectFilter(defaultFilter)
+    }
+
     private fun resetTabColors() {
         val inactiveColor = getColor(R.color.light_gray)
         val inactiveTextColor = getColor(R.color.darker_gray)
@@ -192,6 +209,13 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         if (filteredBookings.isNotEmpty()) {
             showBookingsList()
             bookingAdapter.updateBookings(filteredBookings)
+            highlightBookingId?.let { id ->
+                val index = filteredBookings.indexOfFirst { it.id == id }
+                if (index >= 0) {
+                    binding.rvBookings.scrollToPosition(index)
+                    highlightBookingId = null
+                }
+            }
         } else {
             showEmptyState()
         }

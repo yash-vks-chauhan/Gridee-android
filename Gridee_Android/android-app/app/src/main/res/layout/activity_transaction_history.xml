@@ -51,7 +51,7 @@
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
             android:paddingTop="0dp"
-            android:paddingBottom="2dp">
+            android:paddingBottom="12dp">
 
             <!-- Fixed Back Button Container -->
             <FrameLayout
@@ -89,7 +89,7 @@
             <!-- Main Title -->
             <TextView
                 android:id="@+id/tv_header_title"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:text="All Transactions"
@@ -97,25 +97,29 @@
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-black"
-                android:letterSpacing="0.01" />
+                android:letterSpacing="0.01"
+                android:gravity="center"
+                android:textAlignment="center" />
 
             <!-- Transaction Count -->
             <TextView
                 android:id="@+id/tv_transaction_count"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="1dp"
                 android:text="Loading..."
                 android:textColor="@color/text_secondary"
                 android:textSize="15sp"
-                android:fontFamily="sans-serif-medium" />
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
+                android:textAlignment="center" />
 
             <!-- Filter Buttons -->
             <HorizontalScrollView
                 android:id="@+id/filter_scroll_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="16dp"
                 android:clipToPadding="false"
                 android:overScrollMode="never"
                 android:paddingEnd="6dp"

@@ -125,7 +125,7 @@ class BookingFlowActivity : AppCompatActivity() {
         }
 
         viewModel.totalPrice.observe(this) { price ->
-            binding.tvTotalPrice.text = "₹${"%.1f".format(price)}"
+            binding.tvTotalPrice.text = "₹${String.format(Locale.getDefault(), "%.2f", price)}"
         }
 
         viewModel.duration.observe(this) { duration ->
@@ -145,10 +145,34 @@ class BookingFlowActivity : AppCompatActivity() {
         
         viewModel.bookingCreated.observe(this) { booking ->
             booking?.let {
-                // Navigate to confirmation screen
-                val intent = Intent(this, BookingConfirmationActivity::class.java)
-                intent.putExtra("BOOKING_ID", it.id)
-                startActivity(intent)
+                val startMillis = viewModel.startTime.value?.time ?: System.currentTimeMillis()
+                val endMillis = viewModel.endTime.value?.time ?: (startMillis + 60 * 60 * 1000)
+                val totalAmount = viewModel.totalPrice.value ?: 0.0
+                val selectedSpotName = viewModel.selectedSpot.value
+                    ?: parkingSpot?.name
+                    ?: parkingSpot?.zoneName
+                val parkingName = selectedLotName.ifEmpty { binding.tvParkingName.text.toString() }
+                val parkingAddress = binding.tvParkingAddress.text.toString()
+                val vehicleNumber = viewModel.selectedVehicle.value?.number
+
+                val confirmationIntent = Intent(this, BookingConfirmationActivity::class.java).apply {
+                    putExtra("BOOKING_ID", it.id ?: "")
+                    putExtra("TRANSACTION_ID", it.qrCode ?: "")
+                    putExtra("PARKING_NAME", parkingName)
+                    putExtra("PARKING_ADDRESS", parkingAddress)
+                    putExtra("SELECTED_SPOT", selectedSpotName)
+                    putExtra("PARKING_SPOT_ID", it.spotId)
+                    putExtra("VEHICLE_NUMBER", vehicleNumber)
+                    putExtra("START_TIME", startMillis)
+                    putExtra("END_TIME", endMillis)
+                    putExtra("TOTAL_AMOUNT", totalAmount)
+                    putExtra("PAYMENT_METHOD", "Wallet")
+                    putExtra("PAYMENT_STATUS", it.status ?: "Pending")
+                    putExtra("BOOKING_TIMESTAMP", it.createdAt?.time ?: System.currentTimeMillis())
+                }
+
+                startActivity(confirmationIntent)
+                viewModel.clearBookingCreated()
                 finish()
             }
         }
@@ -198,10 +222,15 @@ class BookingFlowActivity : AppCompatActivity() {
             binding.tvParkingName.text = if (selectedLotName.isNotEmpty()) selectedLotName else "Unknown Location"
             
             // Display the parking lot address/info
-            binding.tvParkingAddress.text = if (selectedLotId.isNotEmpty()) "Lot ID: $selectedLotId" else "Unknown Address"
+            val addressText = when {
+                !spot.zoneName.isNullOrBlank() && spot.zoneName != spot.name -> spot.zoneName
+                selectedLotId.isNotEmpty() -> "Lot ID: $selectedLotId"
+                else -> "Address unavailable"
+            }
+            binding.tvParkingAddress.text = addressText
             
             // Display hourly rate in rupees
-            binding.tvHourlyRate.text = "₹2.5/hour"
+            binding.tvHourlyRate.text = "₹${String.format(Locale.getDefault(), "%.2f", 2.5)}/hour"
             
             // Update the selected spot display to show the actual selected spot
             val spotName = spot.name ?: spot.zoneName ?: "Any available spot"

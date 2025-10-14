@@ -4,11 +4,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityLoginBinding
 import com.gridee.parking.ui.main.MainContainerActivity
+import com.gridee.parking.utils.AppleSignInManager
+import com.gridee.parking.utils.AppleSignInResult
+import com.gridee.parking.utils.GoogleSignInManager
+import com.gridee.parking.utils.GoogleSignInResult
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
     
@@ -16,10 +23,31 @@ class LoginActivity : AppCompatActivity() {
     private val viewModel: LoginViewModel by viewModels()
     private var isPasswordVisible = false
     
+    private lateinit var googleSignInManager: GoogleSignInManager
+    private lateinit var appleSignInManager: AppleSignInManager
+    
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val signInResult = googleSignInManager.handleSignInResult(result.data)
+        when (signInResult) {
+            is GoogleSignInResult.Success -> {
+                viewModel.handleGoogleSignInSuccess(signInResult.account)
+            }
+            is GoogleSignInResult.Error -> {
+                viewModel.handleSignInError(signInResult.message)
+            }
+        }
+    }
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Initialize sign-in managers
+        googleSignInManager = GoogleSignInManager(this)
+        appleSignInManager = AppleSignInManager(this)
         
         setupUI()
         observeViewModel()
@@ -46,12 +74,15 @@ class LoginActivity : AppCompatActivity() {
         
         // Apple Sign In
         binding.btnSignInWithApple.setOnClickListener {
-            viewModel.signInWithApple()
+            appleSignInManager.signIn()
+            // Note: Apple Sign In result will be handled in onNewIntent() 
+            // when the redirect comes back from the browser
         }
         
         // Google Sign In
         binding.btnSignInWithGoogle.setOnClickListener {
-            viewModel.signInWithGoogle()
+            val signInIntent = googleSignInManager.getSignInIntent()
+            googleSignInLauncher.launch(signInIntent)
         }
         
         // Sign Up link
@@ -142,5 +173,21 @@ class LoginActivity : AppCompatActivity() {
     private fun clearErrors() {
         binding.tilEmailPhone.error = null
         binding.tilPassword.error = null
+    }
+    
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        // Handle Apple Sign-In redirect
+        when (val result = appleSignInManager.handleRedirect(intent)) {
+            is AppleSignInResult.Success -> {
+                viewModel.handleAppleSignInSuccess(result.authorizationCode)
+            }
+            is AppleSignInResult.Error -> {
+                viewModel.handleSignInError(result.message)
+            }
+            is AppleSignInResult.Cancelled -> {
+                Toast.makeText(this, "Apple Sign In cancelled", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

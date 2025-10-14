@@ -56,4 +56,28 @@ class UserRepository {
             false
         }
     }
+    
+    suspend fun googleSignIn(
+        idToken: String,
+        email: String,
+        name: String,
+        profilePicture: String?
+    ): Response<User> {
+        val googleData = mapOf(
+            "idToken" to idToken,
+            "email" to email,
+            "name" to name,
+            "profilePicture" to (profilePicture ?: ""),
+            "provider" to "google"
+        )
+        return apiService.socialSignIn(googleData)
+    }
+    
+    suspend fun appleSignIn(authorizationCode: String): Response<User> {
+        val appleData = mapOf(
+            "authorizationCode" to authorizationCode,
+            "provider" to "apple"
+        )
+        return apiService.socialSignIn(appleData)
+    }
 }

@@ -23,6 +23,9 @@ interface ApiService {
     @POST("api/users/login")
     suspend fun loginUser(@Body credentials: Map<String, String>): Response<User>
     
+    @POST("api/users/social-signin")
+    suspend fun socialSignIn(@Body payload: Map<String, String>): Response<User>
+    
     @GET("api/users/{id}")
     suspend fun getUserById(@Path("id") userId: String): Response<User>
     

@@ -130,79 +130,127 @@ class TransactionHistoryActivity : AppCompatActivity() {
         var countShiftX = 0f
         var filterShiftY = 0f
         var filtersStickyApplied = false
+        
+        // Enhanced color states for professional transitions
         val expandedTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.background_primary))
-        val collapsedTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.background_primary))
+        val collapsedTint = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.white))
         filterButtons.forEach { it.backgroundTintList = expandedTint }
 
         headerContainer.doOnLayout {
-            val targetTitleY = backButton.y + (backButton.height - titleView.height) / 2f
+            // Calculate smooth title positioning with better alignment
+            val targetTitleY = backButton.y + (backButton.height - titleView.height) / 2f + 2f // Slight offset for better visual balance
 
             val availableWidth = headerContainer.width - headerContainer.paddingStart - headerContainer.paddingEnd
-            val centeredTitleX = headerContainer.paddingStart + (availableWidth - titleView.width) / 2f
-            val targetTitleX = centeredTitleX + titleHorizontalShift
+            val backButtonRightEdge = backButton.x + backButton.width + 16f // 16dp spacing from back button
+            val targetTitleX = backButtonRightEdge
+            
+            // Title starts centered and moves to specific position next to back button
             titleShiftY = targetTitleY - titleView.y
-            titleShiftX = targetTitleX - titleView.x
+            titleShiftX = targetTitleX - headerContainer.paddingStart // Move from left edge to target position
 
-            // Hide count view when collapsed (move it way up and out of sight)
-            countShiftY = -countView.height * 3f
-            countShiftX = 0f
+            // Smooth count view fade out with better positioning
+            countShiftY = -countView.height * 2f
+            countShiftX = titleShiftX * 0.5f // Subtle horizontal movement
 
-            val targetFilterY = backButton.y + backButton.height + collapsedFilterSpacing
+            // Professional filter positioning
+            val targetFilterY = backButton.y + backButton.height + collapsedFilterSpacing + 4f
             filterShiftY = targetFilterY - filterRow.y
 
-            titleView.pivotX = titleView.width / 2f
-            titleView.pivotY = titleView.height.toFloat()
+            // Enhanced positioning and pivot points for smoother animations
+            titleView.pivotX = 0f // Left-aligned pivot for natural scaling
+            titleView.pivotY = titleView.height / 2f // Center vertical pivot
 
-            titleView.translationZ = 10f // Higher elevation to appear above other elements
-            countView.translationZ = 1f
-            backButton.translationZ = 20f // Highest elevation to stay on top
-            filterRow.translationZ = 5f // Medium elevation for filters
-            headerCard.cardElevation = 0f
+            // Professional elevation layers
+            titleView.translationZ = 12f
+            countView.translationZ = 8f
+            backButton.translationZ = 24f
+            filterRow.translationZ = 16f
+            headerCard.cardElevation = 2f // Subtle shadow for depth
         }
 
         binding.rvAllTransactions.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 if (dy == 0) return
                 headerCollapseOffset = (headerCollapseOffset + dy).coerceIn(0, headerCollapseRange)
-                val progress = headerCollapseOffset.toFloat() / headerCollapseRange
+                
+                // Enhanced easing function for smoother animations
+                val rawProgress = headerCollapseOffset.toFloat() / headerCollapseRange
+                val easedProgress = when {
+                    rawProgress <= 0.5f -> 2f * rawProgress * rawProgress // Ease in (quadratic)
+                    else -> 1f - 2f * (1f - rawProgress) * (1f - rawProgress) // Ease out (quadratic)
+                }
 
-                // Keep back button fixed - no translation or scaling
+                // Keep back button perfectly fixed with professional stability
                 backButton.translationY = 0f
                 backButton.translationX = 0f
                 backButton.scaleX = 1f
                 backButton.scaleY = 1f
 
-                // Animate title from bottom-left to right side of back button (same vertical level)
-                val targetScale = (1f - 0.25f * progress).coerceAtLeast(0.75f)
+                // Professional title animation with smooth scaling and positioning
+                val minScale = 0.72f // Slightly larger minimum for better readability
+                val maxScale = 1f
+                val targetScale = maxScale - (maxScale - minScale) * easedProgress
                 titleView.scaleX = targetScale
                 titleView.scaleY = targetScale
-                val paddingOffset = (paddingReduction * progress).coerceAtMost(paddingReduction.toFloat())
-                titleView.translationY = titleShiftY * progress + paddingOffset
-                titleView.translationX = titleShiftX * progress
+                
+                // Smooth padding animation
+                val paddingOffset = (paddingReduction * easedProgress).coerceAtMost(paddingReduction.toFloat())
+                
+                // Enhanced title positioning with smooth curve and center-to-left transition
+                titleView.translationY = titleShiftY * easedProgress + paddingOffset * 0.5f
+                titleView.translationX = titleShiftX * easedProgress
+                
+                // Animate text alignment from center to start
+                if (easedProgress < 0.1f) {
+                    titleView.textAlignment = View.TEXT_ALIGNMENT_CENTER
+                } else {
+                    titleView.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
+                }
 
-                // Fade out and move count view
-                countView.translationY = countShiftY * progress
-                countView.translationX = countShiftX * progress
-                countView.alpha = (1f - progress * 1.5f).coerceAtLeast(0f)
+                // Professional count view fade with smooth movement
+                countView.translationY = countShiftY * easedProgress
+                countView.translationX = countShiftX * easedProgress
+                // Smoother alpha transition with later start point
+                val alphaProgress = ((easedProgress - 0.2f) / 0.8f).coerceIn(0f, 1f)
+                countView.alpha = (1f - alphaProgress * 1.2f).coerceAtLeast(0f)
 
-                // Move filters up to their sticky position below back button
-                filterRow.translationY = filterShiftY * progress + paddingOffset
+                // Professional filter movement with smooth easing
+                filterRow.translationY = filterShiftY * easedProgress + paddingOffset * 0.3f
 
-                // Update filter button styling for sticky state
-                val shouldUseCollapsedTint = progress > 0.3f
+                // Enhanced filter button styling with smooth color transitions
+                val stickyThreshold = 0.4f
+                val shouldUseCollapsedTint = easedProgress > stickyThreshold
                 if (shouldUseCollapsedTint != filtersStickyApplied) {
-                    val tint = if (shouldUseCollapsedTint) collapsedTint else expandedTint
-                    filterButtons.forEach { it.backgroundTintList = tint }
+                    // Animate tint change for smoother transition
+                    filterButtons.forEach { button ->
+                        val colorAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                            duration = 200
+                            interpolator = AccelerateDecelerateInterpolator()
+                            addUpdateListener { animator ->
+                                val animatedProgress = animator.animatedValue as Float
+                                val tint = if (shouldUseCollapsedTint) {
+                                    ColorStateList.valueOf(ContextCompat.getColor(this@TransactionHistoryActivity, R.color.white))
+                                } else {
+                                    ColorStateList.valueOf(ContextCompat.getColor(this@TransactionHistoryActivity, R.color.background_primary))
+                                }
+                                button.backgroundTintList = tint
+                            }
+                        }
+                        colorAnimator.start()
+                    }
                     filtersStickyApplied = shouldUseCollapsedTint
                 }
 
-                // Reduce padding as header collapses
+                // Enhanced padding animation with smooth transitions
                 val paddingOffsetInt = (paddingOffset).toInt().coerceAtMost(paddingReduction)
                 headerContainer.updatePadding(
-                    top = (initialPaddingTop - paddingOffsetInt).coerceAtLeast(6), // Minimum padding
-                    bottom = (initialPaddingBottom - paddingOffsetInt).coerceAtLeast(6) // Minimum padding
+                    top = (initialPaddingTop - paddingOffsetInt).coerceAtLeast(8), // Slightly more minimum padding
+                    bottom = (initialPaddingBottom - paddingOffsetInt).coerceAtLeast(8)
                 )
 
+                // Professional card background with subtle elevation changes
+                val elevationProgress = easedProgress * 4f // Gradual elevation increase
+                headerCard.cardElevation = elevationProgress
                 headerCard.setCardBackgroundColor(ContextCompat.getColor(this@TransactionHistoryActivity, R.color.background_primary))
             }
         })

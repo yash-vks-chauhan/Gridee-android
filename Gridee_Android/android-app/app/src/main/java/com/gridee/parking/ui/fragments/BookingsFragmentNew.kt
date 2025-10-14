@@ -47,6 +47,9 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private val parkingLotCache = mutableMapOf<String, String>() // lotId -> name
     private val parkingSpotCache = mutableMapOf<String, String>() // spotId -> name
     private var isCacheLoaded = false
+    private data class NavigationRequest(val showPending: Boolean, val highlightBookingId: String?)
+    private var pendingNavigationRequest: NavigationRequest? = null
+    private var pendingHighlightBookingId: String? = null
 
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentBookingsNewBinding {
         return FragmentBookingsNewBinding.inflate(inflater, container, false)
@@ -64,6 +67,11 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         setupRecyclerView()
         setupSegmentedControl()
         loadUserBookings() // Use real API instead of sample data
+    }
+
+    fun handleExternalNavigation(showPending: Boolean, highlightBookingId: String?) {
+        pendingNavigationRequest = NavigationRequest(showPending, highlightBookingId)
+        applyPendingNavigationIfReady()
     }
 
     private fun setupRecyclerView() {
@@ -155,12 +163,9 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     private fun filterBookingsByStatus(status: BookingStatus) {
         android.util.Log.d("BookingsFragment", "filterBookingsByStatus: status=$status, total bookings=${userBookings.size}")
-        val statusString = when (status) {
-            BookingStatus.ACTIVE -> "active"
-            BookingStatus.PENDING -> "pending"
-            BookingStatus.COMPLETED -> "completed"
+        val filteredBookings: List<BackendBooking> = userBookings.filter {
+            mapBackendStatus(it.status) == status
         }
-        val filteredBookings: List<BackendBooking> = userBookings.filter { it.status.lowercase() == statusString }
         android.util.Log.d("BookingsFragment", "Filtered bookings count: ${filteredBookings.size}")
         
         // Convert to UI bookings before updating adapter
@@ -293,6 +298,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         binding.segmentedControlContainer.segmentContainer.post {
             setupEnhancedGestureHandler()
             initializeSegmentedControlState()
+            applyPendingNavigationIfReady()
         }
     }
     
@@ -436,12 +442,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun showBookingsForStatus(status: BookingStatus) {
-        val statusString = when (status) {
-            BookingStatus.ACTIVE -> "active"
-            BookingStatus.PENDING -> "pending"
-            BookingStatus.COMPLETED -> "completed"
-        }
-        val filteredBookings = userBookings.filter { it.status.lowercase() == statusString }
+        val filteredBookings = userBookings.filter { mapBackendStatus(it.status) == status }
         
         if (filteredBookings.isEmpty()) {
             // Show empty state
@@ -486,6 +487,17 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         if (bookings.isNotEmpty()) {
             showToast("Found ${bookings.size} bookings")
         }
+
+        pendingHighlightBookingId?.let { highlightId ->
+            val index = bookings.indexOfFirst { it.id == highlightId }
+            if (index >= 0) {
+                binding.rvBookings.post {
+                    binding.rvBookings.smoothScrollToPosition(index)
+                }
+                showToast("Showing your latest booking")
+                pendingHighlightBookingId = null
+            }
+        }
     }
 
     private fun loadUserBookings() {
@@ -516,6 +528,13 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     // Convert backend bookings to UI bookings
                     userBookings.clear()
                     userBookings.addAll(backendBookings)
+
+                    backendBookings.forEach { booking ->
+                        android.util.Log.d(
+                            "BookingsFragment",
+                            "Raw booking status from backend: '${booking.status}' mapped to ${mapBackendStatus(booking.status)}"
+                        )
+                    }
                     
                     // Update UI for current tab
                     showBookingsForStatus(currentTab)
@@ -541,6 +560,32 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 binding.progressLoading.visibility = View.GONE
             }
         }
+    }
+
+    private fun applyPendingNavigationIfReady() {
+        val request = pendingNavigationRequest ?: return
+        if (!isAdded || view == null) return
+
+        if (!::gestureHandler.isInitialized) {
+            binding.segmentedControlContainer.segmentContainer.post { applyPendingNavigationIfReady() }
+            return
+        }
+
+        pendingNavigationRequest = null
+
+        val targetStatus = if (request.showPending) BookingStatus.PENDING else BookingStatus.ACTIVE
+        pendingHighlightBookingId = request.highlightBookingId
+
+        val targetIndex = when (targetStatus) {
+            BookingStatus.ACTIVE -> 0
+            BookingStatus.PENDING -> 1
+            BookingStatus.COMPLETED -> 2
+        }
+
+        gestureHandler.setSelectedIndex(targetIndex, animated = true)
+        updateSegmentTextColors(targetStatus)
+        currentTab = targetStatus
+        showBookingsForStatus(targetStatus)
     }
     
     private suspend fun loadParkingDataCache() {
@@ -748,12 +793,81 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun mapBackendStatus(backendStatus: String?): BookingStatus {
-        return when (backendStatus?.lowercase()) {
-            "active" -> BookingStatus.ACTIVE
-            "pending", "created" -> BookingStatus.PENDING
-            "completed", "finished", "cancelled", "confirmed", "expired" -> BookingStatus.COMPLETED
-            else -> BookingStatus.PENDING
+        val normalized = backendStatus?.trim()?.lowercase(Locale.ROOT)?.replace(' ', '_') ?: return BookingStatus.PENDING
+
+        return when {
+            normalized.isEmpty() -> BookingStatus.PENDING
+            normalized in ACTIVE_STATUSES -> BookingStatus.ACTIVE
+            normalized in PENDING_STATUSES -> BookingStatus.PENDING
+            normalized in COMPLETED_STATUSES -> BookingStatus.COMPLETED
+
+            // Substring-based fallbacks for unexpected variants
+            normalized.contains("check_out") || normalized.contains("checkout") ||
+                normalized.contains("complete") || normalized.contains("finish") ||
+                normalized.contains("cancel") || normalized.contains("expire") ||
+                normalized.contains("no_show") || normalized.contains("noshow") ||
+                normalized.contains("auto") -> BookingStatus.COMPLETED
+
+            normalized.contains("check_in") || normalized.contains("checkin") ||
+                normalized.contains("in_progress") || normalized.contains("inprogress") ||
+                normalized.contains("ongoing") || normalized.contains("running") ||
+                normalized.contains("active") -> BookingStatus.ACTIVE
+
+            normalized.contains("pending") || normalized.contains("await") ||
+                normalized.contains("reserve") || normalized.contains("schedule") ||
+                normalized.contains("confirm") || normalized.contains("book") ||
+                normalized.contains("init") || normalized.contains("hold") -> BookingStatus.PENDING
+
+            else -> {
+                android.util.Log.w("BookingsFragment", "Unknown booking status '$backendStatus', defaulting to Pending")
+                BookingStatus.PENDING
+            }
         }
+    }
+
+    companion object {
+        private val PENDING_STATUSES = setOf(
+            "pending",
+            "created",
+            "booked",
+            "reserved",
+            "scheduled",
+            "pending_confirmation",
+            "pending-confirmation",
+            "pending_payment",
+            "pending-payment",
+            "awaiting_payment",
+            "awaiting-payment",
+            "awaiting_checkin",
+            "awaiting-checkin",
+            "initiated",
+            "confirmed"
+        )
+
+        private val ACTIVE_STATUSES = setOf(
+            "active",
+            "in_progress",
+            "in-progress",
+            "ongoing",
+            "ongoing_session",
+            "live",
+            "checked_in",
+            "checked-in"
+        )
+
+        private val COMPLETED_STATUSES = setOf(
+            "completed",
+            "finished",
+            "cancelled",
+            "canceled",
+            "expired",
+            "checked_out",
+            "checked-out",
+            "no_show",
+            "no-show",
+            "auto_completed",
+            "auto-completed"
+        )
     }
 
     private fun showBookingDetails(booking: Booking) {

@@ -1,6 +1,8 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    // Uncomment the line below after you add your google-services.json file
+    // id 'com.google.gms.google-services'
 }
 
 android {
@@ -80,6 +82,12 @@ dependencies {
     
     // Lottie for animations
     implementation 'com.airbnb.android:lottie:6.1.0'
+    
+    // Google Sign-In
+    implementation 'com.google.android.gms:play-services-auth:20.7.0'
+    
+    // Browser for Apple Sign-In web flow
+    implementation 'androidx.browser:browser:1.7.0'
     
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.5'
