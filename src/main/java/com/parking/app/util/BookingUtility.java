@@ -51,3 +51,4 @@ public class BookingUtility {
         return hours * bookingRate;
     }
 }
+

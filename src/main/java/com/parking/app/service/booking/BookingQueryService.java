@@ -29,8 +29,8 @@ public class BookingQueryService {
     }
 
     public List<Bookings> getAllBookingsFiltered(String status, String lotId,
-                                                 ZonedDateTime fromDate, ZonedDateTime toDate,
-                                                 int page, int size) {
+                                                  ZonedDateTime fromDate, ZonedDateTime toDate,
+                                                  int page, int size) {
         Query query = new Query();
         if (status != null && !status.isEmpty()) {
             query.addCriteria(Criteria.where("status").is(status));
@@ -72,7 +72,7 @@ public class BookingQueryService {
     }
 
     public List<Bookings> findByLotIdAndTimeWindow(String lotId, ZonedDateTime startTime,
-                                                   ZonedDateTime endTime) {
+                                                    ZonedDateTime endTime) {
         return bookingRepository.findByLotIdAndTimeWindow(lotId, startTime, endTime);
     }
 
@@ -80,3 +80,4 @@ public class BookingQueryService {
         return user.getVehicleNumbers();
     }
 }
+

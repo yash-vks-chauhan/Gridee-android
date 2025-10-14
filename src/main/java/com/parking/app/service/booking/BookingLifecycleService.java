@@ -34,12 +34,12 @@ public class BookingLifecycleService {
     private final BookingBreakupService breakupService;
 
     public BookingLifecycleService(BookingRepository bookingRepository,
-                                   UserService userService,
-                                   WalletService walletService,
-                                   ParkingSpotService parkingSpotService,
-                                   BookingValidationService validationService,
-                                   BookingWalletService bookingWalletService,
-                                   BookingBreakupService breakupService) {
+                                  UserService userService,
+                                  WalletService walletService,
+                                  ParkingSpotService parkingSpotService,
+                                  BookingValidationService validationService,
+                                  BookingWalletService bookingWalletService,
+                                  BookingBreakupService breakupService) {
         this.bookingRepository = bookingRepository;
         this.userService = userService;
         this.walletService = walletService;
@@ -50,8 +50,8 @@ public class BookingLifecycleService {
     }
 
     public Bookings startBooking(String spotId, String userId, String lotId,
-                                 ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
-                                 String vehicleNumber) {
+                                ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
+                                String vehicleNumber) {
         BookingUtility.validateTimes(checkInTime, checkOutTime);
         BookingUtility.validateBookingWindow(checkInTime, checkOutTime);
 
@@ -125,22 +125,22 @@ public class BookingLifecycleService {
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(
-                booking.getCheckInTime().toInstant(), now.getZone());
+            booking.getCheckInTime().toInstant(), now.getZone());
         ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(
-                booking.getCheckOutTime().toInstant(), now.getZone());
+            booking.getCheckOutTime().toInstant(), now.getZone());
         ZonedDateTime actualCheckIn = booking.getActualCheckInTime() != null
                 ? ZonedDateTime.ofInstant(booking.getActualCheckInTime().toInstant(), now.getZone())
                 : scheduledCheckIn;
 
         double lateCheckInPenalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
+            scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
         double lateCheckOutPenalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledEnd, now, spot.getCheckOutPenaltyRate());
+            scheduledEnd, now, spot.getCheckOutPenaltyRate());
         double totalPenalty = lateCheckInPenalty + lateCheckOutPenalty;
 
         if (totalPenalty > 0) {
             bookingWalletService.applyPenaltyToWallet(booking.getUserId(), totalPenalty,
-                    lateCheckInPenalty, lateCheckOutPenalty);
+                lateCheckInPenalty, lateCheckOutPenalty);
         }
 
         booking.setStatus("completed");
@@ -162,13 +162,13 @@ public class BookingLifecycleService {
         }
 
         ZonedDateTime currentCheckOut = ZonedDateTime.ofInstant(
-                booking.getCheckOutTime().toInstant(), newCheckOutTime.getZone());
+            booking.getCheckOutTime().toInstant(), newCheckOutTime.getZone());
         if (!newCheckOutTime.isAfter(currentCheckOut)) {
             throw new IllegalArgumentException("New check-out time must be after current check-out time");
         }
 
         validationService.ensureNoBookingOverlapForExtension(
-                booking.getSpotId(), bookingId, currentCheckOut, newCheckOutTime);
+            booking.getSpotId(), bookingId, currentCheckOut, newCheckOutTime);
 
         ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
@@ -201,9 +201,9 @@ public class BookingLifecycleService {
         }
 
         if ("pending".equalsIgnoreCase(booking.getStatus()) ||
-                "active".equalsIgnoreCase(booking.getStatus())) {
+            "active".equalsIgnoreCase(booking.getStatus())) {
             bookingWalletService.refundToWallet(booking.getUserId(),
-                    booking.getAmount(), "Booking refund");
+                booking.getAmount(), "Booking refund");
         }
 
         booking.setStatus("cancelled");
@@ -225,7 +225,7 @@ public class BookingLifecycleService {
         Bookings booking = findBookingOrThrow(id);
         String currentStatus = booking.getStatus();
         if ("completed".equalsIgnoreCase(currentStatus) ||
-                "cancelled".equalsIgnoreCase(currentStatus)) {
+            "cancelled".equalsIgnoreCase(currentStatus)) {
             throw new IllegalStateException("Cannot update status of completed/cancelled booking");
         }
         booking.setStatus(status);
@@ -242,8 +242,8 @@ public class BookingLifecycleService {
     }
 
     private Bookings createAndSaveBooking(String spotId, String userId, String lotId,
-                                          ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
-                                          String vehicleNumber, double amount) {
+                                         ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
+                                         String vehicleNumber, double amount) {
         Bookings booking = new Bookings();
         booking.setSpotId(spotId);
         booking.setUserId(userId);
@@ -260,3 +260,4 @@ public class BookingLifecycleService {
         return bookingRepository.save(booking);
     }
 }
+

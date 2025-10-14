@@ -71,3 +71,4 @@ public class BookingValidationService {
         return checkIn != null && checkOut != null && !now.before(checkIn) && !now.after(checkOut);
     }
 }
+

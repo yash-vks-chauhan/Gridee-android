@@ -43,22 +43,23 @@ public class BookingWalletService {
             walletService.deductFromWallet(userId, totalPenalty);
             if (lateCheckInPenalty > 0) {
                 transactionService.save(new Transactions(userId, -lateCheckInPenalty,
-                        "Late check-in penalty", new Date()));
+                    "Late check-in penalty", new Date()));
             }
             if (lateCheckOutPenalty > 0) {
                 transactionService.save(new Transactions(userId, -lateCheckOutPenalty,
-                        "Late check-out penalty", new Date()));
+                    "Late check-out penalty", new Date()));
             }
         }
     }
 
     public void refundToWallet(String userId, double amount, String description) {
         walletService.refundWalletAndRecordTransaction(
-                new com.parking.app.model.Bookings() {{
-                    setUserId(userId);
-                    setAmount(amount);
-                }}
+            new com.parking.app.model.Bookings() {{
+                setUserId(userId);
+                setAmount(amount);
+            }}
         );
         transactionService.save(new Transactions(userId, amount, description, new Date()));
     }
 }
+

@@ -29,9 +29,9 @@ public class QRCodeValidationService {
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(
-                booking.getCheckInTime().toInstant(), now.getZone());
+            booking.getCheckInTime().toInstant(), now.getZone());
         double penalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledCheckIn, now, spot.getCheckInPenaltyRate());
+            scheduledCheckIn, now, spot.getCheckInPenaltyRate());
 
         if (penalty > 0) {
             return new QrValidationResult(true, penalty, "Penalty applies for late check-in");
@@ -40,7 +40,7 @@ public class QRCodeValidationService {
     }
 
     public QrValidationResult validateQrCodeForCheckOut(Bookings booking, String qrCode,
-                                                        String bookingId, ParkingSpot spot) {
+                                                         String bookingId, ParkingSpot spot) {
         if (booking == null) {
             return new QrValidationResult(false, 0, "Booking not found");
         }
@@ -56,9 +56,9 @@ public class QRCodeValidationService {
 
         ZonedDateTime now = ZonedDateTime.now();
         ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(
-                booking.getCheckOutTime().toInstant(), now.getZone());
+            booking.getCheckOutTime().toInstant(), now.getZone());
         double penalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledEnd, now, spot.getCheckOutPenaltyRate());
+            scheduledEnd, now, spot.getCheckOutPenaltyRate());
 
         if (penalty > 0) {
             return new QrValidationResult(true, penalty, "Penalty applies for late check-out");
@@ -78,3 +78,4 @@ public class QRCodeValidationService {
         }
     }
 }
+

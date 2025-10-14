@@ -49,8 +49,8 @@ public class BookingService {
 
     // ===== Booking Lifecycle Operations =====
     public Bookings startBooking(String spotId, String userId, String lotId,
-                                 ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
-                                 String vehicleNumber) {
+                                ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
+                                String vehicleNumber) {
         return lifecycleService.startBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber);
     }
 
@@ -84,8 +84,8 @@ public class BookingService {
 
     // ===== Query Operations =====
     public List<Bookings> getAllBookingsFiltered(String status, String lotId,
-                                                 ZonedDateTime fromDate, ZonedDateTime toDate,
-                                                 int page, int size) {
+                                                  ZonedDateTime fromDate, ZonedDateTime toDate,
+                                                  int page, int size) {
         return queryService.getAllBookingsFiltered(status, lotId, fromDate, toDate, page, size);
     }
 
@@ -112,7 +112,7 @@ public class BookingService {
     }
 
     public List<Bookings> findByLotIdAndTimeWindow(String lotId, ZonedDateTime startTime,
-                                                   ZonedDateTime endTime) {
+                                                    ZonedDateTime endTime) {
         return queryService.findByLotIdAndTimeWindow(lotId, startTime, endTime);
     }
 
@@ -146,7 +146,7 @@ public class BookingService {
             throw new NotFoundException("Booking not found");
         }
         if (!"completed".equalsIgnoreCase(booking.getStatus()) &&
-                !"cancelled".equalsIgnoreCase(booking.getStatus())) {
+            !"cancelled".equalsIgnoreCase(booking.getStatus())) {
             throw new IllegalStateException("Breakup only available for checked-out or cancelled bookings");
         }
         ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
@@ -163,3 +163,4 @@ public class BookingService {
         }
     }
 }
+

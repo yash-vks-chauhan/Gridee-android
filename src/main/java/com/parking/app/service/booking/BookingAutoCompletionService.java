@@ -30,10 +30,10 @@ public class BookingAutoCompletionService {
     private final BookingBreakupService breakupService;
 
     public BookingAutoCompletionService(BookingRepository bookingRepository,
-                                        MongoOperations mongoOperations,
-                                        ParkingSpotService parkingSpotService,
-                                        BookingWalletService walletService,
-                                        BookingBreakupService breakupService) {
+                                       MongoOperations mongoOperations,
+                                       ParkingSpotService parkingSpotService,
+                                       BookingWalletService walletService,
+                                       BookingBreakupService breakupService) {
         this.bookingRepository = bookingRepository;
         this.mongoOperations = mongoOperations;
         this.parkingSpotService = parkingSpotService;
@@ -69,22 +69,22 @@ public class BookingAutoCompletionService {
         if (spot == null) return;
 
         ZonedDateTime scheduledCheckIn = ZonedDateTime.ofInstant(
-                booking.getCheckInTime().toInstant(), now.getZone());
+            booking.getCheckInTime().toInstant(), now.getZone());
         ZonedDateTime scheduledEnd = ZonedDateTime.ofInstant(
-                booking.getCheckOutTime().toInstant(), now.getZone());
+            booking.getCheckOutTime().toInstant(), now.getZone());
         ZonedDateTime actualCheckIn = booking.getActualCheckInTime() != null
                 ? ZonedDateTime.ofInstant(booking.getActualCheckInTime().toInstant(), now.getZone())
                 : scheduledCheckIn;
 
         double lateCheckInPenalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
+            scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
         double lateCheckOutPenalty = BookingUtility.calculatePenaltyWithGrace(
-                scheduledEnd, now, spot.getCheckOutPenaltyRate());
+            scheduledEnd, now, spot.getCheckOutPenaltyRate());
         double totalPenalty = lateCheckInPenalty + lateCheckOutPenalty;
 
         if (totalPenalty > 0) {
             walletService.applyPenaltyToWallet(booking.getUserId(), totalPenalty,
-                    lateCheckInPenalty, lateCheckOutPenalty);
+                lateCheckInPenalty, lateCheckOutPenalty);
         }
 
         booking.setStatus("completed");
@@ -107,3 +107,4 @@ public class BookingAutoCompletionService {
         }
     }
 }
+

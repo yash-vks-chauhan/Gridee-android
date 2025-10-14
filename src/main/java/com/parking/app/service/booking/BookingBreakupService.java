@@ -69,9 +69,9 @@ public class BookingBreakupService {
     }
 
     public void applyBreakupAndRefund(Bookings booking, ParkingSpot spot,
-                                      BookingWalletService walletService) {
+                                     BookingWalletService walletService) {
         if (!"completed".equalsIgnoreCase(booking.getStatus()) &&
-                !"cancelled".equalsIgnoreCase(booking.getStatus())) {
+            !"cancelled".equalsIgnoreCase(booking.getStatus())) {
             return;
         }
 
@@ -83,3 +83,4 @@ public class BookingBreakupService {
         }
     }
 }
+
