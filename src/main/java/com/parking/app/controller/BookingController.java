@@ -6,6 +6,7 @@ import com.parking.app.exception.IllegalStateException;
 import com.parking.app.model.Bookings;
 import com.parking.app.service.BookingService;
 import com.parking.app.service.BookingService.QrValidationResult;
+import com.parking.app.service.booking.QRCodeValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -290,7 +291,7 @@ public class BookingController {
                 return ResponseEntity.notFound().build();
             }
             String qrCode = body.get("qrCode");
-            QrValidationResult result = bookingService.validateQrCodeForCheckIn(bookingId, qrCode);
+            QRCodeValidationService.QrValidationResult result = bookingService.validateQrCodeForCheckIn(bookingId, qrCode);
             if (!result.valid) {
                 return ResponseEntity.badRequest().body(result.message);
             }
@@ -314,7 +315,7 @@ public class BookingController {
                 return ResponseEntity.notFound().build();
             }
             String qrCode = body.get("qrCode");
-            QrValidationResult result = bookingService.validateQrCodeForCheckOut(bookingId, qrCode);
+            QRCodeValidationService.QrValidationResult result = bookingService.validateQrCodeForCheckOut(bookingId, qrCode);
             if (!result.valid) {
                 return ResponseEntity.badRequest().body(result.message);
             }
