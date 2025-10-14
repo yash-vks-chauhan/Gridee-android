@@ -35,7 +35,8 @@ public class AuthController {
                 "name", user.getName(),
                 "role", user.getRole().name(),
                 "parkingLotId", user.getParkingLotId(),
-                "parkingLotName", user.getParkingLotName()
+                "parkingLotName", user.getParkingLotName(),
+                "vehiclenumbers", user.getVehicleNumbers()
         );
         return ResponseEntity.ok(response);
     }

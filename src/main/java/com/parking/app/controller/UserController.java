@@ -28,7 +28,7 @@ public class UserController {
     // src/main/java/com/parking/app/controller/UserController.java
 
 
-    @PutMapping("/{userId}/vehicles")
+    @PutMapping("/{userId}/add-vehicles")
     public ResponseEntity<?> addUserVehicles(@PathVariable String userId, @RequestBody List<String> vehicleNumbers) {
         try {
             Users updatedUser = userService.addUserVehicles(userId, vehicleNumbers);
