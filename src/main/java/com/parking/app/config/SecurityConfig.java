@@ -2,11 +2,13 @@
 package com.parking.app.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -16,8 +18,11 @@ import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    @Autowired
+    @Autowired(required = false)
     private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+
+    @Autowired(required = false)
+    private ClientRegistrationRepository clientRegistrationRepository;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, RateLimitingFilter rateLimitingFilter) throws Exception {
@@ -68,10 +73,14 @@ public class SecurityConfig {
                 )
                 // FILTER ORDER: Rate Limiting -> JWT Authentication
                 .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2LoginSuccessHandler)
-                );
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        // CONDITIONAL: Only configure OAuth2 if ClientRegistrationRepository is available
+        if (clientRegistrationRepository != null && oAuth2LoginSuccessHandler != null) {
+            http.oauth2Login(oauth2 -> oauth2
+                    .successHandler(oAuth2LoginSuccessHandler)
+            );
+        }
 
         return http.build();
     }
