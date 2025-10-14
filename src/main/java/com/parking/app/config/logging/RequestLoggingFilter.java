@@ -43,7 +43,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         byte[] content = request.getContentAsByteArray();
         if (content.length > 0) {
             String body = new String(content, StandardCharsets.UTF_8);
-            log.info("Request Body from Filter: {}", sanitizeBody(body));
+//            log.info("Request Body from Filter: {}", sanitizeBody(body));
         }
     }
 
@@ -51,7 +51,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         byte[] content = response.getContentAsByteArray();
         if (content.length > 0) {
             String body = new String(content, StandardCharsets.UTF_8);
-            log.info("Response Body: {}", body);
+//            log.info("Response Body: {}", body);
         }
     }
 
