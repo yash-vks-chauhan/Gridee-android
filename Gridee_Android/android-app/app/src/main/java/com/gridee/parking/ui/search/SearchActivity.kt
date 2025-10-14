@@ -1,7 +1,6 @@
 package com.gridee.parking.ui.search
 
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
@@ -13,8 +12,6 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.core.view.updatePadding
 import androidx.core.widget.doOnTextChanged
-import com.google.android.material.transition.platform.MaterialContainerTransform
-import com.google.android.material.transition.platform.MaterialContainerTransformSharedElementCallback
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivitySearchBinding
 
@@ -25,44 +22,15 @@ class SearchActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
-        window.sharedElementsUseOverlay = false
+        runCatching { window.sharedElementsUseOverlay = false }
         super.onCreate(savedInstanceState)
         binding = ActivitySearchBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        configureSharedElementTransition()
         setupInsets()
         setupInteractions()
         playEntranceAnimations()
         focusInput()
-    }
-
-    private fun configureSharedElementTransition() {
-        setEnterSharedElementCallback(MaterialContainerTransformSharedElementCallback())
-        setExitSharedElementCallback(MaterialContainerTransformSharedElementCallback())
-
-        val containerColor = Color.TRANSPARENT
-
-        val enterTransform = MaterialContainerTransform().apply {
-            drawingViewId = binding.searchRoot.id
-            duration = 420
-            fadeMode = MaterialContainerTransform.FADE_MODE_THROUGH
-            scrimColor = Color.TRANSPARENT
-            setAllContainerColors(containerColor)
-            isElevationShadowEnabled = false
-        }
-
-        val returnTransform = MaterialContainerTransform().apply {
-            drawingViewId = binding.searchRoot.id
-            duration = 320
-            fadeMode = MaterialContainerTransform.FADE_MODE_THROUGH
-            scrimColor = Color.TRANSPARENT
-            setAllContainerColors(containerColor)
-            isElevationShadowEnabled = false
-        }
-
-        window.sharedElementEnterTransition = enterTransform
-        window.sharedElementReturnTransition = returnTransform
     }
 
     private fun setupInsets() {

@@ -4,9 +4,7 @@ import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityOptionsCompat
 import androidx.lifecycle.ViewModelProvider
-import com.gridee.parking.R
 import com.gridee.parking.databinding.FragmentHomeBinding
 import com.gridee.parking.ui.MainViewModel
 import com.gridee.parking.ui.base.BaseTabFragment
@@ -79,15 +77,8 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     }
 
     private fun openSearchExperience() {
-        val context = requireContext()
-        val intent = Intent(context, SearchActivity::class.java)
-        val transitionName = binding.cardSearch.transitionName ?: getString(R.string.transition_search_bar)
-        val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-            requireActivity(),
-            binding.cardSearch,
-            transitionName
-        )
-        startActivity(intent, options.toBundle())
+        val intent = Intent(requireContext(), SearchActivity::class.java)
+        startActivity(intent)
     }
     
     private fun setupFabListener() {
