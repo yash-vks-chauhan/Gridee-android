@@ -1,6 +1,5 @@
 package com.parking.app.service.booking;
 
-import com.parking.app.exception.NotFoundException;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
 import com.parking.app.repository.BookingRepository;

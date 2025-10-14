@@ -2,7 +2,9 @@ package com.parking.app.service;
 
 import com.parking.app.exception.IllegalStateException;
 import com.parking.app.exception.NotFoundException;
-import com.parking.app.model.*;
+import com.parking.app.model.Bookings;
+import com.parking.app.model.ParkingSpot;
+import com.parking.app.model.Users;
 import com.parking.app.service.booking.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

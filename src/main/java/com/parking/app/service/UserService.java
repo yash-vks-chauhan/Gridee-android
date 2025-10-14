@@ -1,7 +1,8 @@
 package com.parking.app.service;
+
 import com.parking.app.config.JwtUtil;
-import com.parking.app.model.Users;
 import com.parking.app.model.ParkingLot;
+import com.parking.app.model.Users;
 import com.parking.app.repository.ParkingLotRepository;
 import com.parking.app.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;

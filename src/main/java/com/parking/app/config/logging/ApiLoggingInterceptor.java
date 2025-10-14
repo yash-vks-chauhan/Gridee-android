@@ -1,6 +1,5 @@
-package com.parking.app.interceptor;
+package com.parking.app.config.logging;
 
-import java.util.Collection;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -8,6 +7,7 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.UUID;
 

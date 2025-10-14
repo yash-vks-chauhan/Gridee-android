@@ -1,11 +1,12 @@
 // Java
 package com.parking.app.controller;
 
-import com.parking.app.exception.*;
+import com.parking.app.exception.ConflictException;
 import com.parking.app.exception.IllegalStateException;
+import com.parking.app.exception.InsufficientFundsException;
+import com.parking.app.exception.NotFoundException;
 import com.parking.app.model.Bookings;
 import com.parking.app.service.BookingService;
-import com.parking.app.service.BookingService.QrValidationResult;
 import com.parking.app.service.booking.QRCodeValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

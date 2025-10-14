@@ -1,15 +1,16 @@
 package com.parking.app.controller;
 
-import com.parking.app.model.Wallet;
 import com.parking.app.model.Transactions;
-import com.parking.app.service.WalletService;
+import com.parking.app.model.Wallet;
 import com.parking.app.service.TransactionService;
+import com.parking.app.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/{userId}/wallet")

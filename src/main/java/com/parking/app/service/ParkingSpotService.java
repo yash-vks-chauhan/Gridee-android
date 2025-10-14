@@ -3,8 +3,6 @@ package com.parking.app.service;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
 import com.parking.app.repository.ParkingSpotRepository;
-import com.parking.app.repository.ParkingLotRepository;
-import com.parking.app.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoOperations;
