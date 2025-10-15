@@ -60,3 +60,10 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// Enable Spring Boot layered JAR for optimized Docker images
+tasks.named('bootJar') {
+	layered {
+		enabled = true
+	}
+}
