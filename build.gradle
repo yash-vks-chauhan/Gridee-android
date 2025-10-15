@@ -10,7 +10,7 @@ description = 'App for parking'
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(24)
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 }
 
@@ -29,21 +29,41 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     compileOnly 'org.projectlombok:lombok'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     annotationProcessor 'org.projectlombok:lombok'
     implementation 'commons-io:commons-io:2.11.0'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
     implementation 'org.springframework.security:spring-security-crypto'
     implementation 'org.springframework.boot:spring-boot-actuator-autoconfigure'
     implementation 'org.json:json:20240303'
     implementation 'com.razorpay:razorpay-java:1.4.4'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 
+    // AOP for logging and tracing
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // Micrometer for distributed tracing and metrics
+    implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+    implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Enhanced logging with MDC support
+    implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 }
 
-    tasks.named('test') {
+tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Enable Spring Boot layered JAR for optimized Docker images
+tasks.named('bootJar') {
+	layered {
+		enabled = true
+	}
 }

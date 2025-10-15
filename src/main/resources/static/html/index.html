@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Parking App Backend UI</title>
+    <link rel="stylesheet" href="../css/styles.css" />
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        header nav { margin-bottom: 20px; }
+        header nav button { margin-right: 10px; padding: 8px 16px; cursor: pointer; }
+        section { margin-top: 20px; }
+        label { display: inline-block; width: 140px; margin-right: 10px; vertical-align: top; }
+        input, select, textarea { padding: 6px; width: 300px; margin: 4px 0; }
+        table { border-collapse: collapse; width: 95%; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; vertical-align: middle; }
+        th { background: #f7f7f7; }
+        .response { background: #eef; padding: 10px; margin-top: 10px; border: 1px solid #99c; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        img.qrcode { height: 80px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <nav>
+        <button onclick="showSection('users')">Users</button>
+        <button onclick="showSection('bookings')">Bookings</button>
+        <button onclick="showSection('spots')">Parking Spots</button>
+        <button onclick="showSection('lots')">Parking Lots</button>
+        <button onclick="showSection('wallet')">Wallet</button>
+    </nav>
+    <img src="../logo.jpeg" alt="Parking App Logo" class="navbar-logo" />
+</header>
+
+<section id="users" class="section">
+    <h2>Users</h2>
+    <button onclick="fetchUsers()">Get All Users</button>
+    <div>
+        <h3>Register User</h3>
+        <label>Name:</label><input type="text" id="userName" placeholder="Name" /><br />
+        <label>Email:</label><input type="email" id="userEmail" placeholder="Email" /><br />
+        <label>Phone:</label><input type="text" id="userPhone" placeholder="Phone" /><br />
+        <label>Parking Lot Name:</label>
+        <select id="userParkingLotName" style="width: 300px;">
+            <option value="">Select Parking Lot</option>
+        </select><br />
+        <label>Password:</label><input type="password" id="userPassword" placeholder="Password" /><br />
+        <label>Role:</label>
+        <select id="userRole">
+            <option value="USER">User</option>
+            <option value="ADMIN">Admin</option>
+        </select><br />
+
+        <button onclick="createUser()">Register</button>
+    </div>
+    <div>
+        <h3>Update User</h3>
+        <label>ID:</label><input type="text" id="updateUserId" placeholder="User ID" /><br />
+        <label>Name:</label><input type="text" id="updateUserName" placeholder="Name" /><br />
+        <label>Email:</label><input type="email" id="updateUserEmail" placeholder="Email" /><br />
+        <label>Phone:</label><input type="text" id="updateUserPhone" placeholder="Phone" /><br />
+        <!-- Vehicle Numbers field removed from updateUser as per new API separation -->
+        <label>New Password (optional):</label><input type="password" id="updateUserPassword" placeholder="Password" /><br />
+        <button onclick="updateUser()">Update</button>
+    </div>
+    <div>
+        <h3>Update User Vehicles</h3>
+        <label>User ID:</label><input type="text" id="updateUserVehiclesUserId" placeholder="User ID" /><br />
+        <label>Vehicle Numbers:</label>
+        <input type="text" id="updateUserVehiclesNumbers" placeholder="Comma-separated, e.g. KA01AB1234, KA02CD5678" /><br />
+        <button onclick="updateUserVehicles()">Update Vehicles</button>
+    </div>
+    <div>
+        <h3>Delete User</h3>
+        <label>ID:</label><input type="text" id="deleteUserId" placeholder="User ID" />
+        <button onclick="deleteUser()">Delete</button>
+    </div>
+    <pre id="usersResponse" class="response"></pre>
+    <h3>Users List</h3>
+    <table id="usersTable">
+        <thead>
+        <tr>
+            <th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Vehicle Numbers</th><th>Role</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+<section id="bookings" class="section hidden">
+    <h2>Bookings</h2>
+    <label>User ID:</label>
+    <input type="text" id="bookingUserId" placeholder="User ID" onchange="fetchUserVehicles()" /><br />
+    <button onclick="fetchBookings()">Get All Bookings</button>
+    <button onclick="fetchUserVehicles()">Load User Vehicles</button>
+    <div>
+        <h3>Create Booking</h3>
+        <label>Spot ID:</label><input type="text" id="bookingSpotId" placeholder="Spot ID" /><br />
+        <label>Lot ID:</label><input type="text" id="bookingLotId" placeholder="Lot ID" /><br />
+        <label>Check-in Time:</label><input type="datetime-local" id="bookingCheckIn" /><br />
+        <label>Check-out Time:</label><input type="datetime-local" id="bookingCheckOut" /><br />
+        <label>Select Vehicle:</label>
+        <select id="bookingVehicleNumber">
+            <option value="">-- Select Vehicle --</option>
+        </select><br />
+        <div id="bookingAmountSection" style="margin-top:10px; display:none;">
+            <label><strong>Amount to Pay (₹):</strong></label>
+            <span id="bookingAmount" style="font-weight:bold; font-size:1.2em;">0.00</span>
+        </div>
+        <button onclick="createBooking()">Create Booking</button>
+    </div>
+    <div>
+        <h3>Update Booking Status</h3>
+        <label>Booking ID:</label><input type="text" id="updateBookingId" placeholder="Booking ID" /><br />
+        <label>Status:</label>
+        <select id="updateBookingStatus">
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="completed">Completed</option>
+        </select><br />
+        <button onclick="updateBooking()">Update Status</button>
+    </div>
+    <div>
+        <h3>Delete Booking</h3>
+        <label>ID:</label><input type="text" id="deleteBookingId" placeholder="Booking ID" />
+        <button onclick="deleteBooking(
+            document.getElementById('bookingUserId').value,
+            document.getElementById('deleteBookingId').value
+        )">Delete Booking</button>
+    </div>
+    <div>
+        <h3>Booking History</h3>
+        <button onclick="fetchBookingHistory()">Get Booking History</button>
+        <table id="bookingHistoryTable">
+            <thead>
+            <tr>
+                <th>ID</th><th>User ID</th><th>Spot ID</th><th>Lot ID</th><th>Check-in</th><th>Check-out</th>
+                <th>Status</th><th>Amount (₹)</th><th>Vehicle</th>
+            </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div>
+        <h3>Filtered Bookings</h3>
+        <label>Status:</label>
+        <select id="filteredStatus">
+            <option value="">Any</option>
+            <option value="pending">Pending</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+        </select>
+        <label>Lot ID:</label><input type="text" id="filteredLotId" placeholder="Lot ID" />
+        <label>Start Date:</label><input type="date" id="filteredStartDate" />
+        <label>End Date:</label><input type="date" id="filteredEndDate" />
+        <label>Page:</label><input type="number" id="filteredPage" min="0" style="width:80px;" />
+        <label>Size:</label><input type="number" id="filteredSize" min="1" style="width:80px;" />
+        <button onclick="fetchFilteredBookings(
+            document.getElementById('filteredStatus').value,
+            document.getElementById('filteredLotId').value,
+            document.getElementById('filteredStartDate').value,
+            document.getElementById('filteredEndDate').value,
+            document.getElementById('filteredPage').value,
+            document.getElementById('filteredSize').value
+        )">Get Filtered Bookings</button>
+    </div>
+    <div>
+        <h3>Penalty Info</h3>
+        <label>Booking ID:</label><input type="text" id="penaltyBookingId" placeholder="Booking ID" />
+        <button onclick="fetchPenaltyInfo(
+            document.getElementById('bookingUserId').value,
+            document.getElementById('penaltyBookingId').value
+        )">Get Penalty</button>
+    </div>
+    <div>
+        <h3>Get Booking by ID</h3>
+        <label>Booking ID:</label><input type="text" id="getBookingById" placeholder="Booking ID" />
+        <button onclick="fetchBookingById(
+            document.getElementById('bookingUserId').value,
+            document.getElementById('getBookingById').value
+        )">Get Booking</button>
+    </div>
+    <div>
+        <h3>Get All Bookings (Admin)</h3>
+        <button onclick="fetchAllBookings()">Get All Bookings</button>
+    </div>
+    <div>
+        <h3>Booking Price Breakup</h3>
+        <label>User ID:</label><input type="text" id="breakupUserId" placeholder="User ID" />
+        <label>Booking ID:</label><input type="text" id="breakupBookingId" placeholder="Booking ID" />
+        <button onclick="fetchBookingBreakup(
+            document.getElementById('breakupUserId').value,
+            document.getElementById('breakupBookingId').value
+        )">Get Price Breakup</button>
+    </div>
+    <pre id="bookingsResponse" class="response"></pre>
+    <h3>Bookings List</h3>
+    <table id="bookingsTable">
+        <thead>
+        <tr>
+            <th>ID</th><th>User ID</th><th>Spot ID</th><th>Lot ID</th><th>Check-in</th><th>Check-out</th>
+            <th>Status</th><th>Amount (₹)</th><th>Vehicle</th><th>QR Code</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+<section id="spots" class="section hidden">
+    <h2>Parking Spots</h2>
+    <button onclick="fetchSpots()">Get All Spots</button>
+    <div>
+        <h3>Create Parking Spot</h3>
+        <label>Lot ID:</label><input type="text" id="spotLotId" placeholder="Lot ID" /><br />
+        <label>Zone Name:</label><input type="text" id="spotZoneName" placeholder="Zone Name" /><br />
+        <label>Capacity:</label><input type="number" id="spotCapacity" placeholder="Capacity" /><br />
+        <label>Available:</label><input type="number" id="spotAvailable" placeholder="Available Spots" /><br />
+        <button onclick="createSpot()">Create Spot</button>
+        <button onclick="resetAllSpots()">Reset All Spots</button>
+    </div>
+    <div>
+        <h3>Parking Spot Details</h3>
+        <label>Spot ID:</label><input type="text" id="parkingSpotDetailsId" placeholder="Spot ID" />
+        <button onclick="fetchParkingSpotDetails(
+            document.getElementById('parkingSpotDetailsId').value
+        )">Get Spot Details</button>
+    </div>
+    <h3>Parking Spots List</h3>
+    <table id="spotsTable">
+        <thead>
+        <tr>
+            <th>ID</th><th>Lot ID</th><th>Zone Name</th><th>Capacity</th><th>Available</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+<section id="lots" class="section hidden">
+    <h2>Parking Lots</h2>
+    <button onclick="fetchLots()">Get All Lots</button>
+    <div>
+        <h3>Create Parking Lot</h3>
+        <label>Name:</label><input type="text" id="lotName" placeholder="Lot Name" /><br />
+        <label>Location:</label><input type="text" id="lotLocation" placeholder="Location" /><br />
+        <label>Description:</label><textarea id="lotDescription" placeholder="Description" rows="3"></textarea><br />
+        <button onclick="createLot()">Create Lot</button>
+    </div>
+    <h3>Parking Lots List</h3>
+    <table id="lotsTable">
+        <thead>
+        <tr>
+            <th>ID</th><th>Name</th><th>Location</th><th>Description</th><th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+<section id="wallet" class="section hidden">
+    <h2>Wallet</h2>
+    <div>
+        <label>User ID:</label>
+        <input type="text" id="walletUserId" placeholder="User ID" />
+        <button onclick="fetchWallet()">View Balance</button>
+        <button onclick="fetchWalletTransactions()">View Transactions</button>
+    </div>
+    <div>
+        <h3>Wallet Top-Up</h3>
+        <label>User ID:</label><input type="text" id="topUpUserId" placeholder="User ID" /><br />
+        <label>Amount:</label><input type="number" id="topUpAmount" placeholder="Top-up amount" /><br />
+        <button onclick="topUpWallet()">Top-Up Wallet</button>
+    </div>
+    <div>
+        <h3>Deduct Penalty</h3>
+        <label>User ID:</label><input type="text" id="walletUserIdPenalty" placeholder="User ID" /><br />
+        <label>Penalty Amount:</label><input type="number" id="penaltyAmount" placeholder="Penalty amount" /><br />
+        <button onclick="deductPenalty()">Deduct Penalty</button>
+    </div>
+    <pre id="walletResponse" class="response"></pre>
+    <h3>Wallet Balance</h3>
+    <table id="walletTable">
+        <thead>
+        <tr>
+            <th>Wallet ID</th><th>User ID</th><th>Balance</th><th>Last Updated</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <h3>Wallet Transactions</h3>
+    <table id="walletTxTable">
+        <thead>
+        <tr>
+            <th>Reference ID</th><th>Type</th><th>Amount</th><th>Status</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</section>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="../js/script.js"></script>
+<script>
+    // --- Only show correct action buttons for each booking status ---
+    function displayBookings(bookings) {
+        const tbody = document.querySelector("#bookingsTable tbody");
+        tbody.innerHTML = "";
+        bookings.forEach((b) => {
+            const qrImg = b.id ? `<img src="https://chart.googleapis.com/chart?cht=qr&chs=150x150&chl=${encodeURIComponent(b.id)}" alt="QR" width="80" height="80"/>` : "N/A";
+            let actions = "";
+            if (b.status === "pending") {
+                actions = `<button onclick="checkIn('${b.userId}','${b.id}')">Check-in</button>
+                           <button onclick="cancelBooking('${b.userId}','${b.id}')">Cancel</button>`;
+            } else if (b.status === "active") {
+                actions = `<button onclick="checkOut('${b.userId}','${b.id}')">Check-out</button>`;
+            }
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>${b.id || ""}</td>
+                <td>${b.userId || ""}</td>
+                <td>${b.spotId || ""}</td>
+                <td>${b.lotId || ""}</td>
+                <td>${b.checkInTime || ""}</td>
+                <td>${b.checkOutTime || ""}</td>
+                <td>${b.status || ""}</td>
+                <td>${b.amount?.toFixed(2) || "0.00"}</td>
+                <td>${b.vehicleNumber || ""}</td>
+                <td>${qrImg}</td>
+                <td>${actions}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+</script>
+</body>
+</html>

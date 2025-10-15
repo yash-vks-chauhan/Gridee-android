@@ -1,3 +1,4 @@
+// src/main/java/com/parking/app/controller/TransactionController.java
 package com.parking.app.controller;
 
 import com.parking.app.model.Transactions;
@@ -37,6 +38,46 @@ public class TransactionController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Transactions>> getTransactionsByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(transactionService.getTransactionsByUserId(userId));
+    }
+
+    @GetMapping("/type/{type}")
+    public ResponseEntity<List<Transactions>> getTransactionsByType(@PathVariable String type) {
+        return ResponseEntity.ok(transactionService.getTransactionsByType(type));
+    }
+
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Transactions>> getTransactionsByStatus(@PathVariable String status) {
+        return ResponseEntity.ok(transactionService.getTransactionsByStatus(status));
+    }
+
+    @GetMapping("/gateway/{gateway}")
+    public ResponseEntity<List<Transactions>> getTransactionsByGateway(@PathVariable String gateway) {
+        return ResponseEntity.ok(transactionService.getTransactionsByGateway(gateway));
+    }
+
+    @GetMapping("/gatewayOrderId/{gatewayOrderId}")
+    public ResponseEntity<List<Transactions>> getTransactionsByGatewayOrderId(@PathVariable String gatewayOrderId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByGatewayOrderId(gatewayOrderId));
+    }
+
+    @GetMapping("/gatewayPaymentId/{gatewayPaymentId}")
+    public ResponseEntity<List<Transactions>> getTransactionsByGatewayPaymentId(@PathVariable String gatewayPaymentId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByGatewayPaymentId(gatewayPaymentId));
+    }
+
+    @GetMapping("/currency/{currency}")
+    public ResponseEntity<List<Transactions>> getTransactionsByCurrency(@PathVariable String currency) {
+        return ResponseEntity.ok(transactionService.getTransactionsByCurrency(currency));
+    }
+
+    @GetMapping("/method/{method}")
+    public ResponseEntity<List<Transactions>> getTransactionsByMethod(@PathVariable String method) {
+        return ResponseEntity.ok(transactionService.getTransactionsByMethod(method));
+    }
+
+    @GetMapping("/referenceId/{referenceId}")
+    public ResponseEntity<List<Transactions>> getTransactionsByReferenceId(@PathVariable String referenceId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByReferenceId(referenceId));
     }
 
     @PutMapping("/{id}")

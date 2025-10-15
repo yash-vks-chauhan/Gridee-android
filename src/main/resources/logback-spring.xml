@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Property definitions for standardization -->
+    <property name="APP_NAME" value="gridee-parking"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [${APP_NAME},%X{traceId:-},%X{spanId:-}] [%X{userId:-}] --- [%t] %-40.40logger{39} : %m%n"/>
+
+    <!-- ==================== LOCAL PROFILE - HUMAN READABLE LOGS ==================== -->
+    <springProfile name="local">
+        <!-- Console Appender with human-readable pattern for local development -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+
+        <!-- File Appender for local - also human readable -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/application.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>logs/archive/application-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>50MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>7</maxHistory>
+            </rollingPolicy>
+            <encoder>
+                <pattern>${LOG_PATTERN}</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- ==================== PROD PROFILE - JSON LOGS FOR CLOUD ==================== -->
+    <springProfile name="prod">
+        <!-- Console Appender with JSON structured logging (Cloud-ready) -->
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <!-- Standard fields for cloud analytics -->
+                <includeMdc>true</includeMdc>
+                <includeContext>true</includeContext>
+                <includeCallerData>false</includeCallerData>
+                <includeTags>true</includeTags>
+
+                <!-- Custom fields following ECS (Elastic Common Schema) standard -->
+                <customFields>{
+                    "service.name":"${APP_NAME}",
+                    "service.version":"${APP_VERSION:-0.0.1}",
+                    "service.environment":"${APP_ENVIRONMENT:-local}",
+                    "service.region":"${APP_REGION:-us-east-1}",
+                    "service.instance":"${INSTANCE_ID:-unknown}",
+                    "log.level":"INFO"
+                }</customFields>
+
+                <!-- Field names following industry standards -->
+                <fieldNames>
+                    <timestamp>@timestamp</timestamp>
+                    <version>@version</version>
+                    <message>message</message>
+                    <logger>logger_name</logger>
+                    <thread>thread_name</thread>
+                    <level>log.level</level>
+                    <levelValue>log.level_value</levelValue>
+                    <stackTrace>error.stack_trace</stackTrace>
+                </fieldNames>
+
+                <!-- Add standard fields for APM tools -->
+                <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                    <pattern>
+                        {
+                            "trace.id": "%X{traceId:-}",
+                            "span.id": "%X{spanId:-}",
+                            "user.id": "%X{userId:-}",
+                            "request.id": "%X{requestId:-}",
+                            "request.uri": "%X{requestUri:-}",
+                            "request.method": "%X{requestMethod:-}",
+                            "http.status_code": "%X{httpStatusCode:-}",
+                            "duration_ms": "%X{durationMs:-}",
+                            "error.type": "%X{errorType:-}",
+                            "business.operation": "%X{businessOperation:-}"
+                        }
+                    </pattern>
+                </provider>
+            </encoder>
+        </appender>
+
+        <!-- File Appender for Application Logs with JSON format -->
+        <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>logs/application.json</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>logs/archive/application-%d{yyyy-MM-dd}.%i.json.gz</fileNamePattern>
+                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                    <maxFileSize>50MB</maxFileSize>
+                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxHistory>30</maxHistory>
+                <totalSizeCap>5GB</totalSizeCap>
+            </rollingPolicy>
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <includeMdc>true</includeMdc>
+                <includeContext>true</includeContext>
+                <customFields>{
+                    "service.name":"${APP_NAME}",
+                    "service.environment":"${APP_ENVIRONMENT:-local}",
+                    "log.type":"application"
+                }</customFields>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <!-- Security Audit Log with standardized format -->
+    <appender name="SECURITY_AUDIT" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/security-audit.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archive/security-audit-%d{yyyy-MM-dd}.json.gz</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>10GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <customFields>{
+                "service.name":"${APP_NAME}",
+                "log.type":"security_audit",
+                "event.category":"authentication",
+                "event.type":"access"
+            }</customFields>
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                        "user.id": "%X{userId:-}",
+                        "user.action": "%X{userAction:-}",
+                        "security.event": "%X{securityEvent:-}",
+                        "source.ip": "%X{sourceIp:-}",
+                        "resource.accessed": "%X{resourceAccessed:-}"
+                    }
+                </pattern>
+            </provider>
+        </encoder>
+    </appender>
+
+    <!-- Performance Monitoring Log with metrics format -->
+    <appender name="PERFORMANCE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/performance.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archive/performance-%d{yyyy-MM-dd}.json.gz</fileNamePattern>
+            <maxHistory>7</maxHistory>
+            <totalSizeCap>2GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <customFields>{
+                "service.name":"${APP_NAME}",
+                "log.type":"performance",
+                "event.category":"performance"
+            }</customFields>
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                        "operation.name": "%X{operationName:-}",
+                        "operation.type": "%X{operationType:-}",
+                        "duration_ms": "%X{durationMs:-}",
+                        "threshold_exceeded": "%X{thresholdExceeded:-}",
+                        "resource.type": "%X{resourceType:-}"
+                    }
+                </pattern>
+            </provider>
+        </encoder>
+    </appender>
+
+    <!-- Error Log with full context -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/error.json</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archive/error-%d{yyyy-MM-dd}.json.gz</fileNamePattern>
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <includeContext>true</includeContext>
+            <includeCallerData>true</includeCallerData>
+            <includeStackTrace>true</includeStackTrace>
+            <customFields>{
+                "service.name":"${APP_NAME}",
+                "log.type":"error",
+                "event.category":"error"
+            }</customFields>
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                        "error.type": "%X{errorType:-}",
+                        "error.message": "%X{errorMessage:-}",
+                        "error.code": "%X{errorCode:-}",
+                        "trace.id": "%X{traceId:-}",
+                        "span.id": "%X{spanId:-}",
+                        "user.id": "%X{userId:-}"
+                    }
+                </pattern>
+            </provider>
+        </encoder>
+    </appender>
+
+    <!-- Business Events Log (for analytics) -->
+    <appender name="BUSINESS_EVENTS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/business-events.json</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/archive/business-events-%d{yyyy-MM-dd}.json.gz</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>3GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdc>true</includeMdc>
+            <customFields>{
+                "service.name":"${APP_NAME}",
+                "log.type":"business_event",
+                "event.category":"business"
+            }</customFields>
+            <provider class="net.logstash.logback.composite.loggingevent.LoggingEventPatternJsonProvider">
+                <pattern>
+                    {
+                        "event.name": "%X{eventName:-}",
+                        "event.type": "%X{eventType:-}",
+                        "user.id": "%X{userId:-}",
+                        "booking.id": "%X{bookingId:-}",
+                        "transaction.id": "%X{transactionId:-}",
+                        "amount": "%X{amount:-}",
+                        "payment.status": "%X{paymentStatus:-}"
+                    }
+                </pattern>
+            </provider>
+        </encoder>
+    </appender>
+
+    <!-- Async Appenders for better performance -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>1024</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>false</neverBlock>
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <appender name="ASYNC_ERROR" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <appender-ref ref="ERROR_FILE"/>
+    </appender>
+
+    <appender name="ASYNC_PERFORMANCE" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <discardingThreshold>20</discardingThreshold>
+        <appender-ref ref="PERFORMANCE"/>
+    </appender>
+
+    <!-- Logger for Security Audit -->
+    <logger name="SECURITY_AUDIT" level="INFO" additivity="false">
+        <appender-ref ref="SECURITY_AUDIT"/>
+    </logger>
+
+    <!-- Logger for Performance Monitoring -->
+    <logger name="PERFORMANCE" level="INFO" additivity="false">
+        <appender-ref ref="ASYNC_PERFORMANCE"/>
+    </logger>
+
+    <!-- Logger for Business Events -->
+    <logger name="BUSINESS_EVENTS" level="INFO" additivity="false">
+        <appender-ref ref="BUSINESS_EVENTS"/>
+    </logger>
+
+    <!-- Application Loggers -->
+    <logger name="com.parking.app" level="DEBUG"/>
+
+    <!-- Spring Framework -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="org.springframework.web" level="INFO"/>
+    <logger name="org.springframework.security" level="INFO"/>
+
+    <!-- MongoDB -->
+    <logger name="org.springframework.data.mongodb" level="INFO"/>
+
+    <!-- Micrometer Tracing -->
+    <logger name="io.micrometer.tracing" level="INFO"/>
+    <logger name="io.micrometer.observation" level="INFO"/>
+
+    <!-- Root Logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR"/>
+    </root>
+
+</configuration>

@@ -1,16 +1,19 @@
 // Java
 package com.parking.app.controller;
 
-import com.parking.app.exception.*;
+import com.parking.app.exception.ConflictException;
 import com.parking.app.exception.IllegalStateException;
+import com.parking.app.exception.InsufficientFundsException;
+import com.parking.app.exception.NotFoundException;
 import com.parking.app.model.Bookings;
 import com.parking.app.service.BookingService;
-import com.parking.app.service.BookingService.QrValidationResult;
+import com.parking.app.service.booking.QRCodeValidationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneId;
@@ -32,6 +35,7 @@ public class BookingController {
     }
 
     @GetMapping("/bookings")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Bookings>> getAllBookings(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String lotId,
@@ -113,6 +117,25 @@ public class BookingController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+    @GetMapping("/users/{userId}/bookings/{bookingId}/breakup")
+    public ResponseEntity<?> getBookingBreakup(
+            @PathVariable String userId,
+            @PathVariable String bookingId
+    ) {
+        try {
+            Bookings booking = bookingService.getBookingById(bookingId);
+            if (booking == null || !booking.getUserId().equals(userId)) {
+                logger.warn("User {} tried to access breakup for booking {} not belonging to them", userId, bookingId);
+                return ResponseEntity.notFound().build();
+            }
+            Map<String, Object> breakup = bookingService.getBookingBreakup(bookingId);
+            return ResponseEntity.ok(breakup);
+        } catch (Exception e) {
+            logger.error("Error fetching booking breakup: {}", e.getMessage());
+            return ResponseEntity.badRequest().body("Error fetching booking breakup");
+        }
+    }
+
 
 
     @PostMapping("/users/{userId}/bookings/{bookingId}/cancel")
@@ -257,16 +280,6 @@ public class BookingController {
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("OK");
     }
-    @PostMapping("/admin/reset-spots")
-    public ResponseEntity<String> resetAllSpots() {
-        try {
-            bookingService.resetParkingSpotsAvailability();
-            return ResponseEntity.ok("All parking spots have been reset to max capacity.");
-        } catch (Exception e) {
-            logger.error("Error resetting parking spots: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");
-        }
-    }
 
     // --- QR validation for check-in: expects { "qrCode": "..." } in body ---
     @PostMapping("/users/{userId}/bookings/{bookingId}/validate-qr-checkin")
@@ -281,7 +294,7 @@ public class BookingController {
                 return ResponseEntity.notFound().build();
             }
             String qrCode = body.get("qrCode");
-            QrValidationResult result = bookingService.validateQrCodeForCheckIn(bookingId, qrCode);
+            QRCodeValidationService.QrValidationResult result = bookingService.validateQrCodeForCheckIn(bookingId, qrCode);
             if (!result.valid) {
                 return ResponseEntity.badRequest().body(result.message);
             }
@@ -305,7 +318,7 @@ public class BookingController {
                 return ResponseEntity.notFound().build();
             }
             String qrCode = body.get("qrCode");
-            QrValidationResult result = bookingService.validateQrCodeForCheckOut(bookingId, qrCode);
+            QRCodeValidationService.QrValidationResult result = bookingService.validateQrCodeForCheckOut(bookingId, qrCode);
             if (!result.valid) {
                 return ResponseEntity.badRequest().body(result.message);
             }

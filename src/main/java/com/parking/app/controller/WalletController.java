@@ -2,33 +2,41 @@ package com.parking.app.controller;
 
 import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
+import com.parking.app.service.TransactionService;
 import com.parking.app.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/{userId}/wallet")
+//TODO : try extracing userId from JWT token instead of path variable for better security
 public class WalletController {
 
     @Autowired
     private WalletService walletService;
 
-    // Get wallet balance for user
-    @GetMapping("")
+    @Autowired
+    private TransactionService transactionService;
+
+    // Get wallet details for a user
+    // In WalletController.java
+
+    @GetMapping
     public ResponseEntity<Wallet> getWallet(@PathVariable String userId) {
-        return walletService.getWalletByUserId(userId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Wallet wallet = walletService.getOrCreateWallet(userId);
+        return ResponseEntity.ok(wallet);
     }
 
-    // Get transaction history for user
+
+    // Get all transactions for a user
     @GetMapping("/transactions")
-    public ResponseEntity<List<Transactions>> getTransactions(@PathVariable String userId) {
-        return ResponseEntity.ok(walletService.getUserTransactions(userId));
+    public ResponseEntity<List<Transactions>> getUserTransactions(@PathVariable String userId) {
+        return ResponseEntity.ok(transactionService.getTransactionsByUserId(userId));
     }
 
     // Top up wallet
@@ -43,8 +51,8 @@ public class WalletController {
         Wallet wallet = walletService.topUpWallet(userId, amount);
         return ResponseEntity.ok(wallet);
     }
-// Add this to WalletController
 
+    // Deduct penalty from wallet
     @PostMapping("/deduct-penalty")
     public ResponseEntity<?> deductPenalty(
             @PathVariable String userId,
@@ -52,14 +60,11 @@ public class WalletController {
         Double penalty = request.get("penalty");
         if (penalty == null || penalty <= 0) {
             return ResponseEntity.badRequest().body("Penalty must be positive.");
-        } 
+        }
         Wallet wallet = walletService.deductPenalty(userId, penalty);
         if (wallet == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Wallet not found or insufficient balance.");
         }
         return ResponseEntity.ok(wallet);
     }
-
-
-
 }

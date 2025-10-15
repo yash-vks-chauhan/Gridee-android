@@ -2,11 +2,11 @@ package com.parking.app.listener;
 
 import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
-import com.parking.app.repository.WalletRepository;
+import com.parking.app.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Component;
 import org.springframework.data.mongodb.core.mapping.event.AfterSaveEvent;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -16,7 +16,7 @@ import java.util.Optional;
 public class TransactionChangeListener {
 
     @Autowired
-    private WalletRepository walletRepository;
+    private WalletService walletService;
 
     // This method listens to MongoDB after-save events for Transaction entities
     @EventListener
@@ -33,7 +33,7 @@ public class TransactionChangeListener {
         // Only act on completed transactions
         if (!"completed".equalsIgnoreCase(tx.getStatus()) || tx.getUserId() == null) return;
 
-        Optional<Wallet> walletOpt = walletRepository.findByUserId(tx.getUserId());
+        Optional<Wallet> walletOpt = walletService.getWalletByUserId(tx.getUserId());
         Wallet wallet = walletOpt.orElseGet(() -> {
             Wallet w = new Wallet();
             w.setUserId(tx.getUserId());
@@ -66,6 +66,6 @@ public class TransactionChangeListener {
         txnList.add(ref);
         wallet.setTransactions(txnList);
 
-        walletRepository.save(wallet);
+        walletService.saveWallet(wallet);
     }
 }

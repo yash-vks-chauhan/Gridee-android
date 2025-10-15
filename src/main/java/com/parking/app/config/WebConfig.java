@@ -1,6 +1,6 @@
 package com.parking.app.config;
 
-import com.parking.app.interceptor.ApiLoggingInterceptor;
+import com.parking.app.config.logging.ApiLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
