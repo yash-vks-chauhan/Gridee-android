@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZonedDateTime;
@@ -23,6 +24,7 @@ public class ParkingSpotController {
     private BookingService bookingService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<ParkingSpot>> getAllParkingSpots() {
         List<ParkingSpot> spots = parkingSpotService.getAllParkingSpots();
         return ResponseEntity.ok(spots);
@@ -50,12 +52,14 @@ public class ParkingSpotController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingSpot> createParkingSpot(@RequestBody ParkingSpot spot) {
         ParkingSpot created = parkingSpotService.createParkingSpot(spot);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingSpot> updateParkingSpot(@PathVariable String id, @RequestBody ParkingSpot spotDetails) {
         ParkingSpot updated = parkingSpotService.updateParkingSpot(id, spotDetails);
         if (updated == null) {
@@ -65,11 +69,13 @@ public class ParkingSpotController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteParkingSpot(@PathVariable String id) {
         parkingSpotService.deleteParkingSpot(id);
         return ResponseEntity.noContent().build();
     }
 
+    //TODO: user related api should go in booking controller
     // Reserve a spot (hold & decrement available count)
     @PostMapping("/{id}/hold")
     public ResponseEntity<ParkingSpot> holdSpot(@PathVariable String id, @RequestParam String userId) {
@@ -89,6 +95,7 @@ public class ParkingSpotController {
         }
         return ResponseEntity.ok(spot);
     }
+
     @PostMapping("/available")
     public ResponseEntity<List<ParkingSpot>> getAvailableSpots(
             @RequestParam String lotId,
@@ -99,22 +106,19 @@ public class ParkingSpotController {
         return ResponseEntity.ok(availableSpots);
     }
 
-
     // Reset all parking spots to full capacity
     @PostMapping("/reset-capacity")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> resetAllSpotsCapacity() {
         parkingSpotService.resetAllSpotsCapacity();
         return ResponseEntity.ok("All parking spots have been reset to full capacity");
     }
-    @Scheduled(cron = "0 0 20 * * *") // Runs every day at 8 pm server time
-    public void scheduledResetAllSpotsCapacity() {
-        resetAllSpotsCapacity();
-    }
 
     @PostMapping("/admin/reset-spots")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> resetAllSpots() {
         try {
-            parkingSpotService.resetParkingSpotsAvailability();
+            parkingSpotService.resetAllSpotsCapacity();
             return ResponseEntity.ok("All parking spots have been reset to max capacity.");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");

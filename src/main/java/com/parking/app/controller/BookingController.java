@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.ZoneId;
@@ -34,6 +35,7 @@ public class BookingController {
     }
 
     @GetMapping("/bookings")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<Bookings>> getAllBookings(
             @RequestParam(required = false) String status,
             @RequestParam(required = false) String lotId,

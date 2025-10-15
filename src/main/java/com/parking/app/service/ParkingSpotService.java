@@ -268,8 +268,6 @@ public class ParkingSpotService {
         System.out.println(String.format(LOG_ZONE_FIX_COMPLETE, updatedCount));
     }
 
-    // ===== Reset & Maintenance Operations =====
-
     public void resetAllSpotsCapacity() {
         List<ParkingSpot> allSpots = parkingSpotRepository.findAll();
         for (ParkingSpot spot : allSpots) {
@@ -277,14 +275,6 @@ public class ParkingSpotService {
             parkingSpotRepository.save(spot);
         }
         System.out.println(LOG_CAPACITY_RESET);
-    }
-
-    public void resetParkingSpotsAvailability() {
-        List<ParkingSpot> spots = mongoOperations.findAll(ParkingSpot.class);
-        for (ParkingSpot spot : spots) {
-            spot.setAvailable(spot.getCapacity());
-            mongoOperations.save(spot);
-        }
     }
 }
 

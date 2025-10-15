@@ -8,6 +8,7 @@ import com.parking.app.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +23,9 @@ public class UserController {
     private UserService userService;
 
     // Get all users - returns DTOs without sensitive data
+    // Only accessible by users with ADMIN role
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         List<Users> users = userService.getAllUsers();
         List<UserResponseDto> userDtos = users.stream()

@@ -22,8 +22,9 @@ public class BookingScheduler {
         bookingService.autoCompleteLateBookings();
     }
 
-    @Scheduled(cron = "0 0 20 * * *", zone = "Asia/Kolkata")
-    public void resetParkingSpotsAvailability() {
-        parkingSpotService.resetParkingSpotsAvailability();
+    @Scheduled(cron = "0 0 20 * * *", zone = "Asia/Kolkata") // Runs every day at 8 pm server time
+    public void scheduledResetAllSpotsCapacity() {
+        parkingSpotService.resetAllSpotsCapacity();
     }
+
 }

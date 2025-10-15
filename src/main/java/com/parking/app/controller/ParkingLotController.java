@@ -5,6 +5,7 @@ import com.parking.app.service.ParkingLotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -53,12 +54,14 @@ public class ParkingLotController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingLot> createParkingLot(@RequestBody ParkingLot parkingLot) {
         ParkingLot created = parkingLotService.createParkingLot(parkingLot);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingLot> updateParkingLot(@PathVariable String id, @RequestBody ParkingLot lotDetails) {
         ParkingLot updated = parkingLotService.updateParkingLot(id, lotDetails);
         if (updated == null) {
@@ -68,6 +71,7 @@ public class ParkingLotController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteParkingLot(@PathVariable String id) {
         parkingLotService.deleteParkingLot(id);
         return ResponseEntity.noContent().build();
