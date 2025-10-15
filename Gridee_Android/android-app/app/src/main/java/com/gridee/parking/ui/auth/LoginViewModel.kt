@@ -6,9 +6,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.gridee.parking.data.model.User
+import com.gridee.parking.data.model.AuthResponse
 import com.gridee.parking.data.repository.UserRepository
+import com.gridee.parking.utils.JwtTokenManager
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
+
+import android.content.Context
 
 class LoginViewModel : ViewModel() {
     
@@ -20,7 +24,7 @@ class LoginViewModel : ViewModel() {
     private val _validationErrors = MutableLiveData<Map<String, String>>()
     val validationErrors: LiveData<Map<String, String>> = _validationErrors
     
-    fun loginUser(emailOrPhone: String, password: String) {
+    fun loginUser(context: Context, emailOrPhone: String, password: String) {
         // Validate input
         val errors = validateInput(emailOrPhone, password)
         if (errors.isNotEmpty()) {
@@ -32,20 +36,39 @@ class LoginViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                val hashedPassword = hashPassword(password)
-                val response = userRepository.loginUser(emailOrPhone.trim(), hashedPassword)
-                
-                if (response.isSuccessful) {
-                    response.body()?.let { user ->
+                // Prefer JWT-based login to avoid parsing mismatches
+                val normalized = emailOrPhone.trim().let { if (it.contains("@")) it.lowercase() else it }
+                // Send plain password; backend uses BCrypt on the server side
+                val jwtResponse = userRepository.authLogin(normalized, password)
+
+                if (jwtResponse.isSuccessful) {
+                    jwtResponse.body()?.let { auth ->
+                        // Persist JWT for subsequent authenticated calls
+                        val jwtManager = JwtTokenManager(context)
+                        jwtManager.saveAuthToken(
+                            token = auth.token,
+                            userId = auth.id,
+                            userName = auth.name,
+                            userRole = auth.role
+                        )
+                        // Build a minimal User object for UI compatibility
+                        val user = User(
+                            id = auth.id,
+                            name = auth.name,
+                            email = if (normalized.contains("@")) normalized else "",
+                            phone = if (!normalized.contains("@")) normalized else "",
+                            vehicleNumbers = emptyList()
+                        )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
-                        _loginState.value = LoginState.Error("Login successful but no user data received")
+                        _loginState.value = LoginState.Error("Login successful but no token received")
                     }
                 } else {
-                    val errorMessage = when (response.code()) {
-                        401 -> "Invalid email/phone or password"
-                        404 -> "User not found"
-                        else -> response.errorBody()?.string() ?: "Login failed"
+                    val errorBody = runCatching { jwtResponse.errorBody()?.string() }.getOrNull()
+                    val errorMessage = when (jwtResponse.code()) {
+                        400, 401 -> errorBody ?: "Invalid email/phone or password"
+                        404 -> errorBody ?: "User not found"
+                        else -> errorBody ?: "Login failed (${jwtResponse.code()})"
                     }
                     _loginState.value = LoginState.Error(errorMessage)
                 }

@@ -58,7 +58,7 @@ class LoginActivity : AppCompatActivity() {
         binding.btnSignIn.setOnClickListener {
             val emailOrPhone = binding.etEmailPhone.text.toString()
             val password = binding.etPassword.text.toString()
-            viewModel.loginUser(emailOrPhone, password)
+            viewModel.loginUser(this, emailOrPhone, password)
         }
         
         // Password visibility toggle
@@ -83,6 +83,11 @@ class LoginActivity : AppCompatActivity() {
         binding.btnSignInWithGoogle.setOnClickListener {
             val signInIntent = googleSignInManager.getSignInIntent()
             googleSignInLauncher.launch(signInIntent)
+        }
+        
+        // JWT Test Button - Development Only
+        binding.btnTestJwtAuth.setOnClickListener {
+            startActivity(Intent(this, JwtTestActivity::class.java))
         }
         
         // Sign Up link

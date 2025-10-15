@@ -14,6 +14,9 @@ public class PaymentController {
     @Autowired
     private PaymentGatewayService paymentGatewayService;
 
+    @org.springframework.beans.factory.annotation.Value("${razorpay.key:}")
+    private String razorpayKeyId;
+
     // Endpoint to initiate payment
     @PostMapping("/initiate")
     public ResponseEntity<?> initiatePayment(@RequestBody Map<String, Object> request) {
@@ -30,7 +33,10 @@ public class PaymentController {
                 amount = Double.parseDouble(amountObj.toString());
             }
             String orderId = paymentGatewayService.initiatePayment(userId, amount);
-            return ResponseEntity.ok(Map.of("orderId", orderId));
+            return ResponseEntity.ok(Map.of(
+                    "orderId", orderId,
+                    "keyId", razorpayKeyId
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -54,6 +54,12 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         loadWalletData()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Refresh wallet data in case a top-up just completed
+        loadWalletData()
+    }
+
     private fun setupRecyclerView() {
         transactionsAdapter = WalletTransactionsAdapter(emptyList())
         
@@ -74,17 +80,17 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             showTopUpDialog()
         }
         
-        // Quick Add buttons - direct top-up
+        // Quick Add buttons - Razorpay checkout
         binding.btnQuickAdd10.setOnClickListener {
-            processTopUp(50.0)
+            startRazorpayCheckout(50.0)
         }
         
         binding.btnQuickAdd20.setOnClickListener {
-            processTopUp(100.0)
+            startRazorpayCheckout(100.0)
         }
         
         binding.btnQuickAdd100.setOnClickListener {
-            processTopUp(200.0)
+            startRazorpayCheckout(200.0)
         }
     }
 
@@ -312,18 +318,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 updateAddButtonState(bottomSheetBinding)
             }
             
-            // Setup payment method selection (only UPI and Card)
-            var selectedPaymentMethod = "UPI" // Default selection
-            
-            bottomSheetBinding.layoutUpi.setOnClickListener {
-                selectPaymentMethod(bottomSheetBinding, "UPI")
-                selectedPaymentMethod = "UPI"
-            }
-            
-            bottomSheetBinding.layoutCard.setOnClickListener {
-                selectPaymentMethod(bottomSheetBinding, "CARD")
-                selectedPaymentMethod = "CARD"
-            }
+            // Payment method is fixed to Razorpay; no selection needed
             
             // Setup text change listener for amount input
             bottomSheetBinding.etAmount.addTextChangedListener(object : TextWatcher {
@@ -345,8 +340,8 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 if (amountText.isNotEmpty()) {
                     val amount = amountText.toDoubleOrNull()
                     if (amount != null && amount > 0) {
-                        showToast("Processing payment via $selectedPaymentMethod...")
-                        processTopUp(amount)
+                        showToast("Redirecting to Razorpay checkout...")
+                        startRazorpayCheckout(amount)
                         animateAndDismiss(bottomSheetDialog)
                     } else {
                         showToast("Please enter a valid amount")
@@ -354,8 +349,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 }
             }
             
-            // Initialize with UPI selected
-            selectPaymentMethod(bottomSheetBinding, "UPI")
+            // No selection state to initialize
             
             android.util.Log.d("WalletFragmentNew", "About to show bottom sheet")
             bottomSheetDialog.show()
@@ -367,23 +361,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         }
     }
     
-    private fun selectPaymentMethod(binding: BottomSheetTopUpSimpleBinding, method: String) {
-        val activeStroke = ContextCompat.getColor(requireContext(), R.color.text_primary)
-        val inactiveStroke = ContextCompat.getColor(requireContext(), R.color.quick_add_outline)
-        val activeBackground = ContextCompat.getColor(requireContext(), R.color.gray_50)
-        val inactiveBackground = ContextCompat.getColor(requireContext(), R.color.background_secondary)
-
-        val isUpiSelected = method == "UPI"
-        val isCardSelected = method == "CARD"
-
-        binding.radioUpi.isChecked = isUpiSelected
-        binding.layoutUpi.strokeColor = if (isUpiSelected) activeStroke else inactiveStroke
-        binding.layoutUpi.setCardBackgroundColor(if (isUpiSelected) activeBackground else inactiveBackground)
-
-        binding.radioCard.isChecked = isCardSelected
-        binding.layoutCard.strokeColor = if (isCardSelected) activeStroke else inactiveStroke
-        binding.layoutCard.setCardBackgroundColor(if (isCardSelected) activeBackground else inactiveBackground)
-    }
+    // No payment method selection anymore
     
     private fun updateAddButtonState(binding: BottomSheetTopUpSimpleBinding) {
         val amountText = binding.etAmount.text.toString()
@@ -416,7 +394,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             .start()
     }
     
-    private fun processTopUp(amount: Double) {
+    private fun startRazorpayCheckout(amount: Double) {
         val userId = getUserId()
         if (userId == null) {
             showToast("Please login to add money")
@@ -426,31 +404,39 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         binding.progressLoading.visibility = View.VISIBLE
 
         lifecycleScope.launch {
-            var shouldRefreshWallet = false
             try {
-                // Call the top-up API
-                val response = ApiClient.apiService.topUpWallet(
-                    userId = userId,
-                    request = mapOf("amount" to amount)
+                // 1) Create Razorpay order via backend
+                val initResp = ApiClient.apiService.initiatePayment(
+                    com.gridee.parking.data.model.PaymentInitiateRequest(
+                        userId = userId,
+                        amount = amount
+                    )
                 )
 
-                if (response.isSuccessful) {
-                    // Update balance immediately for better UX
-                    currentBalance += amount
-                    updateBalanceDisplay()
-                    
-                    showToast("₹${amount.toInt()} added successfully!")
-                    shouldRefreshWallet = true
-                } else {
-                    showToast("Failed to add money. Please try again.")
+                if (!initResp.isSuccessful) {
+                    showToast("Failed to initiate payment: ${initResp.code()}")
+                    return@launch
                 }
+
+                val body = initResp.body()
+                val orderId = body?.orderId
+                val keyId = body?.keyId
+                if (orderId.isNullOrBlank()) {
+                    showToast("Invalid payment order from server")
+                    return@launch
+                }
+
+                // 2) Open Razorpay Checkout in a dedicated activity
+                val intent = android.content.Intent(requireContext(), com.gridee.parking.ui.wallet.WalletTopUpActivity::class.java)
+                intent.putExtra("USER_ID", userId)
+                intent.putExtra("AMOUNT", amount)
+                intent.putExtra("ORDER_ID", orderId)
+                keyId?.let { intent.putExtra("KEY_ID", it) }
+                startActivity(intent)
             } catch (e: Exception) {
                 showToast("Error: ${e.message}")
             } finally {
                 binding.progressLoading.visibility = View.GONE
-                if (shouldRefreshWallet) {
-                    loadWalletData()
-                }
             }
         }
     }

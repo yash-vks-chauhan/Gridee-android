@@ -60,4 +60,7 @@
     <!-- Google Sign In -->
     <!-- TODO: Replace this with your actual Web Client ID from Google Cloud Console -->
     <string name="default_web_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    
+    <!-- Razorpay Test Key (client-side public key). Replace in production. -->
+    <string name="razorpay_key_id">rzp_test_RS3SKqbTQFAamy</string>
 </resources>

@@ -1,12 +1,16 @@
 package com.gridee.parking.ui.auth
 
+import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewModelScope
 import com.gridee.parking.data.model.User
+import com.gridee.parking.data.model.AuthResponse
 import com.gridee.parking.data.model.UserRegistration
 import com.gridee.parking.data.repository.UserRepository
+import com.gridee.parking.utils.JwtTokenManager
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
@@ -21,6 +25,7 @@ class RegistrationViewModel : ViewModel() {
     val validationErrors: LiveData<Map<String, String>> = _validationErrors
     
     fun registerUser(
+        context: Context,
         name: String,
         email: String,
         phone: String,
@@ -39,25 +44,42 @@ class RegistrationViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                val hashedPassword = hashPassword(password)
                 val userRegistration = UserRegistration(
                     name = name.trim(),
                     email = email.trim().lowercase(),
                     phone = phone.trim(),
-                    passwordHash = hashedPassword,
+                    // Send plain password; backend will BCrypt-hash it
+                    passwordHash = password,
                     vehicleNumbers = vehicleNumbers.filter { it.isNotBlank() }
                 )
                 
                 val response = userRepository.registerUser(userRegistration)
                 
                 if (response.isSuccessful) {
-                    response.body()?.let { user ->
-                        _registrationState.value = RegistrationState.Success(user)
+                    response.body()?.let { auth ->
+                        // Save JWT token and user info
+                        val jwtManager = JwtTokenManager(context)
+                        jwtManager.saveAuthToken(
+                            token = auth.token,
+                            userId = auth.id,
+                            userName = auth.name,
+                            userRole = auth.role
+                        )
+
+                        // Build a minimal User object for UI using entered details
+                        val registeredUser = User(
+                            id = auth.id,
+                            name = auth.name,
+                            email = email.trim(),
+                            phone = phone.trim(),
+                            vehicleNumbers = vehicleNumbers.filter { it.isNotBlank() }
+                        )
+                        _registrationState.value = RegistrationState.Success(registeredUser)
                     } ?: run {
-                        _registrationState.value = RegistrationState.Error("Registration successful but no user data received")
+                        _registrationState.value = RegistrationState.Error("Registration successful but empty response")
                     }
                 } else {
-                    val errorMessage = response.errorBody()?.string() ?: "Registration failed"
+                    val errorMessage = runCatching { response.errorBody()?.string() }.getOrNull() ?: "Registration failed"
                     _registrationState.value = RegistrationState.Error(errorMessage)
                 }
             } catch (e: Exception) {

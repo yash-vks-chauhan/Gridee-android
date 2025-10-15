@@ -25,13 +25,29 @@ public class AuthController {
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
         }
-        String token = jwtUtil.generateToken(user.getId(), user.getRole().name());
-        Map<String, Object> response = Map.of(
-                "token", token,
-                "id", user.getId(),
-                "name", user.getName(),
-                "role", user.getRole().name()
-        );
+
+        // Defensive defaults for older records that may have null fields
+        String userId = user.getId();
+        String name = user.getName();
+        Users.Role role = user.getRole();
+
+        if (role == null) {
+            role = Users.Role.USER;
+        }
+        if (name == null || name.isBlank()) {
+            // fallback to email or phone if name is missing
+            name = user.getEmail() != null ? user.getEmail() : (user.getPhone() != null ? user.getPhone() : "User");
+        }
+
+        String token = jwtUtil.generateToken(userId, role.name());
+
+        // Avoid Map.of (disallows null values) to prevent NPEs
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("token", token);
+        response.put("id", userId);
+        response.put("name", name);
+        response.put("role", role.name());
+
         return ResponseEntity.ok(response);
     }
 

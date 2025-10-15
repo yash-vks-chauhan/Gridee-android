@@ -1,6 +1,8 @@
 package com.gridee.parking.ui.fragments
 
 import android.content.Intent
+import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -40,6 +42,12 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     override fun setupUI() {
         setupRecyclerView()
         setupClickListeners()
+        loadWalletData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Refresh wallet data after returning from Razorpay checkout
         loadWalletData()
     }
 
@@ -244,42 +252,68 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun showTopUpDialog() {
-        // TODO: Implement top-up functionality
-        showToast("Top-up feature coming soon!")
+        val input = EditText(requireContext())
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+        input.hint = "Enter amount (₹)"
+
+        AlertDialog.Builder(requireContext())
+            .setTitle("Add Money")
+            .setView(input)
+            .setPositiveButton("Add") { dialog, _ ->
+                val amount = input.text.toString().toDoubleOrNull()
+                if (amount != null && amount > 0) {
+                    startRazorpayCheckout(amount)
+                } else {
+                    showToast("Please enter a valid amount")
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel") { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun processTopUp(amount: Double) {
+        // Route all top-ups via Razorpay
+        startRazorpayCheckout(amount)
+    }
+
+    private fun startRazorpayCheckout(amount: Double) {
         val userId = getUserId()
         if (userId == null) {
-            showToast("Please login to top up wallet")
+            showToast("Please login to add money")
             return
         }
 
         lifecycleScope.launch {
             try {
-                val request = mapOf("amount" to amount)
-                val response = ApiClient.apiService.topUpWallet(userId, request)
-                
-                if (response.isSuccessful) {
-                    val result = response.body()
-                    if (result != null) {
-                        // Update balance from server response
-                        val newBalance = result["balance"] as? Double
-                        if (newBalance != null) {
-                            currentBalance = newBalance
-                            updateBalanceDisplay()
-                        }
-                        
-                        showToast("Successfully added $${String.format("%.2f", amount)} to your wallet!")
-                        
-                        // Refresh wallet data to get updated transactions
-                        loadWalletData()
-                    }
-                } else {
-                    showToast("Top-up failed. Please try again.")
+                val initResp = ApiClient.apiService.initiatePayment(
+                    com.gridee.parking.data.model.PaymentInitiateRequest(
+                        userId = userId,
+                        amount = amount
+                    )
+                )
+
+                if (!initResp.isSuccessful) {
+                    showToast("Failed to initiate payment: ${initResp.code()}")
+                    return@launch
                 }
+
+                val body = initResp.body()
+                val orderId = body?.orderId
+                val keyId = body?.keyId
+                if (orderId.isNullOrBlank()) {
+                    showToast("Invalid payment order from server")
+                    return@launch
+                }
+
+                val intent = Intent(requireContext(), com.gridee.parking.ui.wallet.WalletTopUpActivity::class.java)
+                intent.putExtra("USER_ID", userId)
+                intent.putExtra("AMOUNT", amount)
+                intent.putExtra("ORDER_ID", orderId)
+                keyId?.let { intent.putExtra("KEY_ID", it) }
+                startActivity(intent)
             } catch (e: Exception) {
-                showToast("Error processing top-up: ${e.message}")
+                showToast("Error: ${e.message}")
             }
         }
     }

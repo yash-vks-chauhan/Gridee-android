@@ -29,8 +29,3 @@ data class WalletDetails(
     @SerializedName("transactions")
     val transactions: List<WalletTransaction>? = null
 )
-
-data class TopupRequest(
-    @SerializedName("amount")
-    val amount: Double
-)

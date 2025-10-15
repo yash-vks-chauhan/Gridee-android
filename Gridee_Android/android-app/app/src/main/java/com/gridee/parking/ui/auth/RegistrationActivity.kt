@@ -174,7 +174,7 @@ class RegistrationActivity : AppCompatActivity() {
             }
         }
         
-        viewModel.registerUser(name, email, phone, password, confirmPassword, vehicleNumbers)
+        viewModel.registerUser(this, name, email, phone, password, confirmPassword, vehicleNumbers)
     }
     
     private fun observeViewModel() {

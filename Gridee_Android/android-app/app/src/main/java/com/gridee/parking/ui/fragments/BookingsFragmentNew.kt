@@ -519,11 +519,15 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     loadParkingDataCache()
                 }
                 
-                // Get user bookings from backend using real user ID
-                val response = ApiClient.apiService.getUserBookings(userId)
-                
-                if (response.isSuccessful) {
-                    val backendBookings = response.body() ?: emptyList()
+                // Get user bookings from backend using real user ID (with legacy fallback)
+                val primary = ApiClient.apiService.getUserBookings(userId)
+                val backendBookings = if (primary.isSuccessful) {
+                    primary.body() ?: emptyList()
+                } else {
+                    val legacy = ApiClient.apiService.getUserBookingsLegacy(userId)
+                    if (legacy.isSuccessful) legacy.body() ?: emptyList() else emptyList()
+                }
+                if (backendBookings.isNotEmpty()) {
                     
                     // Convert backend bookings to UI bookings
                     userBookings.clear()
@@ -539,23 +543,17 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     // Update UI for current tab
                     showBookingsForStatus(currentTab)
                 } else {
-                    // Handle API error - for development, show sample data if no real bookings
-                    showToast("Server error: ${response.code()} - ${response.message()}")
-                    // For production, you might want to show empty state instead of sample data
-                    if (response.code() == 404) {
-                        // No bookings found - show empty state
-                        userBookings.clear()
-                        showBookingsForStatus(currentTab)
-                    } else {
-                        // Other server errors - show sample data for testing
-                        loadSampleBookings()
-                    }
+                    // No bookings found - show empty state
+                    userBookings.clear()
+                    showBookingsForStatus(currentTab)
                 }
                 
             } catch (e: Exception) {
                 // Handle error - for development, show sample data
                 showToast("Network error: ${e.message}")
-                loadSampleBookings()
+                // do not load sample data automatically for production view
+                userBookings.clear()
+                showBookingsForStatus(currentTab)
             } finally {
                 binding.progressLoading.visibility = View.GONE
             }
@@ -1003,8 +1001,17 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun getUserId(): String? {
+        // Primary: legacy prefs set by classic login/registration
         val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        return sharedPref.getString("user_id", null)
+        val legacyId = sharedPref.getString("user_id", null)
+        if (!legacyId.isNullOrBlank()) return legacyId
+
+        // Fallback: JWT-based auth storage
+        return try {
+            com.gridee.parking.utils.JwtTokenManager(requireContext()).getUserId()
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun announceForAccessibility(message: String) {

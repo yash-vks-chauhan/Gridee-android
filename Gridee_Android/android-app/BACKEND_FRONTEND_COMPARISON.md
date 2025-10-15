@@ -59,10 +59,10 @@ This document compares the backend API endpoints available in the Spring Boot ba
 ## ❌ MISSING in Frontend (Available in Backend)
 
 ### 1. Authentication
-| Endpoint | Purpose | Priority | Implementation Needed |
-|----------|---------|----------|----------------------|
-| POST /api/auth/login | JWT-based authentication | **HIGH** | Create separate auth endpoint, add JWT handling |
-| GET /api/oauth2/user | OAuth2 user info | MEDIUM | Add OAuth2 support |
+| Endpoint | Purpose | Priority | Status | Implementation Needed |
+|----------|---------|----------|--------|----------------------|
+| POST /api/auth/login | JWT-based authentication | **HIGH** | ✅ **IMPLEMENTED** | Complete - See JWT_AUTHENTICATION_GUIDE.md |
+| GET /api/oauth2/user | OAuth2 user info | MEDIUM | ❌ | Add OAuth2 support |
 
 ### 2. User Management - Extended
 | Endpoint | Purpose | Priority | Implementation Needed |

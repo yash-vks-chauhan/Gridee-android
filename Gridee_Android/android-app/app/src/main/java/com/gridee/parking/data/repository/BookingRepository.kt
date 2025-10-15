@@ -22,8 +22,9 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
             
+            // Try preferred endpoint first
             val response = apiService.getUserBookings(userId)
-            println("BookingRepository: Get bookings response code: ${response.code()}")
+            println("BookingRepository: Get bookings (all-bookings) response code: ${response.code()}")
             if (response.isSuccessful) {
                 val bookings = response.body() ?: emptyList()
                 println("BookingRepository: Found ${bookings.size} bookings")
@@ -31,14 +32,22 @@ class BookingRepository(private val context: Context) {
                     println("BookingRepository: Booking ID: ${booking.id}, Status: ${booking.status}, Spot: ${booking.spotId}")
                 }
                 Result.success(bookings)
-            } else if (response.code() == 404) {
-                // 404 means no bookings found, which is a valid state
-                println("BookingRepository: No bookings found (404), returning empty list")
-                Result.success(emptyList())
             } else {
-                val errorBody = response.errorBody()?.string()
-                println("BookingRepository: Get bookings error: $errorBody")
-                Result.failure(Exception("Failed to load bookings: ${response.message()}"))
+                // Fallback to legacy endpoint if available
+                val fallback = apiService.getUserBookingsLegacy(userId)
+                println("BookingRepository: Fallback (bookings) response code: ${fallback.code()}")
+                if (fallback.isSuccessful) {
+                    val bookings = fallback.body() ?: emptyList()
+                    println("BookingRepository: Found ${bookings.size} bookings via legacy endpoint")
+                    Result.success(bookings)
+                } else if (fallback.code() == 404) {
+                    println("BookingRepository: No bookings found (404), returning empty list")
+                    Result.success(emptyList())
+                } else {
+                    val errorBody = fallback.errorBody()?.string()
+                    println("BookingRepository: Get bookings error: $errorBody")
+                    Result.failure(Exception("Failed to load bookings: ${fallback.message()}"))
+                }
             }
         } catch (e: Exception) {
             println("BookingRepository: Exception loading bookings: ${e.message}")
@@ -56,12 +65,16 @@ class BookingRepository(private val context: Context) {
             val response = apiService.getUserBookingHistory(userId)
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
-            } else if (response.code() == 404) {
-                // 404 means no booking history found, which is a valid state
-                println("BookingRepository: No booking history found (404), returning empty list")
-                Result.success(emptyList())
             } else {
-                Result.failure(Exception("Failed to load booking history: ${response.message()}"))
+                val fallback = apiService.getUserBookingHistoryLegacy(userId)
+                if (fallback.isSuccessful) {
+                    Result.success(fallback.body() ?: emptyList())
+                } else if (fallback.code() == 404) {
+                    println("BookingRepository: No booking history found (404), returning empty list")
+                    Result.success(emptyList())
+                } else {
+                    Result.failure(Exception("Failed to load booking history: ${fallback.message()}"))
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -120,7 +133,7 @@ class BookingRepository(private val context: Context) {
                     println("BookingRepository: Wallet not found, attempting to create wallet...")
                     try {
                         // Try to create wallet by topping up with initial amount
-                        val walletResponse = apiService.topUpWallet(userId, mapOf("amount" to 100.0))
+                        val walletResponse = apiService.topUpWallet(userId, com.gridee.parking.data.model.TopUpRequest(100.0))
                         if (walletResponse.isSuccessful) {
                             println("BookingRepository: Wallet created successfully, retrying booking...")
                             // Retry the booking
@@ -196,8 +209,17 @@ class BookingRepository(private val context: Context) {
     }
     
     private fun getUserId(): String? {
+        // Legacy storage
         val sharedPref = context.getSharedPreferences("gridee_prefs", Context.MODE_PRIVATE)
-        return sharedPref.getString("user_id", null)
+        val legacyId = sharedPref.getString("user_id", null)
+        if (!legacyId.isNullOrBlank()) return legacyId
+
+        // JWT-based storage fallback
+        return try {
+            com.gridee.parking.utils.JwtTokenManager(context).getUserId()
+        } catch (_: Exception) {
+            null
+        }
     }
     
     // Legacy methods for backward compatibility

@@ -74,13 +74,18 @@ class WalletRepository(private val context: Context) {
             }
             
             println("WalletRepository: Topping up wallet for user: $userId, amount: $amount")
-            val request = mapOf("amount" to amount)
+            val request = com.gridee.parking.data.model.TopUpRequest(amount)
             val response = apiService.topUpWallet(userId, request)
             
             if (response.isSuccessful) {
-                val result = response.body() ?: emptyMap()
-                println("WalletRepository: Topup successful: $result")
-                Result.success(result)
+                val result = response.body()
+                val mapResult: Map<String, Any> = if (result != null && result.balance != null) {
+                    mapOf("balance" to result.balance)
+                } else {
+                    emptyMap()
+                }
+                println("WalletRepository: Topup successful: $mapResult")
+                Result.success(mapResult)
             } else {
                 println("WalletRepository: Topup failed - ${response.code()}: ${response.message()}")
                 Result.failure(Exception("Topup failed: ${response.message()}"))
