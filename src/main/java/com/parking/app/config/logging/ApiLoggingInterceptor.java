@@ -68,7 +68,7 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
     }
 
     private void logHeaders(HttpServletRequest request) {
-        log.info("Request Headers:");
+        StringBuilder headers = new StringBuilder();
         Enumeration<String> headerNames = request.getHeaderNames();
         while (headerNames.hasMoreElements()) {
             String headerName = headerNames.nextElement();
@@ -76,16 +76,24 @@ public class ApiLoggingInterceptor implements HandlerInterceptor {
             if (isSensitiveHeader(headerName)) {
                 headerValue = "***MASKED***";
             }
-            log.info("  {}: {}", headerName, headerValue);
+            if (headers.length() > 0) {
+                headers.append(", ");
+            }
+            headers.append(headerName).append("=").append(headerValue);
         }
+        log.info("Request Headers: {}", headers.toString());
     }
 
     private void logResponseHeaders(HttpServletResponse response) {
-        log.info("Response Headers:");
+        StringBuilder headers = new StringBuilder();
         Collection<String> headerNames = response.getHeaderNames();
         for (String headerName : headerNames) {
-            log.info("  {}: {}", headerName, response.getHeader(headerName));
+            if (headers.length() > 0) {
+                headers.append(", ");
+            }
+            headers.append(headerName).append("=").append(response.getHeader(headerName));
         }
+        log.info("Response Headers: {}", headers.toString());
     }
 
     private boolean isSensitiveHeader(String headerName) {

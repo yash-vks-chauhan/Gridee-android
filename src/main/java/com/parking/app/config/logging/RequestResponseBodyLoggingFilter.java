@@ -17,10 +17,10 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 @Order(1)
-public class RequestLoggingFilter extends OncePerRequestFilter {
+public class RequestResponseBodyLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log =
-            LoggerFactory.getLogger(RequestLoggingFilter.class);
+            LoggerFactory.getLogger(RequestResponseBodyLoggingFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
