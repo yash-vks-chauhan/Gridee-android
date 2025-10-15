@@ -27,9 +27,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, RateLimitingFilter rateLimitingFilter) throws Exception {
 
-        // SECURITY FIX: Configure CSRF with cookie-based tokens
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        requestHandler.setCsrfRequestAttributeName("_csrf");
+        // SECURITY FIX: Use custom CSRF handler that bypasses validation for JWT requests
+        JwtCsrfTokenRequestHandler requestHandler = new JwtCsrfTokenRequestHandler();
 
         http
                 .authorizeHttpRequests(auth -> auth
@@ -44,11 +43,11 @@ public class SecurityConfig {
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
-                // SECURITY FIX: Enable CSRF protection with cookie repository
+                // SECURITY FIX: Enable CSRF protection with custom handler for JWT bypass
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/auth/login", "/api/auth/register") // Only for stateless auth endpoints
+                        .csrfTokenRequestHandler(requestHandler) // Use custom handler
+                        .ignoringRequestMatchers("/api/**") // Only for stateless auth endpoints
                 )
                 // SECURITY FIX: Add security headers
                 .headers(headers -> headers
