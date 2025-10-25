@@ -16,6 +16,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.regex.Pattern;
 
 @Service
@@ -27,11 +28,34 @@ public class UserService {
     private ParkingLotRepository parkingLotRepository;
     @Autowired
     private JwtUtil jwtUtil;
+
+    private static final Random RANDOM = new Random();
     // Email Regex (simple, you may replace with a more robust pattern)
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-\\.]+@[\\w-\\.]+\\.[a-z]{2,}$", Pattern.CASE_INSENSITIVE);
 
     // Phone Regex (for example, 10-15 digits)
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
+
+    /**
+     * Generate a unique 6-digit PIN for check-in authentication
+     */
+    private String generateUniqueCheckInPin() {
+        String pin;
+        int attempts = 0;
+        int maxAttempts = 100;
+
+        do {
+            // Generate 6-digit PIN (100000 to 999999)
+            pin = String.format("%06d", 100000 + RANDOM.nextInt(900000));
+            attempts++;
+
+            if (attempts > maxAttempts) {
+                throw new RuntimeException("Unable to generate unique PIN after " + maxAttempts + " attempts");
+            }
+        } while (userRepository.findByCheckInPin(pin).isPresent());
+
+        return pin;
+    }
 
     public Users createUser(UserRequestDto userRequest) {
         if (userRequest == null) throw new IllegalArgumentException("User data is required.");
@@ -88,6 +112,9 @@ public class UserService {
         // Hash password
         String hashedPassword = BCrypt.hashpw(userRequest.getPassword(), BCrypt.gensalt());
         user.setPasswordHash(hashedPassword);
+
+        // Generate unique check-in PIN
+        user.setCheckInPin(generateUniqueCheckInPin());
 
         return userRepository.save(user);
     }

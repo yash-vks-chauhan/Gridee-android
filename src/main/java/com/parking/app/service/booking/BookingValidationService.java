@@ -1,5 +1,6 @@
 package com.parking.app.service.booking;
 
+import com.parking.app.constants.BookingStatus;
 import com.parking.app.exception.ConflictException;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.Wallet;
@@ -29,11 +30,11 @@ public class BookingValidationService {
 
     public void ensureNoBookingOverlap(String spotId, ZonedDateTime checkInTime, ZonedDateTime checkOutTime) {
         Query overlapQuery = new Query(
-                Criteria.where("spotId").is(spotId)
+                Criteria.where(Bookings.FIELD_SPOT_ID).is(spotId)
                         .andOperator(
-                                Criteria.where("status").in("pending", "active"),
-                                Criteria.where("checkInTime").lt(Date.from(checkOutTime.toInstant())),
-                                Criteria.where("checkOutTime").gt(Date.from(checkInTime.toInstant()))
+                                Criteria.where(Bookings.FIELD_STATUS).in(BookingStatus.PENDING.name(), BookingStatus.ACTIVE.name()),
+                                Criteria.where(Bookings.FIELD_CHECK_IN_TIME).lt(Date.from(checkOutTime.toInstant())),
+                                Criteria.where(Bookings.FIELD_CHECK_OUT_TIME).gt(Date.from(checkInTime.toInstant()))
                         )
         );
         if (mongoOperations.exists(overlapQuery, Bookings.class)) {
@@ -43,12 +44,12 @@ public class BookingValidationService {
 
     public void ensureNoBookingOverlapForExtension(String spotId, String bookingId, ZonedDateTime currentCheckOut, ZonedDateTime newCheckOutTime) {
         Query overlapQuery = new Query(
-                Criteria.where("spotId").is(spotId)
+                Criteria.where(Bookings.FIELD_SPOT_ID).is(spotId)
                         .andOperator(
-                                Criteria.where("status").in("pending", "active"),
-                                Criteria.where("checkInTime").lt(Date.from(newCheckOutTime.toInstant())),
-                                Criteria.where("checkOutTime").gt(Date.from(currentCheckOut.toInstant())),
-                                Criteria.where("_id").ne(bookingId)
+                                Criteria.where(Bookings.FIELD_STATUS).in(BookingStatus.PENDING.name(), BookingStatus.ACTIVE.name()),
+                                Criteria.where(Bookings.FIELD_CHECK_IN_TIME).lt(Date.from(newCheckOutTime.toInstant())),
+                                Criteria.where(Bookings.FIELD_CHECK_OUT_TIME).gt(Date.from(currentCheckOut.toInstant())),
+                                Criteria.where(Bookings.FIELD_ID).ne(bookingId)
                         )
         );
         if (mongoOperations.exists(overlapQuery, Bookings.class)) {
@@ -57,18 +58,9 @@ public class BookingValidationService {
     }
 
     public void validateNoActiveBookingForUser(String userId) {
-        Query active = new Query(Criteria.where("userId").is(userId).and("status").is("active"));
+        Query active = new Query(Criteria.where(Bookings.FIELD_USER_ID).is(userId).and(Bookings.FIELD_STATUS).is(BookingStatus.ACTIVE.name()));
         if (mongoOperations.exists(active, Bookings.class)) {
             throw new ConflictException("User already has an active booking");
         }
     }
-
-    public boolean isQrCodeValid(Bookings booking) {
-        if (booking == null) return false;
-        Date now = new Date();
-        Date checkIn = booking.getCheckInTime();
-        Date checkOut = booking.getCheckOutTime();
-        return checkIn != null && checkOut != null && !now.before(checkIn) && !now.after(checkOut);
-    }
 }
-

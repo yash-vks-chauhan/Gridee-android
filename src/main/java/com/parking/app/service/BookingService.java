@@ -1,10 +1,11 @@
 package com.parking.app.service;
 
+import com.parking.app.constants.BookingStatus;
+import com.parking.app.constants.CheckInMode;
 import com.parking.app.exception.IllegalStateException;
 import com.parking.app.exception.NotFoundException;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
-import com.parking.app.model.Users;
 import com.parking.app.service.booking.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +25,7 @@ public class BookingService {
     private final BookingQueryService queryService;
     private final BookingBreakupService breakupService;
     private final BookingAutoCompletionService autoCompletionService;
-    private final QRCodeValidationService qrCodeValidationService;
     private final BookingValidationService validationService;
-    private final UserService userService;
     private final ParkingSpotService parkingSpotService;
 
     public BookingService(
@@ -34,38 +33,30 @@ public class BookingService {
             BookingQueryService queryService,
             BookingBreakupService breakupService,
             BookingAutoCompletionService autoCompletionService,
-            QRCodeValidationService qrCodeValidationService,
             BookingValidationService validationService,
-            UserService userService,
             ParkingSpotService parkingSpotService
     ) {
         this.lifecycleService = lifecycleService;
         this.queryService = queryService;
         this.breakupService = breakupService;
         this.autoCompletionService = autoCompletionService;
-        this.qrCodeValidationService = qrCodeValidationService;
         this.validationService = validationService;
-        this.userService = userService;
         this.parkingSpotService = parkingSpotService;
     }
 
     // ===== Booking Lifecycle Operations =====
-    public Bookings startBooking(String spotId, String userId, String lotId,
-                                ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
-                                String vehicleNumber) {
-        return lifecycleService.startBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber);
+    public Bookings createBooking(String spotId, String userId, String lotId,
+                                  ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
+                                  String vehicleNumber) {
+        return lifecycleService.createBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber);
     }
 
-    public Bookings confirmBooking(String bookingId) {
-        return lifecycleService.confirmBooking(bookingId);
+    public Bookings checkIn(String bookingId, CheckInMode mode, String qrCode, String vehicleNumber, String pin, String checkInOperatorId) {
+        return lifecycleService.checkIn(bookingId, mode, qrCode, vehicleNumber, pin, checkInOperatorId);
     }
 
-    public Bookings checkIn(String bookingId, String qrCode) {
-        return lifecycleService.checkIn(bookingId, qrCode);
-    }
-
-    public Bookings checkOut(String bookingId, String qrCode) {
-        return lifecycleService.checkOut(bookingId, qrCode);
+    public Bookings checkOut(String bookingId, CheckInMode mode, String qrCode, String vehicleNumber, String pin, String checkOutOperatorId) {
+        return lifecycleService.checkOut(bookingId, mode, qrCode, vehicleNumber, pin, checkOutOperatorId);
     }
 
     public Bookings extendBooking(String bookingId, ZonedDateTime newCheckOutTime) {
@@ -95,16 +86,6 @@ public class BookingService {
         return queryService.getBookingHistoryByUserId(userId);
     }
 
-    public List<String> getVehicleNumbersByUserId(String userId) {
-        Users user = userService.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
-        return queryService.getVehicleNumbersByUserId(userId, user);
-    }
-
-    public List<Bookings> getAllBookings() {
-        return queryService.getAllBookings();
-    }
-
     public Bookings getBookingById(String id) {
         return queryService.getBookingById(id);
     }
@@ -123,32 +104,14 @@ public class BookingService {
         autoCompletionService.autoCompleteLateBookings();
     }
 
-    // ===== QR Code Validation =====
-    public QRCodeValidationService.QrValidationResult validateQrCodeForCheckIn(String bookingId, String qrCode) {
-        Bookings booking = queryService.getBookingById(bookingId);
-        ParkingSpot spot = booking != null ? parkingSpotService.findById(booking.getSpotId()) : null;
-        return qrCodeValidationService.validateQrCodeForCheckIn(booking, qrCode, spot);
-    }
-
-    public QRCodeValidationService.QrValidationResult validateQrCodeForCheckOut(String bookingId, String qrCode) {
-        Bookings booking = queryService.getBookingById(bookingId);
-        ParkingSpot spot = booking != null ? parkingSpotService.findById(booking.getSpotId()) : null;
-        return qrCodeValidationService.validateQrCodeForCheckOut(booking, qrCode, bookingId, spot);
-    }
-
-    public boolean isQrCodeValid(String bookingId) {
-        Bookings booking = queryService.getBookingById(bookingId);
-        return validationService.isQrCodeValid(booking);
-    }
-
     // ===== Booking Breakup Operations =====
     public Map<String, Object> getBookingBreakup(String bookingId) {
         Bookings booking = queryService.getBookingById(bookingId);
         if (booking == null) {
             throw new NotFoundException("Booking not found");
         }
-        if (!"completed".equalsIgnoreCase(booking.getStatus()) &&
-            !"cancelled".equalsIgnoreCase(booking.getStatus())) {
+        if (!BookingStatus.COMPLETED.name().equalsIgnoreCase(booking.getStatus()) &&
+            !BookingStatus.CANCELLED.name().equalsIgnoreCase(booking.getStatus())) {
             throw new IllegalStateException("Breakup only available for checked-out or cancelled bookings");
         }
         ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
@@ -157,12 +120,4 @@ public class BookingService {
         }
         return breakupService.calculateBookingBreakup(booking, spot);
     }
-
-    // ===== Legacy Support - Inner Class for QrValidationResult =====
-    public static class QrValidationResult extends QRCodeValidationService.QrValidationResult {
-        public QrValidationResult(boolean valid, double penalty, String message) {
-            super(valid, penalty, message);
-        }
-    }
 }
-

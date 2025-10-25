@@ -5,6 +5,7 @@ import com.parking.app.constants.Role;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -17,7 +18,9 @@ public class Users {
     @Id
     private String id;
     private String name;
+    @Indexed(unique = true)
     private String email;
+    @Indexed
     private String phone;
     private List<String> vehicleNumbers;
     private boolean firstUser;
@@ -28,7 +31,9 @@ public class Users {
     private String passwordHash;  // Store hashed password securely
     private String role;
     private String parkingLotId;
-    private String parkingLotName;// Add this field
+    private String parkingLotName;
+    @Indexed(unique = true, sparse = true)
+    private String checkInPin;  // Unique 6-digit PIN for check-in authentication
 
     public Users() {
         this.createdAt = new Date();

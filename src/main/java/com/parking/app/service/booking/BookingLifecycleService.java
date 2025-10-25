@@ -1,5 +1,7 @@
 package com.parking.app.service.booking;
 
+import com.parking.app.constants.BookingStatus;
+import com.parking.app.constants.CheckInMode;
 import com.parking.app.exception.IllegalStateException;
 import com.parking.app.exception.InsufficientFundsException;
 import com.parking.app.exception.NotFoundException;
@@ -8,6 +10,7 @@ import com.parking.app.model.ParkingSpot;
 import com.parking.app.model.Users;
 import com.parking.app.model.Wallet;
 import com.parking.app.repository.BookingRepository;
+import com.parking.app.repository.UserRepository;
 import com.parking.app.service.ParkingSpotService;
 import com.parking.app.service.UserService;
 import com.parking.app.service.WalletService;
@@ -32,6 +35,7 @@ public class BookingLifecycleService {
     private final BookingValidationService validationService;
     private final BookingWalletService bookingWalletService;
     private final BookingBreakupService breakupService;
+    private final UserRepository userRepository;
 
     public BookingLifecycleService(BookingRepository bookingRepository,
                                   UserService userService,
@@ -39,7 +43,8 @@ public class BookingLifecycleService {
                                   ParkingSpotService parkingSpotService,
                                   BookingValidationService validationService,
                                   BookingWalletService bookingWalletService,
-                                  BookingBreakupService breakupService) {
+                                  BookingBreakupService breakupService,
+                                  UserRepository userRepository) {
         this.bookingRepository = bookingRepository;
         this.userService = userService;
         this.walletService = walletService;
@@ -47,18 +52,15 @@ public class BookingLifecycleService {
         this.validationService = validationService;
         this.bookingWalletService = bookingWalletService;
         this.breakupService = breakupService;
+        this.userRepository = userRepository;
     }
 
-    public Bookings startBooking(String spotId, String userId, String lotId,
-                                ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
-                                String vehicleNumber) {
-        BookingUtility.validateTimes(checkInTime, checkOutTime);
-        BookingUtility.validateBookingWindow(checkInTime, checkOutTime);
-
+    public Bookings createBooking(String spotId, String userId, String lotId,
+                                  ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
+                                  String vehicleNumber) {
+        //TODO : handle transaction in the logic
         ParkingSpot spot = parkingSpotService.getParkingSpotById(spotId);
         if (spot == null) throw new NotFoundException("Parking spot not found");
-
-        double amount = BookingUtility.calculateCharge(checkInTime, checkOutTime, spot.getBookingRate());
 
         Users user = userService.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"));
@@ -66,10 +68,15 @@ public class BookingLifecycleService {
         Wallet wallet = walletService.findByUserId(userId)
                 .orElseThrow(() -> new NotFoundException("Wallet not found"));
 
+        BookingUtility.validateTimes(checkInTime, checkOutTime);
+        BookingUtility.validateBookingWindow(checkInTime, checkOutTime);
+
+        double amount = BookingUtility.calculateCharge(checkInTime, checkOutTime, spot.getBookingRate());
+
         if (!validationService.hasSufficientBalance(wallet, amount)) {
             throw new InsufficientFundsException();
         }
-
+        //TODO : check if spot update,decrement and booking creation should be atomic
         validationService.ensureNoBookingOverlap(spotId, checkInTime, checkOutTime);
         parkingSpotService.decrementSpotAvailability(spotId);
         bookingWalletService.deductAndRecord(userId, amount, "Booking charge");
@@ -77,48 +84,92 @@ public class BookingLifecycleService {
         return createAndSaveBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber, amount);
     }
 
-    public Bookings confirmBooking(String bookingId) {
-        Bookings booking = findBookingOrThrow(bookingId);
-        if (!"pending".equalsIgnoreCase(booking.getStatus())) {
-            throw new IllegalStateException("Only pending bookings can be confirmed");
+
+    private Bookings findBookingByAuthMode(String bookingId, CheckInMode mode, String vehicleNumber,
+                                           String pin, String requiredStatus) {
+        // If bookingId is provided (QR_CODE mode), use direct lookup - fastest path
+        if (bookingId != null && !bookingId.trim().isEmpty()) {
+            return findBookingOrThrow(bookingId);
         }
-        booking.setStatus("pending");
-        ZonedDateTime now = ZonedDateTime.now();
-        booking.setCheckInTime(Date.from(now.toInstant()));
-        return bookingRepository.save(booking);
+
+        // For VEHICLE_NUMBER and PIN modes, we need to find the booking
+        if (mode == null) {
+            throw new IllegalArgumentException("mode is required when bookingId is not provided");
+        }
+
+        switch (mode) {
+            case VEHICLE_NUMBER:
+                if (vehicleNumber == null || vehicleNumber.trim().isEmpty()) {
+                    throw new IllegalArgumentException("Vehicle number is required for VEHICLE_NUMBER mode");
+                }
+                // Optimized query: finds booking by vehicle number using index
+                return bookingRepository.findByVehicleNumberAndStatus(vehicleNumber.trim(), requiredStatus)
+                        .orElseThrow(() -> new NotFoundException("No " + requiredStatus.toLowerCase() +
+                                " booking found for vehicle number: " + vehicleNumber));
+
+            case PIN:
+                if (pin == null || pin.trim().isEmpty()) {
+                    throw new IllegalArgumentException("PIN is required for PIN mode");
+                }
+                // Optimized: direct PIN lookup using index, then find booking by userId
+                Users user = userRepository.findByCheckInPin(pin.trim())
+                        .orElseThrow(() -> new IllegalArgumentException("Invalid PIN"));
+
+                return bookingRepository.findByUserIdAndStatus(user.getId(), requiredStatus)
+                        .orElseThrow(() -> new NotFoundException("No " + requiredStatus.toLowerCase() +
+                                " booking found for user"));
+
+            case QR_CODE:
+                throw new IllegalArgumentException("BookingId must be provided for QR_CODE mode");
+            default:
+                throw new IllegalArgumentException("Invalid check-in mode");
+        }
     }
 
-    public Bookings checkIn(String bookingId, String qrCode) {
-        Bookings booking = findBookingOrThrow(bookingId);
-        if (!"pending".equalsIgnoreCase(booking.getStatus())) {
-            throw new java.lang.IllegalStateException("Only pending bookings can check in");
-        }
-        if (!bookingId.equals(qrCode)) {
-            throw new java.lang.IllegalStateException("Invalid QR code for check-in");
+    /**
+     * Check-in with multiple authentication methods: QR code, vehicle number, or PIN
+     * @param checkInOperatorId - ID of the operator performing the check-in (null for user self check-in)
+     */
+    public Bookings checkIn(String bookingId, CheckInMode mode, String qrCode, String vehicleNumber, String pin, String checkInOperatorId) {
+        // Efficiently find booking based on mode - uses indexed queries for speed
+        // The findBookingByAuthMode method already validates the authentication credentials
+        Bookings booking = findBookingByAuthMode(bookingId, mode, vehicleNumber, pin, BookingStatus.PENDING.name());
+
+        if (!BookingStatus.PENDING.name().equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalStateException("Only pending bookings can check in");
         }
 
+        // Single query to validate no active bookings
         validationService.validateNoActiveBookingForUser(booking.getUserId());
 
+        // Get spot details
         ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
 
+        // Update booking status to ACTIVE
         ZonedDateTime now = ZonedDateTime.now();
-        booking.setStatus("active");
+        booking.setStatus(BookingStatus.ACTIVE.name());
         booking.setCheckInTime(Date.from(now.toInstant()));
         booking.setActualCheckInTime(Date.from(now.toInstant()));
         booking.setQrCodeScanned(true);
+        booking.setCheckInOperatorId(checkInOperatorId);  // Store operator ID who performed check-in
 
         return bookingRepository.save(booking);
     }
 
-    public Bookings checkOut(String bookingId, String qrCode) {
-        Bookings booking = findBookingOrThrow(bookingId);
-        if (!"active".equalsIgnoreCase(booking.getStatus())) {
-            throw new java.lang.IllegalStateException("Booking is not active");
+    /**
+     * Check-out with multiple authentication methods: QR code, vehicle number, or PIN
+     * @param checkOutOperatorId - ID of the operator performing the check-out (null for user self check-out)
+     */
+    public Bookings checkOut(String bookingId, CheckInMode mode, String qrCode, String vehicleNumber, String pin, String checkOutOperatorId) {
+        // Efficiently find booking based on mode
+        // The findBookingByAuthMode method already validates the authentication credentials
+        Bookings booking = findBookingByAuthMode(bookingId, mode, vehicleNumber, pin, BookingStatus.ACTIVE.name());
+
+        if (!BookingStatus.ACTIVE.name().equalsIgnoreCase(booking.getStatus())) {
+            throw new IllegalStateException("Booking is not active");
         }
-        if (!bookingId.equals(qrCode)) {
-            throw new java.lang.IllegalStateException("Invalid QR code for checkout");
-        }
+
 
         ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
         if (spot == null) throw new NotFoundException("Parking spot not found");
@@ -143,10 +194,11 @@ public class BookingLifecycleService {
                 lateCheckInPenalty, lateCheckOutPenalty);
         }
 
-        booking.setStatus("completed");
+        booking.setStatus(BookingStatus.COMPLETED.name());
         booking.setCheckOutTime(Date.from(now.toInstant()));
         booking.setQrCodeScanned(true);
         booking.setAutoCompleted(false);
+        booking.setCheckOutOperatorId(checkOutOperatorId);  // Store operator ID who performed check-out
 
         bookingRepository.save(booking);
         parkingSpotService.incrementSpotAvailability(booking.getSpotId());
@@ -157,7 +209,7 @@ public class BookingLifecycleService {
 
     public Bookings extendBooking(String bookingId, ZonedDateTime newCheckOutTime) {
         Bookings booking = findBookingOrThrow(bookingId);
-        if (!"active".equalsIgnoreCase(booking.getStatus())) {
+        if (!BookingStatus.ACTIVE.name().equalsIgnoreCase(booking.getStatus())) {
             throw new java.lang.IllegalStateException("Only active bookings can be extended");
         }
 
@@ -196,17 +248,17 @@ public class BookingLifecycleService {
 
     public boolean cancelBooking(String bookingId) {
         Bookings booking = findBookingOrThrow(bookingId);
-        if ("cancelled".equalsIgnoreCase(booking.getStatus())) {
+        if (BookingStatus.CANCELLED.name().equalsIgnoreCase(booking.getStatus())) {
             return false;
         }
 
-        if ("pending".equalsIgnoreCase(booking.getStatus()) ||
-            "active".equalsIgnoreCase(booking.getStatus())) {
+        if (BookingStatus.PENDING.name().equalsIgnoreCase(booking.getStatus()) ||
+            BookingStatus.ACTIVE.name().equalsIgnoreCase(booking.getStatus())) {
             bookingWalletService.refundToWallet(booking.getUserId(),
                 booking.getAmount(), "Booking refund");
         }
 
-        booking.setStatus("cancelled");
+        booking.setStatus(BookingStatus.CANCELLED.name());
         bookingRepository.save(booking);
         parkingSpotService.incrementSpotAvailability(booking.getSpotId());
 
@@ -224,8 +276,8 @@ public class BookingLifecycleService {
         }
         Bookings booking = findBookingOrThrow(id);
         String currentStatus = booking.getStatus();
-        if ("completed".equalsIgnoreCase(currentStatus) ||
-            "cancelled".equalsIgnoreCase(currentStatus)) {
+        if (BookingStatus.COMPLETED.name().equalsIgnoreCase(currentStatus) ||
+            BookingStatus.CANCELLED.name().equalsIgnoreCase(currentStatus)) {
             throw new IllegalStateException("Cannot update status of completed/cancelled booking");
         }
         booking.setStatus(status);
@@ -248,7 +300,7 @@ public class BookingLifecycleService {
         booking.setSpotId(spotId);
         booking.setUserId(userId);
         booking.setLotId(lotId);
-        booking.setStatus("pending");
+        booking.setStatus(BookingStatus.PENDING.name());
         booking.setAmount(amount);
         booking.setCreatedAt(Date.from(ZonedDateTime.now().toInstant()));
         booking.setCheckInTime(Date.from(checkInTime.toInstant()));
@@ -260,4 +312,3 @@ public class BookingLifecycleService {
         return bookingRepository.save(booking);
     }
 }
-

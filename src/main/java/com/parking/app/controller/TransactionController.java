@@ -31,7 +31,9 @@ public class TransactionController {
     @GetMapping("/{id}")
     public ResponseEntity<Transactions> getTransactionById(@PathVariable String id) {
         Transactions transaction = transactionService.getTransactionById(id);
-        if (transaction == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (transaction == null) {
+            throw new com.parking.app.exception.NotFoundException("Transaction not found with id: " + id);
+        }
         return ResponseEntity.ok(transaction);
     }
 
@@ -83,7 +85,9 @@ public class TransactionController {
     @PutMapping("/{id}")
     public ResponseEntity<Transactions> updateTransaction(@PathVariable String id, @RequestBody Transactions transactionDetails) {
         Transactions updated = transactionService.updateTransaction(id, transactionDetails);
-        if (updated == null) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        if (updated == null) {
+            throw new com.parking.app.exception.NotFoundException("Transaction not found with id: " + id);
+        }
         return ResponseEntity.ok(updated);
     }
 

@@ -1,5 +1,6 @@
 package com.parking.app.service.booking;
 
+import com.parking.app.constants.BookingStatus;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
 import com.parking.app.repository.BookingRepository;
@@ -44,9 +45,9 @@ public class BookingAutoCompletionService {
         ZonedDateTime now = ZonedDateTime.now();
 
         // Auto-complete late active bookings
-        Query lateQuery = new Query(Criteria.where("status").is("active")
-                .and("checkOutTime").lte(Date.from(now.toInstant()))
-                .and("qrCodeScanned").ne(true));
+        Query lateQuery = new Query(Criteria.where(Bookings.FIELD_STATUS).is(BookingStatus.ACTIVE.name())
+                .and(Bookings.FIELD_CHECK_OUT_TIME).lte(Date.from(now.toInstant()))
+                .and(Bookings.FIELD_QR_CODE_SCANNED).ne(true));
         List<Bookings> lateBookings = mongoOperations.find(lateQuery, Bookings.class);
 
         for (Bookings booking : lateBookings) {
@@ -54,8 +55,8 @@ public class BookingAutoCompletionService {
         }
 
         // Auto-cancel no-shows
-        Query noShowQuery = new Query(Criteria.where("status").is("pending")
-                .and("checkInTime").lt(Date.from(now.minusMinutes(NO_SHOW_MINUTES).toInstant())));
+        Query noShowQuery = new Query(Criteria.where(Bookings.FIELD_STATUS).is(BookingStatus.PENDING.name())
+                .and(Bookings.FIELD_CHECK_IN_TIME).lt(Date.from(now.minusMinutes(NO_SHOW_MINUTES).toInstant())));
         List<Bookings> noShowBookings = mongoOperations.find(noShowQuery, Bookings.class);
 
         for (Bookings booking : noShowBookings) {
@@ -86,7 +87,7 @@ public class BookingAutoCompletionService {
                 lateCheckInPenalty, lateCheckOutPenalty);
         }
 
-        booking.setStatus("completed");
+        booking.setStatus(BookingStatus.COMPLETED.name());
         booking.setQrCodeScanned(false);
         booking.setAutoCompleted(true);
         bookingRepository.save(booking);
@@ -96,7 +97,7 @@ public class BookingAutoCompletionService {
     }
 
     private void autoCancelNoShowBooking(Bookings booking) {
-        booking.setStatus("cancelled");
+        booking.setStatus(BookingStatus.CANCELLED.name());
         bookingRepository.save(booking);
         parkingSpotService.incrementSpotAvailability(booking.getSpotId());
 
@@ -106,4 +107,3 @@ public class BookingAutoCompletionService {
         }
     }
 }
-

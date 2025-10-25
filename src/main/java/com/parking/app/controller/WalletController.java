@@ -5,7 +5,6 @@ import com.parking.app.model.Wallet;
 import com.parking.app.service.TransactionService;
 import com.parking.app.service.WalletService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +45,7 @@ public class WalletController {
             @RequestBody Map<String, Double> request) {
         Double amount = request.get("amount");
         if (amount == null || amount <= 0) {
-            return ResponseEntity.badRequest().body("Amount must be positive.");
+            throw new IllegalArgumentException("Amount must be positive.");
         }
         Wallet wallet = walletService.topUpWallet(userId, amount);
         return ResponseEntity.ok(wallet);
@@ -59,11 +58,11 @@ public class WalletController {
             @RequestBody Map<String, Double> request) {
         Double penalty = request.get("penalty");
         if (penalty == null || penalty <= 0) {
-            return ResponseEntity.badRequest().body("Penalty must be positive.");
+            throw new IllegalArgumentException("Penalty must be positive.");
         }
         Wallet wallet = walletService.deductPenalty(userId, penalty);
         if (wallet == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Wallet not found or insufficient balance.");
+            throw new com.parking.app.exception.NotFoundException("Wallet not found or insufficient balance.");
         }
         return ResponseEntity.ok(wallet);
     }
