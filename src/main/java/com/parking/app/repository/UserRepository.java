@@ -10,11 +10,13 @@ import java.util.Optional;
 @Repository
 public interface UserRepository extends MongoRepository<Users, String> {
 
-    Optional<Users> findByEmail(String email);
+    Optional<Users> findByEmailAndActive(String email, boolean isActive);
 
-    Optional<Users> findByPhone(String phone);
+    Optional<Users> findByPhoneAndActive(String phone, boolean isActive);
 
     Optional<Users> findByVehicleNumbers(String vehicleNumbers);
+
+    Optional<Users> findByCheckInPin(String checkInPin);
 
     List<Users> findByNameContainingIgnoreCase(String nameFragment);
 

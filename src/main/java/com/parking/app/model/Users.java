@@ -1,9 +1,11 @@
 // src/main/java/com/parking/app/model/Users.java
 package com.parking.app.model;
 
+import com.parking.app.constants.Role;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
@@ -16,26 +18,28 @@ public class Users {
     @Id
     private String id;
     private String name;
+    @Indexed(unique = true)
     private String email;
+    @Indexed
     private String phone;
     private List<String> vehicleNumbers;
     private boolean firstUser;
     private int walletCoins;
     private Date createdAt;
+    private Date updatedAt;
+    private boolean active;
     private String passwordHash;  // Store hashed password securely
-    private Role role;
+    private String role;
     private String parkingLotId;
-    private String parkingLotName;// Add this field
+    private String parkingLotName;
+    @Indexed(unique = true, sparse = true)
+    private String checkInPin;  // Unique 6-digit PIN for check-in authentication
 
     public Users() {
         this.createdAt = new Date();
         this.walletCoins = 0;
         this.firstUser = true;
-        this.role = Role.USER;    // Default role
-    }
-
-    public enum Role {
-        USER,
-        ADMIN
+        this.active = true;
+        this.role = Role.USER.name();    // Default role
     }
 }

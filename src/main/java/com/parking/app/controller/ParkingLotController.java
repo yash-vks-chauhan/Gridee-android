@@ -5,6 +5,7 @@ import com.parking.app.service.ParkingLotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +28,7 @@ public class ParkingLotController {
     public ResponseEntity<ParkingLot> getParkingLotById(@PathVariable String id) {
         ParkingLot lot = parkingLotService.getParkingLotById(id);
         if (lot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with id: " + id);
         }
         return ResponseEntity.ok(lot);
     }
@@ -36,7 +37,7 @@ public class ParkingLotController {
     public ResponseEntity<ParkingLot> getParkingLotByName(@RequestParam String name) {
         ParkingLot lot = parkingLotService.getParkingLotByName(name);
         if (lot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with name: " + name);
         }
         return ResponseEntity.ok(lot);
     }
@@ -53,21 +54,24 @@ public class ParkingLotController {
 
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingLot> createParkingLot(@RequestBody ParkingLot parkingLot) {
         ParkingLot created = parkingLotService.createParkingLot(parkingLot);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingLot> updateParkingLot(@PathVariable String id, @RequestBody ParkingLot lotDetails) {
         ParkingLot updated = parkingLotService.updateParkingLot(id, lotDetails);
         if (updated == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with id: " + id);
         }
         return ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteParkingLot(@PathVariable String id) {
         parkingLotService.deleteParkingLot(id);
         return ResponseEntity.noContent().build();
