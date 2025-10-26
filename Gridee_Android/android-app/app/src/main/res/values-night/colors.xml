@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night palette tweaks for clarity and contrast -->
+    <color name="bulky_glass_container_fill">#14FFFFFF</color>
+    <color name="bulky_glass_container_border">#26FFFFFF</color>
+    <color name="bulky_glass_indicator_fill">#80FFFFFF</color>
+    <color name="bulky_glass_indicator_border">#99FFFFFF</color>
+    <color name="bulky_glass_shadow">#33000000</color>
+    <color name="bulky_glass_highlight">#10FFFFFF</color>
+    <color name="bulky_glass_text_selected">#FFFFFFFF</color>
+    <color name="bulky_glass_text_unselected">#DDFFFFFF</color>
+    <color name="bulky_glass_focus_ring">#3388CCFF</color>
+    <color name="segment_ripple_white">#26FFFFFF</color>
+</resources>
+

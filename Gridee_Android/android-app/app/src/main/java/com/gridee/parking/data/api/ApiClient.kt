@@ -29,6 +29,8 @@ object ApiClient {
     })
     
     private val httpClient = OkHttpClient.Builder()
+        // Attach JWT token first so logs show it
+        .addInterceptor(JwtAuthInterceptor(GrideeApplication.instance.applicationContext))
         .addInterceptor { chain ->
             val requestBuilder = chain.request().newBuilder()
             
@@ -49,8 +51,6 @@ object ApiClient {
             }
         }
         .addInterceptor(loggingInterceptor)
-        // Attach JWT token to requests when available
-        .addInterceptor(JwtAuthInterceptor(GrideeApplication.instance.applicationContext))
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)

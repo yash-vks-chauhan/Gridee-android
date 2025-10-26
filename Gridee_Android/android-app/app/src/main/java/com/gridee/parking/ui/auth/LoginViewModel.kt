@@ -102,7 +102,7 @@ class LoginViewModel : ViewModel() {
         _validationErrors.value = emptyMap()
     }
     
-    fun handleGoogleSignInSuccess(account: GoogleSignInAccount) {
+    fun handleGoogleSignInSuccess(context: Context, account: GoogleSignInAccount) {
         _loginState.value = LoginState.Loading
         
         viewModelScope.launch {
@@ -116,10 +116,27 @@ class LoginViewModel : ViewModel() {
                 )
                 
                 if (response.isSuccessful) {
-                    response.body()?.let { user ->
+                    response.body()?.let { auth ->
+                        // Save JWT token and user info
+                        val jwtManager = JwtTokenManager(context)
+                        jwtManager.saveAuthToken(
+                            token = auth.token,
+                            userId = auth.id,
+                            userName = auth.name,
+                            userRole = auth.role
+                        )
+                        
+                        // Build a minimal User object for UI compatibility
+                        val user = User(
+                            id = auth.id,
+                            name = auth.name,
+                            email = account.email ?: "",
+                            phone = "",
+                            vehicleNumbers = emptyList()
+                        )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
-                        _loginState.value = LoginState.Error("Sign in successful but no user data received")
+                        _loginState.value = LoginState.Error("Sign in successful but no token received")
                     }
                 } else {
                     _loginState.value = LoginState.Error("Google Sign In failed: ${response.errorBody()?.string()}")
@@ -130,7 +147,7 @@ class LoginViewModel : ViewModel() {
         }
     }
     
-    fun handleAppleSignInSuccess(authorizationCode: String) {
+    fun handleAppleSignInSuccess(context: Context, authorizationCode: String) {
         _loginState.value = LoginState.Loading
         
         viewModelScope.launch {
@@ -139,7 +156,24 @@ class LoginViewModel : ViewModel() {
                 val response = userRepository.appleSignIn(authorizationCode)
                 
                 if (response.isSuccessful) {
-                    response.body()?.let { user ->
+                    response.body()?.let { auth ->
+                        // Save JWT token and user info
+                        val jwtManager = JwtTokenManager(context)
+                        jwtManager.saveAuthToken(
+                            token = auth.token,
+                            userId = auth.id,
+                            userName = auth.name,
+                            userRole = auth.role
+                        )
+                        
+                        // Build a minimal User object for UI compatibility
+                        val user = User(
+                            id = auth.id,
+                            name = auth.name,
+                            email = "",  // Apple may not provide email
+                            phone = "",
+                            vehicleNumbers = emptyList()
+                        )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
                         _loginState.value = LoginState.Error("Sign in successful but no user data received")

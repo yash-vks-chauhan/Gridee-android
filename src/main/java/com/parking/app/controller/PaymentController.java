@@ -51,6 +51,7 @@ public class PaymentController {
             Object successObj = payload.get("success");
             String userId = (String) payload.get("userId");
             Object amountObj = payload.get("amount");
+            String status = payload.get("status") != null ? payload.get("status").toString() : null;
 
             if (orderId == null || paymentId == null || successObj == null || userId == null || amountObj == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "orderId, paymentId, success, userId, and amount are required"));
@@ -70,7 +71,7 @@ public class PaymentController {
                 amount = Double.parseDouble(amountObj.toString());
             }
 
-            boolean result = paymentGatewayService.handlePaymentCallback(orderId, paymentId, success, userId, amount);
+            boolean result = paymentGatewayService.handlePaymentCallback(orderId, paymentId, success, userId, amount, status);
             if (result) {
                 return ResponseEntity.ok(Map.of("status", "success"));
             } else {

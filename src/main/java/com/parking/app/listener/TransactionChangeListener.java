@@ -43,29 +43,47 @@ public class TransactionChangeListener {
             return w;
         });
 
-        double updatedBalance = wallet.getBalance();
-        // Add to balance for topup/refund, subtract for payment
-        if ("wallet_topup".equalsIgnoreCase(tx.getType()) || "refund".equalsIgnoreCase(tx.getType()))
-            updatedBalance += tx.getAmount();
-        else if ("payment".equalsIgnoreCase(tx.getType()))
-            updatedBalance -= tx.getAmount();
-
-        wallet.setBalance(updatedBalance);
-        wallet.setLastUpdated(new Date());
-
-        // Add TransactionRef
-        Wallet.TransactionRef ref = new Wallet.TransactionRef();
-        ref.setReferenceId(tx.getReferenceId());
-        ref.setType(tx.getType());
-        ref.setAmount(tx.getAmount());
-        ref.setStatus(tx.getStatus());
+        // Build a stable unique key for this transaction to avoid double-application
+        String key = tx.getGatewayPaymentId();
+        if (key == null || key.isBlank()) key = tx.getGatewayOrderId();
+        if (key == null || key.isBlank()) key = tx.getReferenceId();
+        if (key == null || key.isBlank()) key = tx.getId();
 
         ArrayList<Wallet.TransactionRef> txnList = wallet.getTransactions() == null
                 ? new ArrayList<>()
                 : new ArrayList<>(wallet.getTransactions());
-        txnList.add(ref);
-        wallet.setTransactions(txnList);
 
-        walletService.saveWallet(wallet);
+        boolean alreadyApplied = false;
+        if (key != null) {
+            for (Wallet.TransactionRef r : txnList) {
+                if (r != null && key.equals(r.getReferenceId())) {
+                    alreadyApplied = true;
+                    break;
+                }
+            }
+        }
+
+        if (!alreadyApplied) {
+            double updatedBalance = wallet.getBalance();
+            // Add to balance for topup/refund, subtract for payment
+            if ("wallet_topup".equalsIgnoreCase(tx.getType()) || "refund".equalsIgnoreCase(tx.getType()))
+                updatedBalance += tx.getAmount();
+            else if ("payment".equalsIgnoreCase(tx.getType()))
+                updatedBalance -= tx.getAmount();
+
+            wallet.setBalance(updatedBalance);
+            wallet.setLastUpdated(new Date());
+
+            // Add TransactionRef with the stable key
+            Wallet.TransactionRef ref = new Wallet.TransactionRef();
+            ref.setReferenceId(key);
+            ref.setType(tx.getType());
+            ref.setAmount(tx.getAmount());
+            ref.setStatus(tx.getStatus());
+            txnList.add(ref);
+            wallet.setTransactions(txnList);
+
+            walletService.saveWallet(wallet);
+        }
     }
 }

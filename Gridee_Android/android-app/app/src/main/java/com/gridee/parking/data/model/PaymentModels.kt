@@ -19,7 +19,8 @@ data class PaymentCallbackRequest(
     @SerializedName("paymentId") val paymentId: String,
     @SerializedName("success") val success: Boolean,
     @SerializedName("userId") val userId: String,
-    @SerializedName("amount") val amount: Double
+    @SerializedName("amount") val amount: Double,
+    @SerializedName("status") val status: String? = null
 )
 
 data class PaymentCallbackResponse(
@@ -34,4 +35,3 @@ data class TopUpRequest(
 data class TopUpResponse(
     @SerializedName("balance") val balance: Double? = null
 )
-

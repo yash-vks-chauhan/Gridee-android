@@ -42,7 +42,74 @@ public class UserController {
         }
     }
 
-
+    // Social sign-in (Google, Apple, etc.)
+    @PostMapping("/social-signin")
+    public ResponseEntity<?> socialSignIn(@RequestBody Map<String, String> credentials) {
+        try {
+            String provider = credentials.get("provider");
+            String email = credentials.get("email");
+            String name = credentials.get("name");
+            
+            // Validate required fields
+            if (provider == null || email == null || name == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "Missing required fields: provider, email, name"));
+            }
+            
+            // Check if user exists by email
+            Users user = userService.getUserByEmail(email);
+            
+            if (user == null) {
+                // Create new user for social sign-in
+                user = new Users();
+                user.setName(name);
+                user.setEmail(email.trim().toLowerCase());
+                user.setRole(Users.Role.USER);
+                user.setWalletCoins(0);
+                user.setFirstUser(true);
+                user.setCreatedAt(new java.util.Date());
+                
+                // Set a special password hash for social sign-in users
+                // This prevents them from logging in with password
+                user.setPasswordHash("SOCIAL_SIGNIN_" + provider.toUpperCase() + "_" + System.currentTimeMillis());
+                
+                // For Google Sign-In, we can store additional data
+                if ("google".equalsIgnoreCase(provider)) {
+                    String idToken = credentials.get("idToken");
+                    String profilePicture = credentials.get("profilePicture");
+                    // TODO: Verify Google ID token if needed
+                    // TODO: Store profile picture URL in user profile if field added
+                } 
+                // For Apple Sign-In
+                else if ("apple".equalsIgnoreCase(provider)) {
+                    String authCode = credentials.get("authorizationCode");
+                    // TODO: Verify Apple authorization code if needed
+                }
+                
+                // Save the new social user
+                user = userService.createSocialUser(user);
+            }
+            
+            // Generate JWT token
+            String token = jwtUtil.generateToken(user.getId(), user.getRole().name());
+            
+            // Return response with token (same format as registration)
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("token", token);
+            response.put("id", user.getId());
+            response.put("name", user.getName());
+            response.put("role", user.getRole().name());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Social sign-in failed: " + e.getMessage()));
+        }
+    }
 
     // Login user - authenticate by email/phone and password (accepts JSON)
     // src/main/java/com/parking/app/controller/UserController.java

@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Gridee</string>
+    <string name="camera_permission_required">Camera permission required</string>
+    <string name="scan_to_check_in">Scan to Check-In</string>
+    <string name="scan_to_check_out">Scan to Check-Out</string>
+    <string name="validating_qr">Validating QR…</string>
+    <string name="processing_check_in">Processing check-in…</string>
+    <string name="processing_check_out">Processing check-out…</string>
+    <string name="qr_invalid">Invalid QR code</string>
+    <string name="qr_validation_message">%1$s</string>
     <string name="registration_title">Create Account</string>
     <string name="registration_subtitle">Join Gridee for smart parking</string>
     <string name="login_link">Already have an account? Login</string>
@@ -33,6 +41,18 @@
     <string name="booking_details">Booking Details</string>
     <string name="booking_directions">Directions</string>
     <string name="booking_share">Share</string>
+    <string name="extend_booking">Extend Booking</string>
+    <string name="current_end_time">Current end time: %s</string>
+    <string name="select_new_end_time">Select new end time:</string>
+    <string name="additional_charges">Additional charges: ₹%1$d</string>
+    <string name="confirm_extend_title">Confirm Extension</string>
+    <string name="confirm_extend_message">Are you sure you want to extend this booking?&#x0A;&#x0A;Additional charges will be deducted from your wallet.</string>
+    <string name="booking_extended_success">Booking extended successfully!</string>
+    <string name="insufficient_wallet_balance">Insufficient wallet balance. Please top up.</string>
+    <string name="spot_not_available_extended">Parking spot not available for selected time</string>
+    <string name="new_time_must_be_later">New end time must be after current end time</string>
+    <string name="extend_failed_default">Failed to extend booking</string>
+    <string name="cancel">Cancel</string>
 
     <!-- Wallet -->
     <string name="wallet_transaction_icon_content_description">Transaction type icon</string>

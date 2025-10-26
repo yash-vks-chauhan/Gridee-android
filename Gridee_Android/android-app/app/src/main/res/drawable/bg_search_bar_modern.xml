@@ -1,50 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     
-    <!-- Outer Glow Shadow -->
-    <item android:top="4dp" android:left="2dp" android:right="2dp">
-        <shape android:shape="rectangle">
-            <corners android:radius="18dp" />
-            <solid android:color="#08000000" />
-        </shape>
-    </item>
-    
-    <!-- Main Drop Shadow -->
-    <item android:top="2dp" android:left="1dp" android:right="1dp">
-        <shape android:shape="rectangle">
-            <corners android:radius="17dp" />
-            <solid android:color="#15000000" />
-        </shape>
-    </item>
-    
-    <!-- Glass Surface with Enhanced Effect -->
-    <item android:bottom="2dp">
+    <!-- Apple-style Clean Glass Morphism -->
+    <item>
         <layer-list>
-            <!-- Base frosted glass background -->
+            <!-- Frosted glass background - Apple translucent -->
             <item>
                 <shape android:shape="rectangle">
                     <corners android:radius="16dp" />
-                    <gradient
-                        android:type="linear"
-                        android:angle="135"
-                        android:startColor="#CCFFFFFF"
-                        android:centerColor="#B8FFFFFF"
-                        android:endColor="#A5FFFFFF" />
+                    <solid android:color="#CCFFFFFF" />
                 </shape>
             </item>
             
             <!-- Glass shine overlay -->
-            <item android:top="0dp" android:bottom="24dp">
+            <item android:top="0dp" android:bottom="42dp">
                 <shape android:shape="rectangle">
                     <corners 
                         android:topLeftRadius="16dp" 
                         android:topRightRadius="16dp"
-                        android:bottomLeftRadius="4dp"
-                        android:bottomRightRadius="4dp" />
+                        android:bottomLeftRadius="2dp"
+                        android:bottomRightRadius="2dp" />
                     <gradient
                         android:type="linear"
                         android:angle="90"
-                        android:startColor="#30FFFFFF"
+                        android:startColor="#18FFFFFF"
+                        android:centerColor="#08FFFFFF"
                         android:endColor="#00FFFFFF" />
                 </shape>
             </item>
@@ -54,18 +34,18 @@
                 <shape android:shape="rectangle">
                     <corners android:radius="16dp" />
                     <stroke 
-                        android:width="1.5dp" 
-                        android:color="#40FFFFFF" />
+                        android:width="0.5dp" 
+                        android:color="#30000000" />
                 </shape>
             </item>
             
             <!-- Inner highlight ring -->
-            <item android:inset="1.5dp">
+            <item android:inset="0.5dp">
                 <shape android:shape="rectangle">
-                    <corners android:radius="14.5dp" />
+                    <corners android:radius="15.5dp" />
                     <stroke 
                         android:width="0.5dp" 
-                        android:color="#60FFFFFF" />
+                        android:color="#40FFFFFF" />
                 </shape>
             </item>
         </layer-list>

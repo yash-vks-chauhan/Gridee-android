@@ -19,7 +19,8 @@ data class Transaction(
     val timestamp: Date,
     val balanceAfter: Double,
     val paymentMethod: String? = null,
-    val reference: String? = null
+    val reference: String? = null,
+    val status: String? = null
 )
 
 enum class TransactionType {
@@ -74,13 +75,24 @@ class TransactionsAdapter(
             )
             binding.tvTimestamp.text = relativeTime
 
-            binding.tvBalance.text = context.getString(
-                R.string.wallet_transaction_after,
-                transaction.balanceAfter
-            )
+            // Show balance after for successful transactions only; otherwise show status
+            val statusLower = transaction.status?.lowercase(Locale.getDefault())
+            if (statusLower == "failed" || statusLower == "cancelled" || statusLower == "canceled") {
+                binding.tvBalance.text = if (statusLower == "failed") "Failed" else "Cancelled"
+            } else {
+                binding.tvBalance.text = context.getString(
+                    R.string.wallet_transaction_after,
+                    transaction.balanceAfter
+                )
+            }
 
+            val statusIndicatesFailure = statusLower == "failed" || statusLower == "cancelled" || statusLower == "canceled"
             val amountPositive = transaction.amount >= 0
-            val amountColor = if (amountPositive) R.color.success_green else R.color.red
+            val amountColor = when {
+                statusIndicatesFailure -> R.color.red
+                amountPositive -> R.color.success_green
+                else -> R.color.red
+            }
             binding.tvAmount.setTextColor(ContextCompat.getColor(context, amountColor))
             val absoluteAmount = abs(transaction.amount)
             val formattedAmount = String.format(
@@ -89,10 +101,11 @@ class TransactionsAdapter(
                 absoluteAmount
             )
 
-            val amountText = if (amountPositive) {
-                "+₹$formattedAmount"
+            val amountText = if (statusIndicatesFailure) {
+                // For failed/cancelled, avoid misleading +/-, just show amount
+                "₹$formattedAmount"
             } else {
-                "-₹$formattedAmount"
+                if (amountPositive) "+₹$formattedAmount" else "-₹$formattedAmount"
             }
             binding.tvAmount.text = amountText
 

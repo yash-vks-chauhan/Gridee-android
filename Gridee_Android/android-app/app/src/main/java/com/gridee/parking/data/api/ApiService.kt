@@ -15,6 +15,8 @@ import com.gridee.parking.data.model.PaymentCallbackRequest
 import com.gridee.parking.data.model.PaymentCallbackResponse
 import com.gridee.parking.data.model.TopUpRequest
 import com.gridee.parking.data.model.TopUpResponse
+import com.gridee.parking.data.model.QrCodeRequest
+import com.gridee.parking.data.model.QrValidationResult
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -39,7 +41,7 @@ interface ApiService {
     suspend fun loginUser(@Body credentials: Map<String, String>): Response<User>
     
     @POST("api/users/social-signin")
-    suspend fun socialSignIn(@Body credentials: Map<String, String>): Response<User>
+    suspend fun socialSignIn(@Body credentials: Map<String, String>): Response<AuthResponse>
 
     // OAuth2 user info
     @GET("api/oauth2/user")
@@ -127,4 +129,60 @@ interface ApiService {
         @Query("key") phoneNumber: String,
         @Query("otp") otp: String
     ): Response<Boolean>
+
+    // ========== NEW QR CHECK-IN/OUT ENDPOINTS ==========
+
+    // Validate QR code before check-in
+    @POST("api/users/{userId}/bookings/{bookingId}/validate-qr-checkin")
+    suspend fun validateQrCodeForCheckIn(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body request: QrCodeRequest
+    ): Response<QrValidationResult>
+
+    // Actual check-in
+    @POST("api/users/{userId}/bookings/{bookingId}/checkin")
+    suspend fun checkInBooking(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body request: QrCodeRequest
+    ): Response<Booking>
+
+    // Validate QR code before check-out
+    @POST("api/users/{userId}/bookings/{bookingId}/validate-qr-checkout")
+    suspend fun validateQrCodeForCheckOut(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body request: QrCodeRequest
+    ): Response<QrValidationResult>
+
+    // Actual check-out
+    @POST("api/users/{userId}/bookings/{bookingId}/checkout")
+    suspend fun checkOutBooking(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body request: QrCodeRequest
+    ): Response<Booking>
+
+    // Get booking by ID (for refreshing data)
+    @GET("api/users/{userId}/bookings/{bookingId}")
+    suspend fun getBookingById(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String
+    ): Response<Booking>
+
+    // Get penalty info (real-time)
+    @GET("api/users/{userId}/bookings/{bookingId}/penalty")
+    suspend fun getPenaltyInfo(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String
+    ): Response<Double>
+
+    // Extend booking end time
+    @PUT("api/users/{userId}/bookings/{bookingId}/extend")
+    suspend fun extendBooking(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body request: Map<String, String>
+    ): Response<Booking>
 }

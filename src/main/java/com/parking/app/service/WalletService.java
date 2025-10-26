@@ -41,11 +41,10 @@ public class WalletService {
         return transactionService.getTransactionsByUserId(userId);
     }
 
-    // Top up wallet and create a transaction (atomic)
+    // Top up wallet and create a transaction (let listener update wallet)
     public Wallet topUpWallet(String userId, double amount) {
-        Wallet wallet = getOrCreateWallet(userId);
-
-        // Create transaction
+        getOrCreateWallet(userId);
+        // Create a finalized transaction; TransactionChangeListener will update balance + refs exactly once
         Transactions tx = new Transactions();
         tx.setReferenceId(UUID.randomUUID().toString());
         tx.setUserId(userId);
@@ -54,21 +53,8 @@ public class WalletService {
         tx.setStatus("completed");
         tx.setTimestamp(new Date());
         transactionService.recordTransaction(tx);
-
-        // Update wallet
-        wallet.setBalance(wallet.getBalance() + amount);
-        wallet.setLastUpdated(new Date());
-        Wallet.TransactionRef ref = new Wallet.TransactionRef();
-        ref.setReferenceId(tx.getReferenceId());
-        ref.setType(tx.getType());
-        ref.setAmount(amount);
-        ref.setStatus("completed");
-
-        List<Wallet.TransactionRef> txnList = wallet.getTransactions() == null ? new ArrayList<>() : wallet.getTransactions();
-        txnList.add(ref);
-        wallet.setTransactions(txnList);
-
-        return walletRepository.save(wallet);
+        // Return latest wallet snapshot
+        return walletRepository.findByUserId(userId).orElseGet(() -> getOrCreateWallet(userId));
     }
 
     // Save wallet (encapsulate repository access)
@@ -124,5 +110,37 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance() + booking.getAmount());
         wallet.setLastUpdated(new Date());
         walletRepository.save(wallet);
+    }
+
+    // Recompute wallet balance from transactions ledger (idempotent repair)
+    public Wallet reconcileBalance(String userId) {
+        Wallet wallet = getOrCreateWallet(userId);
+        List<Transactions> txs = transactionService.getTransactionsByUserId(userId);
+
+        double newBalance = 0.0;
+        if (txs != null) {
+            for (Transactions tx : txs) {
+                if (tx == null) continue;
+                String status = tx.getStatus() != null ? tx.getStatus().toLowerCase() : "";
+                if (!("completed".equals(status) || "success".equals(status))) {
+                    continue; // only finalized
+                }
+                String type = tx.getType() != null ? tx.getType().toLowerCase() : "";
+                double amt = tx.getAmount();
+                double delta;
+                if ("payment".equals(type) || "penalty_deduction".equals(type)) {
+                    // Payments reduce balance; handle sign defensively
+                    delta = (amt >= 0) ? -Math.abs(amt) : amt; // negative amounts remain negative
+                } else {
+                    // Credits increase balance
+                    delta = Math.abs(amt);
+                }
+                newBalance += delta;
+            }
+        }
+
+        wallet.setBalance(newBalance);
+        wallet.setLastUpdated(new Date());
+        return walletRepository.save(wallet);
     }
 }

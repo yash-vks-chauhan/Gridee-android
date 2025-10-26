@@ -77,7 +77,7 @@ class UserRepository {
         email: String,
         name: String,
         profilePicture: String?
-    ): Response<User> {
+    ): Response<AuthResponse> {
         val googleData = mapOf(
             "idToken" to idToken,
             "email" to email,
@@ -88,7 +88,7 @@ class UserRepository {
         return apiService.socialSignIn(googleData)
     }
     
-    suspend fun appleSignIn(authorizationCode: String): Response<User> {
+    suspend fun appleSignIn(authorizationCode: String): Response<AuthResponse> {
         val appleData = mapOf(
             "authorizationCode" to authorizationCode,
             "provider" to "apple"

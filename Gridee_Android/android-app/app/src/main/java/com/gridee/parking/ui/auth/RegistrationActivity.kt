@@ -28,6 +28,10 @@ class RegistrationActivity : AppCompatActivity() {
         binding = ActivityRegistrationBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
+        // Set light status bar with dark icons for white background
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        window.statusBarColor = android.graphics.Color.parseColor("#F5F5F5")
+        
         setupUI()
         observeViewModel()
     }

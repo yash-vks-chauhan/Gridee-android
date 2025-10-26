@@ -493,4 +493,31 @@
 
     </ScrollView>
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnExtendBooking"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/extend_booking"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:cornerRadius="16dp"
+        style="@style/Widget.Material3.Button.TonalButton" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonScanQr"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="@string/scan_to_check_in"
+        android:textAllCaps="false"
+        android:textStyle="bold"
+        android:insetTop="12dp"
+        android:insetBottom="12dp"
+        app:cornerRadius="16dp" />
+
 </LinearLayout>

@@ -100,21 +100,33 @@ class WalletTopUpActivity : AppCompatActivity(), PaymentResultListener {
     }
 
     override fun onPaymentError(code: Int, response: String?) {
-        // Inform backend of failed payment (optional)
+        // Inform backend of failed/cancelled payment
         lifecycleScope.launch {
             try {
+                val status = when {
+                    // Heuristic: Razorpay uses code 2 for user-cancelled; also check message text
+                    code == 2 -> "cancelled"
+                    response?.contains("cancel", ignoreCase = true) == true -> "cancelled"
+                    else -> "failed"
+                }
                 ApiClient.apiService.paymentCallback(
                     com.gridee.parking.data.model.PaymentCallbackRequest(
                         orderId = orderId,
                         paymentId = (response ?: ""),
                         success = false,
                         userId = userId,
-                        amount = amount
+                        amount = amount,
+                        status = status
                     )
                 )
             } catch (_: Exception) {
             } finally {
-                Toast.makeText(this@WalletTopUpActivity, "Payment failed", Toast.LENGTH_LONG).show()
+                val msg = if (code == 2 || (response?.contains("cancel", true) == true)) {
+                    "Payment cancelled"
+                } else {
+                    "Payment failed"
+                }
+                Toast.makeText(this@WalletTopUpActivity, msg, Toast.LENGTH_LONG).show()
                 finish()
             }
         }

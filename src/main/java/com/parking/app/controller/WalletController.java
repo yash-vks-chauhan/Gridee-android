@@ -21,18 +21,52 @@ public class WalletController {
     @Autowired
     private TransactionService transactionService;
 
-    // Get wallet details for a user
+    // Get wallet details for a user (create if missing)
     @GetMapping("")
     public ResponseEntity<Wallet> getWallet(@PathVariable String userId) {
-        return walletService.getWalletByUserId(userId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        // Ensure a wallet always exists for the user to avoid 404s in clients
+        Wallet wallet = walletService.getOrCreateWallet(userId);
+        return ResponseEntity.ok(wallet);
     }
 
     // Get all transactions for a user
     @GetMapping("/transactions")
     public ResponseEntity<List<Transactions>> getUserTransactions(@PathVariable String userId) {
-        return ResponseEntity.ok(transactionService.getTransactionsByUserId(userId));
+        List<Transactions> txs = transactionService.getTransactionsByUserId(userId);
+        if (txs == null || txs.isEmpty()) return ResponseEntity.ok(List.of());
+
+        // Deduplicate by gatewayPaymentId -> gatewayOrderId -> referenceId -> id
+        java.util.LinkedHashMap<String, Transactions> map = new java.util.LinkedHashMap<>();
+        for (Transactions tx : txs) {
+            if (tx == null) continue;
+            String key = tx.getGatewayPaymentId();
+            if (key == null || key.isBlank()) key = tx.getGatewayOrderId();
+            if (key == null || key.isBlank()) key = tx.getReferenceId();
+            if (key == null || key.isBlank()) key = tx.getId();
+            if (key == null) continue;
+
+            Transactions existing = map.get(key);
+            if (existing == null) {
+                map.put(key, tx);
+                continue;
+            }
+            // Prefer a finalized record over a non-finalized one
+            String s1 = existing.getStatus() != null ? existing.getStatus().toLowerCase() : "";
+            String s2 = tx.getStatus() != null ? tx.getStatus().toLowerCase() : "";
+            boolean finalized1 = s1.equals("completed") || s1.equals("success");
+            boolean finalized2 = s2.equals("completed") || s2.equals("success");
+            if (finalized2 && !finalized1) {
+                map.put(key, tx);
+            } else if (finalized2 == finalized1) {
+                // If both same finality, keep the latest timestamp
+                java.util.Date d1 = existing.getTimestamp();
+                java.util.Date d2 = tx.getTimestamp();
+                if (d2 != null && (d1 == null || d2.after(d1))) {
+                    map.put(key, tx);
+                }
+            }
+        }
+        return ResponseEntity.ok(new java.util.ArrayList<>(map.values()));
     }
 
     // Top up wallet
@@ -61,6 +95,13 @@ public class WalletController {
         if (wallet == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Wallet not found or insufficient balance.");
         }
+        return ResponseEntity.ok(wallet);
+    }
+
+    // Admin/repair: Recompute wallet balance from transaction history
+    @PostMapping("/reconcile")
+    public ResponseEntity<Wallet> reconcile(@PathVariable String userId) {
+        Wallet wallet = walletService.reconcileBalance(userId);
         return ResponseEntity.ok(wallet);
     }
 }

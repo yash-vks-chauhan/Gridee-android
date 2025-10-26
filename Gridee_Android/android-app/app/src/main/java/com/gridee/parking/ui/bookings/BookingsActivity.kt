@@ -35,6 +35,7 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(this)[BookingsViewModel::class.java]
         setupRecyclerView()
+        setupPullToRefresh()
         setupObservers()
         setupClickListeners()
         handleIntent(intent)
@@ -48,6 +49,12 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
             handleIntent(it)
             loadBookings()
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Ensure list refresh when returning from booking flow or other screens
+        loadBookings()
     }
 
     override fun setupUI() {
@@ -66,6 +73,13 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         }
     }
 
+    private fun setupPullToRefresh() {
+        binding.swipeRefresh.setColorSchemeResources(R.color.primary_blue)
+        binding.swipeRefresh.setOnRefreshListener {
+            loadBookings()
+        }
+    }
+
     private fun setupObservers() {
         viewModel.bookings.observe(this) { backendBookings ->
             println("BookingsActivity: Observer called with ${backendBookings.size} bookings")
@@ -76,6 +90,10 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
 
         viewModel.isLoading.observe(this) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            // Reflect loading on pull-to-refresh (only when list is visible)
+            if (!isLoading) {
+                binding.swipeRefresh.isRefreshing = false
+            }
         }
 
         viewModel.errorMessage.observe(this) { error ->
@@ -132,9 +150,13 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
     }
 
     private fun showBookingDetails(booking: Booking) {
-        // TODO: Create and show bottom sheet with booking details
-        // For now, just show a toast
-        android.widget.Toast.makeText(this, "Booking: ${booking.locationName}", android.widget.Toast.LENGTH_SHORT).show()
+        val bookingId = booking.id
+        if (bookingId.isNotBlank()) {
+            val bottomSheet = BookingDetailBottomSheet.newInstance(bookingId)
+            bottomSheet.show(supportFragmentManager, "BookingDetailBottomSheet")
+        } else {
+            android.widget.Toast.makeText(this, "Invalid booking ID", android.widget.Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun updateFilterCounts() {

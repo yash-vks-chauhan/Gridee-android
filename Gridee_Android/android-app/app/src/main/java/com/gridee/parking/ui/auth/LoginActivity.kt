@@ -32,7 +32,7 @@ class LoginActivity : AppCompatActivity() {
         val signInResult = googleSignInManager.handleSignInResult(result.data)
         when (signInResult) {
             is GoogleSignInResult.Success -> {
-                viewModel.handleGoogleSignInSuccess(signInResult.account)
+                viewModel.handleGoogleSignInSuccess(this, signInResult.account)
             }
             is GoogleSignInResult.Error -> {
                 viewModel.handleSignInError(signInResult.message)
@@ -44,6 +44,10 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        
+        // Set light status bar with dark icons for white background
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        window.statusBarColor = android.graphics.Color.parseColor("#F5F5F5")
         
         // Initialize sign-in managers
         googleSignInManager = GoogleSignInManager(this)
@@ -185,7 +189,7 @@ class LoginActivity : AppCompatActivity() {
         // Handle Apple Sign-In redirect
         when (val result = appleSignInManager.handleRedirect(intent)) {
             is AppleSignInResult.Success -> {
-                viewModel.handleAppleSignInSuccess(result.authorizationCode)
+                viewModel.handleAppleSignInSuccess(this, result.authorizationCode)
             }
             is AppleSignInResult.Error -> {
                 viewModel.handleSignInError(result.message)

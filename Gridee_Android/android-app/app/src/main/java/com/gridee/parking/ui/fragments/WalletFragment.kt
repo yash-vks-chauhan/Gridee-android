@@ -6,6 +6,7 @@ import androidx.appcompat.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AnimationUtils
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.gridee.parking.R
@@ -42,6 +43,7 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     override fun setupUI() {
         setupRecyclerView()
         setupClickListeners()
+        setupAnimations()
         loadWalletData()
     }
 
@@ -62,14 +64,26 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun setupClickListeners() {
-        // Add money button
-        binding.btnAddMoney.setOnClickListener {
-            showTopUpDialog()
+        // Add money button with rotation animation
+        binding.btnAddMoney.setOnClickListener { view ->
+            // Rotate animation
+            val rotatePress = AnimationUtils.loadAnimation(requireContext(), R.anim.button_rotate_press)
+            val rotateRelease = AnimationUtils.loadAnimation(requireContext(), R.anim.button_rotate_release)
+            
+            view.startAnimation(rotatePress)
+            view.postDelayed({
+                view.startAnimation(rotateRelease)
+                showTopUpDialog()
+            }, 200)
         }
         
-        // Tap balance to show/hide (privacy feature)
-        binding.tvBalanceAmount.setOnClickListener {
-            showTopUpDialog()
+        // Tap balance with bounce animation
+        binding.tvBalanceAmount.setOnClickListener { view ->
+            val bounceAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.balance_bounce)
+            view.startAnimation(bounceAnim)
+            view.postDelayed({
+                showTopUpDialog()
+            }, 150)
         }
         
         // Quick add buttons
@@ -89,6 +103,31 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             // Navigate to TransactionHistoryActivity to show all transactions
             val intent = Intent(requireContext(), TransactionHistoryActivity::class.java)
             startActivity(intent)
+        }
+    }
+    
+    private fun setupAnimations() {
+        // Card entrance animation
+        try {
+            val entranceAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.wallet_card_entrance)
+            binding.cardWalletBalance.startAnimation(entranceAnim)
+        } catch (e: Exception) {
+            // Animation optional - continue without it
+        }
+        
+        // Setup pull-to-refresh
+        binding.swipeRefresh.setColorSchemeResources(
+            R.color.primary,
+            R.color.primary_dark,
+            R.color.accent
+        )
+        binding.swipeRefresh.setProgressBackgroundColorSchemeResource(R.color.white)
+        binding.swipeRefresh.setOnRefreshListener {
+            // Reload wallet data with smooth animation
+            loadWalletData()
+            binding.swipeRefresh.postDelayed({
+                binding.swipeRefresh.isRefreshing = false
+            }, 800)
         }
     }
     
@@ -112,7 +151,17 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
                         showToast("Wallet details response is null")
                     }
                 } else {
-                    showToast("Failed to load wallet balance: ${balanceResponse.code()}")
+                    if (balanceResponse.code() == 401) {
+                        handleUnauthorized()
+                        return@launch
+                    } else if (balanceResponse.code() == 404) {
+                        // Wallet not found — treat as zero balance for resilience
+                        currentBalance = 0.0
+                        updateBalanceDisplay()
+                        // Continue to load transactions
+                    } else {
+                        showToast("Failed to load wallet balance: ${balanceResponse.code()}")
+                    }
                 }
 
                 // Fetch wallet transactions separately
@@ -149,6 +198,10 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
                         showToast("No transactions found")
                     }
                 } else {
+                    if (transactionsResponse.code() == 401) {
+                        handleUnauthorized()
+                        return@launch
+                    }
                     showToast("Failed to load transactions: ${transactionsResponse.code()}")
                     userTransactions.clear()
                     updateTransactionsList() // Show empty state
@@ -172,6 +225,14 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
 
     private fun updateBalanceDisplay() {
         binding.tvBalanceAmount.text = "₹${String.format("%.2f", currentBalance)}"
+        
+        // Animate balance update
+        try {
+            val updateAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.balance_update)
+            binding.tvBalanceAmount.startAnimation(updateAnim)
+        } catch (e: Exception) {
+            // Animation optional
+        }
         
         // Update last updated time
         binding.tvLastUpdated.text = "Updated now"
@@ -227,22 +288,45 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             Date() // Fallback to current date
         }
 
-        // Validate and convert transaction type
-        val transactionType = walletTransaction.type?.uppercase()?.trim() ?: "CREDIT"
-        
+        // Normalize fields
+        val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
+        val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
+
+        val transactionType = when (typeNorm) {
+            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
+            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
+            "refund" -> TransactionType.REFUND
+            "bonus" -> TransactionType.BONUS
+            else -> TransactionType.TOP_UP
+        }
+
+        val amount = walletTransaction.amount ?: 0.0
+        val displayAmount = when (typeNorm) {
+            "debit", "payment", "penalty_deduction" -> if (amount > 0) -amount else amount
+            "credit", "refund", "bonus", "top_up", "topup", "wallet_topup", "wallet_recharge" -> if (amount < 0) -amount else amount
+            else -> amount
+        }
+
+        val baseDescription = when (transactionType) {
+            TransactionType.TOP_UP -> "Wallet Top-up"
+            TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            TransactionType.REFUND -> "Refund"
+            TransactionType.BONUS -> "Bonus"
+        }
+        val description = when (statusNorm) {
+            "failed" -> "$baseDescription Failed"
+            "cancelled", "canceled" -> "$baseDescription Cancelled"
+            else -> walletTransaction.description?.trim() ?: baseDescription
+        }
+
         return Transaction(
             id = id,
-            type = when (transactionType) {
-                "CREDIT", "TOP_UP", "TOPUP" -> TransactionType.TOP_UP
-                "DEBIT", "PAYMENT" -> TransactionType.PARKING_PAYMENT
-                "REFUND" -> TransactionType.REFUND
-                "BONUS" -> TransactionType.BONUS
-                else -> TransactionType.TOP_UP
-            },
-            amount = walletTransaction.amount ?: 0.0,
-            description = walletTransaction.description?.trim() ?: "Transaction",
+            type = transactionType,
+            amount = displayAmount,
+            description = description,
             timestamp = parsedTimestamp,
-            balanceAfter = walletTransaction.balanceAfter ?: 0.0
+            balanceAfter = walletTransaction.balanceAfter ?: 0.0,
+            status = walletTransaction.status
         )
     }
 
@@ -316,5 +400,18 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
                 showToast("Error: ${e.message}")
             }
         }
+    }
+
+    private fun handleUnauthorized() {
+        showToast("Session expired. Please log in again.")
+        try {
+            val prefs = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+            com.gridee.parking.utils.JwtTokenManager(requireContext()).clearAuthToken()
+        } catch (_: Exception) { }
+        val intent = android.content.Intent(requireContext(), com.gridee.parking.ui.auth.LoginActivity::class.java)
+        intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
     }
 }

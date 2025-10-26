@@ -128,7 +128,16 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 currentBalance = walletDetails?.balance ?: 0.0
                 updateBalanceDisplay()
             } else {
-                showToast("Unable to load wallet balance (${response.code()})")
+                if (response.code() == 401) {
+                    handleUnauthorized()
+                } else if (response.code() == 404) {
+                    // Wallet not found — treat as zero balance for resilience
+                    currentBalance = 0.0
+                    updateBalanceDisplay()
+                    android.util.Log.w("WalletFragmentNew", "Wallet not found (404); showing zero balance")
+                } else {
+                    showToast("Unable to load wallet balance (${response.code()})")
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("WalletFragmentNew", "Error loading wallet balance", e)
@@ -150,9 +159,13 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 android.util.Log.d("WalletFragmentNew", "Loaded ${userTransactions.size} transactions from API")
                 updateTransactionsDisplay()
             } else {
-                userTransactions.clear()
-                updateTransactionsDisplay()
-                showToast("Unable to load transactions (${transactionResponse.code()})")
+                if (transactionResponse.code() == 401) {
+                    handleUnauthorized()
+                } else {
+                    userTransactions.clear()
+                    updateTransactionsDisplay()
+                    showToast("Unable to load transactions (${transactionResponse.code()})")
+                }
             }
         } catch (e: Exception) {
             android.util.Log.e("WalletFragmentNew", "Error loading wallet transactions", e)
@@ -160,6 +173,22 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             updateTransactionsDisplay()
             showToast("Error loading transactions: ${e.message}")
         }
+    }
+
+    private fun handleUnauthorized() {
+        showToast("Session expired. Please log in again.")
+        try {
+            // Clear saved session
+            val prefs = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+            // Also clear JWT store
+            com.gridee.parking.utils.JwtTokenManager(requireContext()).clearAuthToken()
+        } catch (_: Exception) { }
+        // Navigate to login
+        val intent = android.content.Intent(requireContext(), com.gridee.parking.ui.auth.LoginActivity::class.java)
+        intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        requireActivity().finish()
     }
 
     private fun updateBalanceDisplay() {
@@ -228,34 +257,52 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
             Date()
         }
         
+        // Normalize fields
+        val typeNorm = backendTransaction.type?.trim()?.lowercase(Locale.getDefault())
+        val statusNorm = backendTransaction.status?.trim()?.lowercase(Locale.getDefault())
+
         // Map transaction type and handle amount correctly
-        val transactionType = when (backendTransaction.type?.uppercase()) {
-            "CREDIT" -> TransactionType.TOP_UP
-            "DEBIT" -> TransactionType.PARKING_PAYMENT
-            "REFUND" -> TransactionType.REFUND
-            "BONUS" -> TransactionType.BONUS
-            else -> TransactionType.PARKING_PAYMENT
+        val transactionType = when (typeNorm) {
+            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
+            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
+            "refund" -> TransactionType.REFUND
+            "bonus" -> TransactionType.BONUS
+            else -> TransactionType.TOP_UP
         }
         
         // Ensure proper amount handling:
         // CREDIT transactions should be positive
         // DEBIT transactions should be negative
         val amount = backendTransaction.amount ?: 0.0
-        val displayAmount = when (backendTransaction.type?.uppercase()) {
-            "DEBIT" -> if (amount > 0) -amount else amount  // Make sure debits are negative
-            "CREDIT", "REFUND", "BONUS" -> if (amount < 0) -amount else amount  // Make sure credits are positive
+        val displayAmount = when (typeNorm) {
+            "debit", "payment", "penalty_deduction" -> if (amount > 0) -amount else amount  // Make sure debits are negative
+            "credit", "refund", "bonus", "top_up", "topup", "wallet_topup", "wallet_recharge" -> if (amount < 0) -amount else amount  // Make sure credits are positive
             else -> amount
         }
         
         android.util.Log.d("WalletFragmentNew", "Converting transaction: type=${backendTransaction.type}, originalAmount=$amount, displayAmount=$displayAmount")
         
+        // Build a user-friendly description, respecting status
+        val baseDescription = when (transactionType) {
+            TransactionType.TOP_UP -> "Wallet Top-up"
+            TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            TransactionType.REFUND -> "Refund"
+            TransactionType.BONUS -> "Bonus"
+        }
+        val description = when (statusNorm) {
+            "failed" -> "$baseDescription Failed"
+            "cancelled", "canceled" -> "$baseDescription Cancelled"
+            else -> backendTransaction.description ?: baseDescription
+        }
+
         return Transaction(
             id = backendTransaction.id ?: "Unknown",
             type = transactionType,
             amount = displayAmount,
-            description = backendTransaction.description ?: "Transaction",
+            description = description,
             timestamp = timestamp,
-            balanceAfter = backendTransaction.balanceAfter ?: 0.0
+            balanceAfter = backendTransaction.balanceAfter ?: 0.0,
+            status = backendTransaction.status
         )
     }
 

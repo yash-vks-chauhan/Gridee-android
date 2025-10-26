@@ -3,6 +3,8 @@ package com.gridee.parking.data.repository
 import android.content.Context
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.Booking
+import com.gridee.parking.data.model.QrCodeRequest
+import com.gridee.parking.data.model.QrValidationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -202,6 +204,229 @@ class BookingRepository(private val context: Context) {
                 Result.success(true)
             } else {
                 Result.failure(Exception("Failed to cancel booking: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // ========== NEW QR METHODS ==========
+
+    /**
+     * Validate QR code for check-in and return penalty info/message
+     */
+    suspend fun validateCheckInQr(
+        bookingId: String,
+        qrCode: String
+    ): Result<QrValidationResult> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val request = QrCodeRequest(qrCode)
+            val response = apiService.validateQrCodeForCheckIn(userId, bookingId, request)
+
+            if (response.isSuccessful) {
+                val result = response.body()
+                if (result != null) {
+                    Result.success(result)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Validation failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Perform actual check-in
+     */
+    suspend fun checkIn(
+        bookingId: String,
+        qrCode: String
+    ): Result<Booking> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val request = QrCodeRequest(qrCode)
+            val response = apiService.checkInBooking(userId, bookingId, request)
+
+            if (response.isSuccessful) {
+                val booking = response.body()
+                if (booking != null) {
+                    Result.success(booking)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Check-in failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Validate QR code for check-out and return final charges
+     */
+    suspend fun validateCheckOutQr(
+        bookingId: String,
+        qrCode: String
+    ): Result<QrValidationResult> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val request = QrCodeRequest(qrCode)
+            val response = apiService.validateQrCodeForCheckOut(userId, bookingId, request)
+
+            if (response.isSuccessful) {
+                val result = response.body()
+                if (result != null) {
+                    Result.success(result)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Validation failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Perform actual check-out
+     */
+    suspend fun checkOut(
+        bookingId: String,
+        qrCode: String
+    ): Result<Booking> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val request = QrCodeRequest(qrCode)
+            val response = apiService.checkOutBooking(userId, bookingId, request)
+
+            if (response.isSuccessful) {
+                val booking = response.body()
+                if (booking != null) {
+                    Result.success(booking)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else if (response.code() == 402) {
+                // Payment required - insufficient funds
+                Result.failure(Exception("Insufficient wallet balance to pay penalties"))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Check-out failed"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Get real-time penalty for active booking
+     */
+    suspend fun getPenaltyInfo(bookingId: String): Result<Double> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val response = apiService.getPenaltyInfo(userId, bookingId)
+
+            if (response.isSuccessful) {
+                val penalty = response.body()
+                if (penalty != null) {
+                    Result.success(penalty)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                Result.failure(Exception("Failed to get penalty info"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Refresh booking data
+     */
+    suspend fun refreshBooking(bookingId: String): Result<Booking> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val response = apiService.getBookingById(userId, bookingId)
+
+            if (response.isSuccessful) {
+                val booking = response.body()
+                if (booking != null) {
+                    Result.success(booking)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else {
+                Result.failure(Exception("Failed to refresh booking"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Extend booking checkout time
+     */
+    suspend fun extendBooking(
+        bookingId: String,
+        newCheckOutTime: String
+    ): Result<Booking> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val request = mapOf("newCheckOutTime" to newCheckOutTime)
+            val response = apiService.extendBooking(userId, bookingId, request)
+
+            if (response.isSuccessful) {
+                val booking = response.body()
+                if (booking != null) {
+                    Result.success(booking)
+                } else {
+                    Result.failure(Exception("Empty response"))
+                }
+            } else if (response.code() == 402) {
+                Result.failure(Exception("Insufficient wallet balance"))
+            } else if (response.code() == 409) {
+                Result.failure(Exception("Parking spot not available for extended time"))
+            } else {
+                val errorBody = response.errorBody()?.string()
+                Result.failure(Exception(errorBody ?: "Failed to extend booking"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -354,24 +354,45 @@ class TransactionHistoryActivity : AppCompatActivity() {
             Date()
         }
 
-        val transactionType = walletTransaction.type?.uppercase()?.trim() ?: "CREDIT"
-        val rawDescription = walletTransaction.description?.trim().orEmpty()
-        val description = if (rawDescription.isBlank()) "Transaction" else rawDescription
-        
+        val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
+        val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
+
+        val transactionType = when (typeNorm) {
+            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
+            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
+            "refund" -> TransactionType.REFUND
+            "bonus" -> TransactionType.BONUS
+            else -> TransactionType.TOP_UP
+        }
+
+        val amount = walletTransaction.amount ?: 0.0
+        val displayAmount = when (typeNorm) {
+            "debit", "payment", "penalty_deduction" -> if (amount > 0) -amount else amount
+            "credit", "refund", "bonus", "top_up", "topup", "wallet_topup", "wallet_recharge" -> if (amount < 0) -amount else amount
+            else -> amount
+        }
+
+        val baseDescription = when (transactionType) {
+            TransactionType.TOP_UP -> "Wallet Top-up"
+            TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            TransactionType.REFUND -> "Refund"
+            TransactionType.BONUS -> "Bonus"
+        }
+        val description = when (statusNorm) {
+            "failed" -> "$baseDescription Failed"
+            "cancelled", "canceled" -> "$baseDescription Cancelled"
+            else -> walletTransaction.description?.trim()?.ifBlank { baseDescription } ?: baseDescription
+        }
+
         return Transaction(
             id = id,
-            type = when (transactionType) {
-                "CREDIT", "TOP_UP", "TOPUP" -> TransactionType.TOP_UP
-                "DEBIT", "PAYMENT" -> TransactionType.PARKING_PAYMENT
-                "REFUND" -> TransactionType.REFUND
-                "BONUS" -> TransactionType.BONUS
-                else -> TransactionType.TOP_UP
-            },
-            amount = walletTransaction.amount ?: 0.0,
+            type = transactionType,
+            amount = displayAmount,
             description = description,
             timestamp = parsedTimestamp,
             balanceAfter = walletTransaction.balanceAfter ?: 0.0,
-            paymentMethod = null
+            paymentMethod = null,
+            status = walletTransaction.status
         )
     }
 

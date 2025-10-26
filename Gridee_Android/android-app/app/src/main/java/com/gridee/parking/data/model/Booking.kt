@@ -35,5 +35,15 @@ data class Booking(
     val createdAt: Date? = null,
     
     @SerializedName("vehicleNumber")
-    val vehicleNumber: String? = null
+    val vehicleNumber: String? = null,
+
+    // QR/check-in fields
+    @SerializedName("qrCodeScanned")
+    val qrCodeScanned: Boolean = false,
+
+    @SerializedName("actualCheckInTime")
+    val actualCheckInTime: Date? = null,
+
+    @SerializedName("autoCompleted")
+    val autoCompleted: Boolean? = false
 )

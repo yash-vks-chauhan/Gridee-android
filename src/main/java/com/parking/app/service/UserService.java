@@ -50,17 +50,17 @@ public class UserService {
 
         if (user.getPhone() == null || user.getPhone().trim().isEmpty()) throw new IllegalArgumentException("Phone is required.");
         if (!PHONE_PATTERN.matcher(user.getPhone()).matches()) throw new IllegalArgumentException("Invalid phone format.");
-        if (parkingLotName == null || parkingLotName.trim().isEmpty()) {
-            throw new IllegalArgumentException("Parking lot name is required.");
+        
+        // Parking lot is optional for regular users
+        if (parkingLotName != null && !parkingLotName.trim().isEmpty()) {
+            // Fetch parking lot by name
+            ParkingLot lot = parkingLotRepository.findByName(parkingLotName);
+            if (lot == null) {
+                throw new IllegalArgumentException("Parking lot not found");
+            }
+            user.setParkingLotId(lot.getId());
         }
-
-        // Fetch parking lot by name
-        ParkingLot lot = parkingLotRepository.findByName(parkingLotName);
-        if (lot == null) {
-            throw new IllegalArgumentException("Parking lot not found");
-        }
-
-        user.setParkingLotId(lot.getId());
+        
         if (user.getPasswordHash() == null || user.getPasswordHash().isEmpty()) throw new IllegalArgumentException("Password is required.");
 
         // Check duplicates
@@ -103,6 +103,78 @@ public class UserService {
     }
     public java.util.Optional<Users> findById(String userId) {
         return userRepository.findById(userId);
+    }
+
+    /**
+     * Get user by email
+     * Used for social sign-in to check if user already exists
+     */
+    public Users getUserByEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return null;
+        }
+        return userRepository.findByEmail(email.trim().toLowerCase()).orElse(null);
+    }
+
+    /**
+     * Get user by email or phone
+     * Used for forgot password and other features
+     */
+    public Users getUserByEmailOrPhone(String emailOrPhone) {
+        if (emailOrPhone == null || emailOrPhone.trim().isEmpty()) {
+            return null;
+        }
+        
+        String normalized = emailOrPhone.trim().toLowerCase();
+        
+        // Try email first
+        Users user = userRepository.findByEmail(normalized).orElse(null);
+        
+        // If not found and looks like phone, try phone
+        if (user == null && PHONE_PATTERN.matcher(emailOrPhone.trim()).matches()) {
+            user = userRepository.findByPhone(emailOrPhone.trim()).orElse(null);
+        }
+        
+        return user;
+    }
+
+    /**
+     * Create a new user from social sign-in (Google, Apple, etc.)
+     * If user already exists by email, return existing user
+     */
+    public Users createSocialUser(Users user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User data is required");
+        }
+        
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email is required for social sign-in");
+        }
+        
+        // Check if user already exists by email
+        java.util.Optional<Users> existingUser = userRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
+            return existingUser.get();
+        }
+        
+        // Validate email format
+        if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
+            throw new IllegalArgumentException("Invalid email format");
+        }
+        
+        // Set defaults if not set
+        if (user.getRole() == null) {
+            user.setRole(Users.Role.USER);
+        }
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(new java.util.Date());
+        }
+        if (user.getWalletCoins() == 0) {
+            user.setWalletCoins(0);
+        }
+        
+        // Save and return
+        return userRepository.save(user);
     }
 
     public Users updateUser(String id, Users userDetails) {

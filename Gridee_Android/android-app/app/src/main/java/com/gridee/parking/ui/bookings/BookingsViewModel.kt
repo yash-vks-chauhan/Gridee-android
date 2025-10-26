@@ -28,6 +28,22 @@ class BookingsViewModel(application: Application) : AndroidViewModel(application
     private val _bookingCreated = MutableLiveData<Booking?>()
     val bookingCreated: LiveData<Booking?> = _bookingCreated
 
+    // ========== NEW QR CODE STATE ==========
+    private val _selectedBooking = MutableLiveData<Booking?>()
+    val selectedBooking: LiveData<Booking?> = _selectedBooking
+
+    private val _penalty = MutableLiveData<Double>()
+    val penalty: LiveData<Double> = _penalty
+
+    private val _qrValidation = MutableLiveData<com.gridee.parking.data.model.QrValidationResult?>()
+    val qrValidation: LiveData<com.gridee.parking.data.model.QrValidationResult?> = _qrValidation
+
+    private val _checkInSuccess = MutableLiveData<Boolean?>()
+    val checkInSuccess: LiveData<Boolean?> = _checkInSuccess
+
+    private val _checkOutSuccess = MutableLiveData<Boolean?>()
+    val checkOutSuccess: LiveData<Boolean?> = _checkOutSuccess
+
     fun loadUserBookings() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -148,4 +164,145 @@ class BookingsViewModel(application: Application) : AndroidViewModel(application
     fun loadUserBookings(userId: String) {
         loadUserBookings()
     }
+
+    // ========== NEW QR METHODS ==========
+    fun selectBooking(booking: Booking) {
+        _selectedBooking.value = booking
+    }
+
+    fun refreshBooking(bookingId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                bookingRepository.refreshBooking(bookingId).fold(
+                    onSuccess = { booking ->
+                        _selectedBooking.value = booking
+                        _errorMessage.value = null
+                        // Also refresh list
+                        loadUserBookings()
+                    },
+                    onFailure = { exception ->
+                        _errorMessage.value = exception.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to refresh booking: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadPenaltyInfo(bookingId: String) {
+        viewModelScope.launch {
+            try {
+                bookingRepository.getPenaltyInfo(bookingId).fold(
+                    onSuccess = { value -> _penalty.value = value },
+                    onFailure = { _penalty.value = 0.0 }
+                )
+            } catch (e: Exception) {
+                _penalty.value = 0.0
+            }
+        }
+    }
+
+    fun validateCheckInQr(bookingId: String, qrCode: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                bookingRepository.validateCheckInQr(bookingId, qrCode).fold(
+                    onSuccess = { v ->
+                        _qrValidation.value = v
+                        _errorMessage.value = null
+                    },
+                    onFailure = { ex ->
+                        _errorMessage.value = ex.message
+                        _qrValidation.value = null
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "QR validation failed: ${e.message}"
+                _qrValidation.value = null
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun checkIn(bookingId: String, qrCode: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                bookingRepository.checkIn(bookingId, qrCode).fold(
+                    onSuccess = { booking ->
+                        _selectedBooking.value = booking
+                        _checkInSuccess.value = true
+                        _errorMessage.value = null
+                        loadUserBookings()
+                    },
+                    onFailure = { ex ->
+                        _errorMessage.value = ex.message
+                        _checkInSuccess.value = false
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Check-in failed: ${e.message}"
+                _checkInSuccess.value = false
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun validateCheckOutQr(bookingId: String, qrCode: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                bookingRepository.validateCheckOutQr(bookingId, qrCode).fold(
+                    onSuccess = { v ->
+                        _qrValidation.value = v
+                        _errorMessage.value = null
+                    },
+                    onFailure = { ex ->
+                        _errorMessage.value = ex.message
+                        _qrValidation.value = null
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "QR validation failed: ${e.message}"
+                _qrValidation.value = null
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun checkOut(bookingId: String, qrCode: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                bookingRepository.checkOut(bookingId, qrCode).fold(
+                    onSuccess = { booking ->
+                        _selectedBooking.value = booking
+                        _checkOutSuccess.value = true
+                        _errorMessage.value = null
+                        loadUserBookings()
+                    },
+                    onFailure = { ex ->
+                        _errorMessage.value = ex.message
+                        _checkOutSuccess.value = false
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Check-out failed: ${e.message}"
+                _checkOutSuccess.value = false
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun clearQrValidation() { _qrValidation.value = null }
+    fun clearCheckInSuccess() { _checkInSuccess.value = null }
+    fun clearCheckOutSuccess() { _checkOutSuccess.value = null }
 }

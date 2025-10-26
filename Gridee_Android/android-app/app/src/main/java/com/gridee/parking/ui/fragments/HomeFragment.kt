@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import com.gridee.parking.databinding.FragmentHomeBinding
 import com.gridee.parking.ui.MainViewModel
 import com.gridee.parking.ui.base.BaseTabFragment
-import com.gridee.parking.ui.search.SearchActivity
 
 class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
 
@@ -30,26 +29,6 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         setupUserWelcome()
         setupClickListeners()
-        animateSearchBarEntrance()
-    }
-    
-    private fun animateSearchBarEntrance() {
-        // Set initial state
-        binding.cardSearch.alpha = 0f
-        binding.cardSearch.translationY = 40f
-        binding.cardSearch.scaleX = 0.95f
-        binding.cardSearch.scaleY = 0.95f
-        
-        // Animate to final state
-        binding.cardSearch.animate()
-            .alpha(1f)
-            .translationY(0f)
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(600)
-            .setStartDelay(200)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
-            .start()
     }
 
     private fun setupUserWelcome() {
@@ -63,22 +42,7 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     }
 
     private fun setupClickListeners() {
-        setupSearchBarInteractions()
         setupFabListener()
-    }
-    
-    private fun setupSearchBarInteractions() {
-        binding.cardSearch.setOnClickListener {
-            openSearchExperience()
-        }
-        binding.ivSearchIcon.setOnClickListener { binding.cardSearch.performClick() }
-        binding.tvSearchPlaceholder.setOnClickListener { binding.cardSearch.performClick() }
-        binding.ivSearchArrow.setOnClickListener { binding.cardSearch.performClick() }
-    }
-
-    private fun openSearchExperience() {
-        val intent = Intent(requireContext(), SearchActivity::class.java)
-        startActivity(intent)
     }
     
     private fun setupFabListener() {

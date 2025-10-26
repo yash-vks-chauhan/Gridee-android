@@ -58,6 +58,7 @@ class JwtAuthInterceptor(private val context: Context) : Interceptor {
             "/api/users/social-signin",
             "/api/otp/generate",
             "/api/otp/validate"
+            // /api/oauth2/user requires JWT token to show authenticated user info
         )
         
         // Check if path is public (doesn't require authentication)

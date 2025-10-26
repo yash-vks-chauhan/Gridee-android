@@ -13,7 +13,12 @@ import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.animation.OvershootInterpolator
 import android.widget.TextView
+import android.widget.DatePicker
+import android.widget.TimePicker
+import android.widget.Button
+import android.app.Dialog
 import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.animation.doOnEnd
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -31,6 +36,10 @@ import com.gridee.parking.databinding.BottomSheetBookingOverviewBinding
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import android.view.WindowManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import android.content.Intent
+import com.gridee.parking.ui.qr.QrScannerActivity
+import com.gridee.parking.data.repository.BookingRepository
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -51,6 +60,31 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private var pendingNavigationRequest: NavigationRequest? = null
     private var pendingHighlightBookingId: String? = null
 
+    private val bookingRepository by lazy { BookingRepository(requireContext()) }
+
+    private enum class ScanType { CHECK_IN, CHECK_OUT }
+    private var pendingScanBookingId: String? = null
+    private var pendingScanType: ScanType? = null
+
+    private val qrScanLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == QrScannerActivity.RESULT_QR_SCANNED) {
+            val qrCode = result.data?.getStringExtra(QrScannerActivity.EXTRA_QR_CODE)
+            val bookingId = pendingScanBookingId
+            val type = pendingScanType
+            if (qrCode.isNullOrBlank() || bookingId.isNullOrBlank() || type == null) {
+                showToast(getString(R.string.qr_invalid))
+                return@registerForActivityResult
+            }
+
+            lifecycleScope.launch {
+                when (type) {
+                    ScanType.CHECK_IN -> handleCheckInFlow(bookingId, qrCode)
+                    ScanType.CHECK_OUT -> handleCheckOutFlow(bookingId, qrCode)
+                }
+            }
+        }
+    }
+
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentBookingsNewBinding {
         return FragmentBookingsNewBinding.inflate(inflater, container, false)
     }
@@ -65,8 +99,16 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     override fun setupUI() {
         setupRecyclerView()
+        setupPullToRefresh()
         setupSegmentedControl()
         loadUserBookings() // Use real API instead of sample data
+    }
+
+    private fun setupPullToRefresh() {
+        binding.swipeRefresh.setColorSchemeResources(R.color.primary_blue)
+        binding.swipeRefresh.setOnRefreshListener {
+            loadUserBookings()
+        }
     }
 
     fun handleExternalNavigation(showPending: Boolean, highlightBookingId: String?) {
@@ -127,12 +169,9 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     private fun animateTextColor(textView: TextView, isSelected: Boolean) {
         val fromColor = textView.currentTextColor
-        val toColor = if (isSelected) {
-            ValueAnimator.ofArgb(fromColor, resources.getColor(R.color.white, null))
-        } else {
-            ValueAnimator.ofArgb(fromColor, resources.getColor(R.color.bulky_glass_text_unselected, null))
-        }
-        toColor.duration = 240
+        val target = if (isSelected) R.color.bulky_glass_text_selected else R.color.bulky_glass_text_unselected
+        val toColor = ValueAnimator.ofArgb(fromColor, resources.getColor(target, null))
+        toColor.duration = 200
         toColor.addUpdateListener { animation ->
             textView.setTextColor(animation.animatedValue as Int)
         }
@@ -140,12 +179,12 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun animateTextScale(textView: TextView, isSelected: Boolean) {
-        ObjectAnimator.ofFloat(textView, "scaleX", if (isSelected) 1.05f else 1.0f).apply {
-            duration = 180
+        ObjectAnimator.ofFloat(textView, "scaleX", if (isSelected) 1.02f else 1.0f).apply {
+            duration = 160
             start()
         }
-        ObjectAnimator.ofFloat(textView, "scaleY", if (isSelected) 1.05f else 1.0f).apply {
-            duration = 180
+        ObjectAnimator.ofFloat(textView, "scaleY", if (isSelected) 1.02f else 1.0f).apply {
+            duration = 160
             start()
         }
     }
@@ -299,6 +338,14 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             setupEnhancedGestureHandler()
             initializeSegmentedControlState()
             applyPendingNavigationIfReady()
+            // Recalculate indicator width/position on layout changes (rotation, font scale)
+            binding.segmentedControlContainer.segmentContainer.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                val widthChanged = (right - left) != (oldRight - oldLeft)
+                val heightChanged = (bottom - top) != (oldBottom - oldTop)
+                if (widthChanged || heightChanged) {
+                    initializeSegmentedControlState()
+                }
+            }
         }
     }
     
@@ -356,6 +403,32 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
         indicator.x = selectedSegment.x + indicatorMargin
         updateSegmentTextColors(currentTab)
+
+        // Adjust corner radii at runtime to maintain perfect pill shape
+        adjustGlassCornerRadii()
+    }
+
+    private fun adjustGlassCornerRadii() {
+        val container = binding.segmentedControlContainer.segmentContainer
+        val indicator = binding.segmentedControlContainer.segmentIndicator
+
+        val containerHeight = container.height.toFloat()
+        val indicatorHeight = indicator.height.toFloat()
+        val containerRadius = (containerHeight / 2f).coerceAtLeast(0f)
+        val indicatorRadius = (indicatorHeight / 2f).coerceAtLeast(0f)
+
+        // Update container background radii (layer-list)
+        (container.background as? android.graphics.drawable.LayerDrawable)?.let { layer ->
+            for (i in 0 until layer.numberOfLayers) {
+                (layer.getDrawable(i) as? android.graphics.drawable.GradientDrawable)?.cornerRadius = containerRadius
+            }
+        }
+        // Update indicator background radii (layer-list)
+        (indicator.background as? android.graphics.drawable.LayerDrawable)?.let { layer ->
+            for (i in 0 until layer.numberOfLayers) {
+                (layer.getDrawable(i) as? android.graphics.drawable.GradientDrawable)?.cornerRadius = indicatorRadius
+            }
+        }
     }
     
     /**
@@ -501,7 +574,9 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun loadUserBookings() {
-        binding.progressLoading.visibility = View.VISIBLE
+        if (!binding.swipeRefresh.isRefreshing) {
+            binding.progressLoading.visibility = View.VISIBLE
+        }
         
         val userId = getUserId()
         if (userId == null) {
@@ -556,6 +631,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 showBookingsForStatus(currentTab)
             } finally {
                 binding.progressLoading.visibility = View.GONE
+                binding.swipeRefresh.isRefreshing = false
             }
         }
     }
@@ -927,6 +1003,21 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             textLocationInitial.setTextColor(ContextCompat.getColor(requireContext(), statusTextColor))
         }
 
+        // Show extend button for ACTIVE bookings only
+        if (booking.status == BookingStatus.ACTIVE) {
+            sheetBinding.btnExtendBooking.visibility = View.VISIBLE
+            sheetBinding.btnExtendBooking.setOnClickListener {
+                val backendBooking = userBookings.firstOrNull { it.id == booking.id }
+                if (backendBooking != null) {
+                    showExtendBookingDialog(backendBooking)
+                } else {
+                    showToast("Booking details not found")
+                }
+            }
+        } else {
+            sheetBinding.btnExtendBooking.visibility = View.GONE
+        }
+
         sheetBinding.buttonCloseSheet.setOnClickListener { dialog.dismiss() }
         sheetBinding.actionDirections.setOnClickListener {
             showToast("Directions action coming soon")
@@ -935,8 +1026,81 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             showToast("Share action coming soon")
         }
         sheetBinding.actionCancel.setOnClickListener {
-            showToast("Cancel booking action coming soon")
-            dialog.dismiss()
+            when (booking.status) {
+                BookingStatus.PENDING -> {
+                    // Confirm cancellation
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Cancel Booking")
+                        .setMessage("Are you sure you want to cancel this booking? Any holds or promotions may be released.")
+                        .setNegativeButton("No", null)
+                        .setPositiveButton("Yes, Cancel") { _, _ ->
+                            // Disable action to prevent double taps
+                            sheetBinding.actionCancel.isEnabled = false
+                            sheetBinding.actionCancel.alpha = 0.6f
+
+                            lifecycleScope.launch {
+                                try {
+                                    val result = bookingRepository.cancelBooking(booking.id)
+                                    if (result.isSuccess) {
+                                        showToast("Booking cancelled")
+                                        dialog.dismiss()
+                                        loadUserBookings()
+                                    } else {
+                                        showToast(result.exceptionOrNull()?.message ?: "Failed to cancel booking")
+                                        sheetBinding.actionCancel.isEnabled = true
+                                        sheetBinding.actionCancel.alpha = 1f
+                                    }
+                                } catch (e: Exception) {
+                                    showToast(e.message ?: "Failed to cancel booking")
+                                    sheetBinding.actionCancel.isEnabled = true
+                                    sheetBinding.actionCancel.alpha = 1f
+                                }
+                            }
+                        }
+                        .show()
+                }
+                BookingStatus.ACTIVE -> {
+                    showToast("Active bookings cannot be cancelled. Please check out.")
+                }
+                BookingStatus.COMPLETED -> {
+                    showToast("This booking is already completed.")
+                }
+            }
+        }
+
+        // Configure primary QR scan action based on status
+        when (booking.status) {
+            BookingStatus.PENDING -> {
+                sheetBinding.buttonScanQr.visibility = View.VISIBLE
+                sheetBinding.buttonScanQr.text = getString(R.string.scan_to_check_in)
+                sheetBinding.buttonScanQr.setOnClickListener {
+                    pendingScanBookingId = booking.id
+                    pendingScanType = ScanType.CHECK_IN
+                    val intent = Intent(requireContext(), QrScannerActivity::class.java).apply {
+                        putExtra(QrScannerActivity.EXTRA_BOOKING_ID, booking.id)
+                        putExtra(QrScannerActivity.EXTRA_SCAN_TYPE, ScanType.CHECK_IN.name)
+                    }
+                    dialog.dismiss()
+                    qrScanLauncher.launch(intent)
+                }
+            }
+            BookingStatus.ACTIVE -> {
+                sheetBinding.buttonScanQr.visibility = View.VISIBLE
+                sheetBinding.buttonScanQr.text = getString(R.string.scan_to_check_out)
+                sheetBinding.buttonScanQr.setOnClickListener {
+                    pendingScanBookingId = booking.id
+                    pendingScanType = ScanType.CHECK_OUT
+                    val intent = Intent(requireContext(), QrScannerActivity::class.java).apply {
+                        putExtra(QrScannerActivity.EXTRA_BOOKING_ID, booking.id)
+                        putExtra(QrScannerActivity.EXTRA_SCAN_TYPE, ScanType.CHECK_OUT.name)
+                    }
+                    dialog.dismiss()
+                    qrScanLauncher.launch(intent)
+                }
+            }
+            BookingStatus.COMPLETED -> {
+                sheetBinding.buttonScanQr.visibility = View.GONE
+            }
         }
 
         dialog.setOnShowListener {
@@ -958,6 +1122,125 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         dialog.setOnCancelListener {
             toggleBackgroundBlur(false)
         }
+    }
+
+    private fun showExtendBookingDialog(booking: BackendBooking) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_extend_booking, null)
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .create()
+
+        val tvCurrentEndTime = dialogView.findViewById<TextView>(R.id.tv_current_end_time)
+        val datePicker = dialogView.findViewById<DatePicker>(R.id.date_picker)
+        val timePicker = dialogView.findViewById<TimePicker>(R.id.time_picker)
+        val tvAdditionalCharges = dialogView.findViewById<TextView>(R.id.tv_additional_charges)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btn_cancel)
+        val btnExtend = dialogView.findViewById<Button>(R.id.btn_extend)
+
+        val currentEndTime = booking.checkOutTime ?: Date()
+        val dateFormat = SimpleDateFormat("MMM dd, yyyy hh:mm a", Locale.getDefault())
+        tvCurrentEndTime.text = getString(R.string.current_end_time, dateFormat.format(currentEndTime))
+
+        val calendar = Calendar.getInstance().apply { time = currentEndTime }
+        datePicker.minDate = currentEndTime.time
+        datePicker.updateDate(
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        )
+        try {
+            timePicker.hour = calendar.get(Calendar.HOUR_OF_DAY)
+            timePicker.minute = calendar.get(Calendar.MINUTE)
+        } catch (_: Throwable) {
+            // ignore for older APIs
+        }
+
+        fun updateCharges() {
+            val newCal = Calendar.getInstance()
+            val selHour = try { timePicker.hour } catch (_: Throwable) { calendar.get(Calendar.HOUR_OF_DAY) }
+            val selMin = try { timePicker.minute } catch (_: Throwable) { calendar.get(Calendar.MINUTE) }
+            newCal.set(datePicker.year, datePicker.month, datePicker.dayOfMonth, selHour, selMin)
+
+            val diffMillis = (newCal.timeInMillis - currentEndTime.time).coerceAtLeast(0L)
+            val durationHours = (diffMillis / (1000 * 60 * 60)).toInt()
+            val additionalCharge = durationHours * 100 // Adjust per pricing rules
+            tvAdditionalCharges.text = getString(R.string.additional_charges, additionalCharge)
+        }
+
+        // initialize charges
+        updateCharges()
+
+        datePicker.setOnDateChangedListener { _, _, _, _ -> updateCharges() }
+        try {
+            timePicker.setOnTimeChangedListener { _, _, _ -> updateCharges() }
+        } catch (_: Throwable) { }
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnExtend.setOnClickListener {
+            val newCal = Calendar.getInstance()
+            val selHour = try { timePicker.hour } catch (_: Throwable) { calendar.get(Calendar.HOUR_OF_DAY) }
+            val selMin = try { timePicker.minute } catch (_: Throwable) { calendar.get(Calendar.MINUTE) }
+            newCal.set(datePicker.year, datePicker.month, datePicker.dayOfMonth, selHour, selMin)
+
+            if (newCal.timeInMillis <= currentEndTime.time) {
+                showToast(getString(R.string.new_time_must_be_later))
+                return@setOnClickListener
+            }
+
+            val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+            val newCheckOutTime = isoFormat.format(Date(newCal.timeInMillis))
+
+            showExtendConfirmation(booking.id ?: return@setOnClickListener, newCheckOutTime, dialog)
+        }
+
+        dialog.show()
+    }
+
+    private fun showExtendConfirmation(bookingId: String, newCheckOutTime: String, extendDialog: Dialog) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.confirm_extend_title))
+            .setMessage(getString(R.string.confirm_extend_message))
+            .setPositiveButton(getString(R.string.extend_booking)) { _, _ ->
+                lifecycleScope.launch {
+                    extendBooking(bookingId, newCheckOutTime)
+                    extendDialog.dismiss()
+                }
+            }
+            .setNegativeButton(getString(R.string.cancel), null)
+            .show()
+    }
+
+    private suspend fun extendBooking(bookingId: String, newCheckOutTime: String) {
+        showLoading(true)
+        val result = bookingRepository.extendBooking(bookingId, newCheckOutTime)
+        result.fold(
+            onSuccess = {
+                showLoading(false)
+                showToast(getString(R.string.booking_extended_success))
+                refreshCurrentTab()
+            },
+            onFailure = { error ->
+                showLoading(false)
+                val message = error.message ?: getString(R.string.extend_failed_default)
+                when {
+                    message.contains("Insufficient wallet balance", ignoreCase = true) -> {
+                        showToast(getString(R.string.insufficient_wallet_balance))
+                    }
+                    message.contains("not available", ignoreCase = true) -> {
+                        showToast(getString(R.string.spot_not_available_extended))
+                    }
+                    else -> showToast(message)
+                }
+            }
+        )
+    }
+
+    private fun showLoading(show: Boolean) {
+        binding.progressLoading.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
+    private fun refreshCurrentTab() {
+        loadUserBookings()
     }
 
     private fun getStringFormattedTime(date: String, time: String): String {
@@ -997,6 +1280,81 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     blurOverlayView = null
                 }
             }?.start()
+        }
+    }
+
+    private suspend fun handleCheckInFlow(bookingId: String, qrCode: String) {
+        try {
+            showToast(getString(R.string.validating_qr))
+            val validation = bookingRepository.validateCheckInQr(bookingId, qrCode)
+            if (validation.isFailure) {
+                showToast(validation.exceptionOrNull()?.message ?: getString(R.string.qr_invalid))
+                return
+            }
+            val result = validation.getOrNull()
+            if (result != null) {
+                // If penalty applies, prompt user; simplified proceed
+                if (result.penalty > 0) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Penalty on Check-In")
+                        .setMessage(result.message)
+                        .setPositiveButton("Proceed") { _, _ ->
+                            lifecycleScope.launch { finalizeCheckIn(bookingId, qrCode) }
+                        }
+                        .setNegativeButton("Cancel", null)
+                        .show()
+                } else {
+                    finalizeCheckIn(bookingId, qrCode)
+                }
+            }
+        } catch (e: Exception) {
+            showToast(e.message ?: "Check-in error")
+        }
+    }
+
+    private suspend fun finalizeCheckIn(bookingId: String, qrCode: String) {
+        showToast(getString(R.string.processing_check_in))
+        val checkInRes = bookingRepository.checkIn(bookingId, qrCode)
+        if (checkInRes.isSuccess) {
+            showToast("Checked in successfully")
+            loadUserBookings()
+        } else {
+            showToast(checkInRes.exceptionOrNull()?.message ?: "Check-in failed")
+        }
+    }
+
+    private suspend fun handleCheckOutFlow(bookingId: String, qrCode: String) {
+        try {
+            showToast(getString(R.string.validating_qr))
+            val validation = bookingRepository.validateCheckOutQr(bookingId, qrCode)
+            if (validation.isFailure) {
+                showToast(validation.exceptionOrNull()?.message ?: getString(R.string.qr_invalid))
+                return
+            }
+            val result = validation.getOrNull()
+            if (result != null) {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle("Check-Out Charges")
+                    .setMessage(result.message)
+                    .setPositiveButton("Pay & Check-Out") { _, _ ->
+                        lifecycleScope.launch { finalizeCheckOut(bookingId, qrCode) }
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            }
+        } catch (e: Exception) {
+            showToast(e.message ?: "Check-out error")
+        }
+    }
+
+    private suspend fun finalizeCheckOut(bookingId: String, qrCode: String) {
+        showToast(getString(R.string.processing_check_out))
+        val checkOutRes = bookingRepository.checkOut(bookingId, qrCode)
+        if (checkOutRes.isSuccess) {
+            showToast("Checked out successfully")
+            loadUserBookings()
+        } else {
+            showToast(checkOutRes.exceptionOrNull()?.message ?: "Check-out failed")
         }
     }
 

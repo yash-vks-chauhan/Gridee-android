@@ -44,6 +44,9 @@
     
     <!-- Common alias -->
     <color name="primary_color">@color/primary_blue</color>
+    <color name="primary">@color/primary_blue</color>
+    <color name="primary_dark">#1565C0</color>
+    <color name="accent">#FF9800</color>
     <color name="charcoal_black">#2D3748</color>
     <!-- Status Colors -->
     <color name="status_active">#4CAF50</color>
@@ -63,14 +66,14 @@
     <color name="glass_focus_ring">#3388CCFF</color>
 
     <!-- Bulky Glass Segmented Control Colors -->
-    <color name="bulky_glass_container_fill">#1AFFFFFF</color>
-    <color name="bulky_glass_container_border">#4DFFFFFF</color>
-    <color name="bulky_glass_indicator_fill">#66FFFFFF</color>
-    <color name="bulky_glass_indicator_border">#80FFFFFF</color>
-    <color name="bulky_glass_shadow">#2E000000</color>
-    <color name="bulky_glass_highlight">#14FFFFFF</color>
+    <color name="bulky_glass_container_fill">#14FFFFFF</color>
+    <color name="bulky_glass_container_border">#33FFFFFF</color>
+    <color name="bulky_glass_indicator_fill">#59FFFFFF</color>
+    <color name="bulky_glass_indicator_border">#66FFFFFF</color>
+    <color name="bulky_glass_shadow">#14000000</color>
+    <color name="bulky_glass_highlight">#12FFFFFF</color>
     <color name="bulky_glass_text_selected">#191C19</color>
-    <color name="bulky_glass_text_unselected">#FFFFFFFF</color>
+    <color name="bulky_glass_text_unselected">#6B7280</color>
     <color name="bulky_glass_focus_ring">#3388CCFF</color>
     <color name="bulky_glass_pressed">#5AFFFFFF</color>
 
@@ -137,17 +140,17 @@
     <color name="md3_outline">#74777F</color>
     <color name="md3_outline_variant">#C4C7C5</color>
     
-    <!-- Search Bar Specific Colors -->
-    <color name="search_surface">#FEFEFE</color>
-    <color name="search_surface_tint">#F8F9FA</color>
-    <color name="search_border">#E1E4E8</color>
-    <color name="search_border_focused">#1976D2</color>
-    <color name="search_icon_tint">#6B7280</color>
-    <color name="search_icon_tint_focused">#1976D2</color>
-    <color name="search_hint_text">#9CA3AF</color>
-    <color name="search_hint_text_active">#4A76D2</color>
-    <color name="search_input_text">#1F2937</color>
-    <color name="search_ripple_color">#331976D2</color>
+    <!-- Search Bar Specific Colors - Minimal Grey/Black/White Theme -->
+    <color name="search_surface">#FFFFFF</color>
+    <color name="search_surface_tint">#FAFAFA</color>
+    <color name="search_border">#E5E5E5</color>
+    <color name="search_border_focused">#303030</color>
+    <color name="search_icon_tint">#757575</color>
+    <color name="search_icon_tint_focused">#303030</color>
+    <color name="search_hint_text">#AAAAAA</color>
+    <color name="search_hint_text_active">#505050</color>
+    <color name="search_input_text">#1A1A1A</color>
+    <color name="search_ripple_color">#1A000000</color>
     <color name="search_scrim">#B3000000</color>
     
     <!-- Glass Morphism Colors -->
@@ -157,5 +160,8 @@
     <color name="glass_highlight_new">#40FFFFFF</color>
     <color name="glass_shadow_light">#0A000000</color>
     <color name="glass_shadow_medium">#15000000</color>
+
+    <!-- Segmented control interactions -->
+    <color name="segment_ripple_white">#1AFFFFFF</color>
 
 </resources>
