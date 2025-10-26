@@ -15,8 +15,9 @@ import com.gridee.parking.data.model.PaymentCallbackRequest
 import com.gridee.parking.data.model.PaymentCallbackResponse
 import com.gridee.parking.data.model.TopUpRequest
 import com.gridee.parking.data.model.TopUpResponse
-import com.gridee.parking.data.model.QrCodeRequest
 import com.gridee.parking.data.model.QrValidationResult
+import com.gridee.parking.data.model.CheckInRequest
+import com.gridee.parking.data.model.CreateBookingRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -56,45 +57,31 @@ interface ApiService {
     // Parking lots and spots endpoints
     @GET("api/parking-lots")
     suspend fun getParkingLots(): Response<List<ParkingLot>>
-    
+
+    // ADMIN-only on backend; avoid using from app for regular users
     @GET("api/parking-spots")
     suspend fun getParkingSpots(): Response<List<ParkingSpot>>
-    
-    @GET("api/parking-lots/{lotId}/spots")
+
+    // Correct backend path for by-lot spots
+    @GET("api/parking-spots/lot/{lotId}")
     suspend fun getParkingSpotsByLot(@Path("lotId") lotId: String): Response<List<ParkingSpot>>
     
-    // Preferred: backend exposes "all-bookings" for list/history
-    @GET("api/users/{userId}/all-bookings")
+    // Backend endpoints for user bookings list/history
+    @GET("api/bookings/{userId}/all")
     suspend fun getUserBookings(@Path("userId") userId: String): Response<List<Booking>>
     
-    @GET("api/users/{userId}/all-bookings/history")
+    @GET("api/bookings/{userId}/all/history")
     suspend fun getUserBookingHistory(@Path("userId") userId: String): Response<List<Booking>>
-
-    // Legacy fallback endpoints (older backend versions)
-    @GET("api/users/{userId}/bookings")
-    suspend fun getUserBookingsLegacy(@Path("userId") userId: String): Response<List<Booking>>
-    
-    @GET("api/users/{userId}/bookings/history")
-    suspend fun getUserBookingHistoryLegacy(@Path("userId") userId: String): Response<List<Booking>>
     
     // Booking creation endpoints
-    @POST("api/users/{userId}/bookings/start")
-    suspend fun startBooking(
+    // Create booking with JSON body per backend DTO
+    @POST("api/bookings/{userId}/create")
+    suspend fun createBooking(
         @Path("userId") userId: String,
-        @Query("spotId") spotId: String,
-        @Query("lotId") lotId: String,
-        @Query("checkInTime") checkInTime: String,
-        @Query("checkOutTime") checkOutTime: String,
-        @Query("vehicleNumber") vehicleNumber: String
+        @Body request: CreateBookingRequest
     ): Response<Booking>
-    
-    @POST("api/users/{userId}/bookings/{bookingId}/confirm")
-    suspend fun confirmBooking(
-        @Path("userId") userId: String,
-        @Path("bookingId") bookingId: String
-    ): Response<Booking>
-    
-    @POST("api/users/{userId}/bookings/{bookingId}/cancel")
+
+    @POST("api/bookings/{userId}/{bookingId}/cancel")
     suspend fun cancelBooking(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String
@@ -130,59 +117,51 @@ interface ApiService {
         @Query("otp") otp: String
     ): Response<Boolean>
 
-    // ========== NEW QR CHECK-IN/OUT ENDPOINTS ==========
+    // ========== QR CHECK-IN/OUT ENDPOINTS ==========
 
-    // Validate QR code before check-in
-    @POST("api/users/{userId}/bookings/{bookingId}/validate-qr-checkin")
-    suspend fun validateQrCodeForCheckIn(
-        @Path("userId") userId: String,
-        @Path("bookingId") bookingId: String,
-        @Body request: QrCodeRequest
-    ): Response<QrValidationResult>
-
-    // Actual check-in
-    @POST("api/users/{userId}/bookings/{bookingId}/checkin")
+    // User check-in with CheckInRequest body
+    @POST("api/bookings/{userId}/checkin/{bookingId}")
     suspend fun checkInBooking(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String,
-        @Body request: QrCodeRequest
+        @Body request: CheckInRequest
     ): Response<Booking>
 
-    // Validate QR code before check-out
-    @POST("api/users/{userId}/bookings/{bookingId}/validate-qr-checkout")
-    suspend fun validateQrCodeForCheckOut(
-        @Path("userId") userId: String,
-        @Path("bookingId") bookingId: String,
-        @Body request: QrCodeRequest
-    ): Response<QrValidationResult>
-
-    // Actual check-out
-    @POST("api/users/{userId}/bookings/{bookingId}/checkout")
+    // User check-out with CheckInRequest body
+    @POST("api/bookings/{userId}/checkout/{bookingId}")
     suspend fun checkOutBooking(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String,
-        @Body request: QrCodeRequest
+        @Body request: CheckInRequest
     ): Response<Booking>
 
     // Get booking by ID (for refreshing data)
-    @GET("api/users/{userId}/bookings/{bookingId}")
+    @GET("api/bookings/{userId}/{bookingId}")
     suspend fun getBookingById(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String
     ): Response<Booking>
 
     // Get penalty info (real-time)
-    @GET("api/users/{userId}/bookings/{bookingId}/penalty")
+    @GET("api/bookings/{userId}/{bookingId}/penalty")
     suspend fun getPenaltyInfo(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String
     ): Response<Double>
 
     // Extend booking end time
-    @PUT("api/users/{userId}/bookings/{bookingId}/extend")
+    @PUT("api/bookings/{userId}/{bookingId}/extend")
     suspend fun extendBooking(
         @Path("userId") userId: String,
         @Path("bookingId") bookingId: String,
         @Body request: Map<String, String>
+    ): Response<Booking>
+
+    // Update booking status (e.g., to ACTIVE/CANCELLED) when needed
+    @PUT("api/bookings/{userId}/{bookingId}")
+    suspend fun updateBookingStatus(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String,
+        @Body body: Map<String, String>
     ): Response<Booking>
 }

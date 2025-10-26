@@ -3,7 +3,8 @@ package com.gridee.parking.data.repository
 import android.content.Context
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.Booking
-import com.gridee.parking.data.model.QrCodeRequest
+import com.gridee.parking.data.model.CheckInRequest
+import com.gridee.parking.data.model.CreateBookingRequest
 import com.gridee.parking.data.model.QrValidationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,9 +25,8 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
             
-            // Try preferred endpoint first
             val response = apiService.getUserBookings(userId)
-            println("BookingRepository: Get bookings (all-bookings) response code: ${response.code()}")
+            println("BookingRepository: Get bookings response code: ${response.code()}")
             if (response.isSuccessful) {
                 val bookings = response.body() ?: emptyList()
                 println("BookingRepository: Found ${bookings.size} bookings")
@@ -34,22 +34,13 @@ class BookingRepository(private val context: Context) {
                     println("BookingRepository: Booking ID: ${booking.id}, Status: ${booking.status}, Spot: ${booking.spotId}")
                 }
                 Result.success(bookings)
+            } else if (response.code() == 404) {
+                println("BookingRepository: No bookings found (404), returning empty list")
+                Result.success(emptyList())
             } else {
-                // Fallback to legacy endpoint if available
-                val fallback = apiService.getUserBookingsLegacy(userId)
-                println("BookingRepository: Fallback (bookings) response code: ${fallback.code()}")
-                if (fallback.isSuccessful) {
-                    val bookings = fallback.body() ?: emptyList()
-                    println("BookingRepository: Found ${bookings.size} bookings via legacy endpoint")
-                    Result.success(bookings)
-                } else if (fallback.code() == 404) {
-                    println("BookingRepository: No bookings found (404), returning empty list")
-                    Result.success(emptyList())
-                } else {
-                    val errorBody = fallback.errorBody()?.string()
-                    println("BookingRepository: Get bookings error: $errorBody")
-                    Result.failure(Exception("Failed to load bookings: ${fallback.message()}"))
-                }
+                val errorBody = response.errorBody()?.string()
+                println("BookingRepository: Get bookings error: $errorBody")
+                Result.failure(Exception("Failed to load bookings: ${response.message()}"))
             }
         } catch (e: Exception) {
             println("BookingRepository: Exception loading bookings: ${e.message}")
@@ -67,16 +58,11 @@ class BookingRepository(private val context: Context) {
             val response = apiService.getUserBookingHistory(userId)
             if (response.isSuccessful) {
                 Result.success(response.body() ?: emptyList())
+            } else if (response.code() == 404) {
+                println("BookingRepository: No booking history found (404), returning empty list")
+                Result.success(emptyList())
             } else {
-                val fallback = apiService.getUserBookingHistoryLegacy(userId)
-                if (fallback.isSuccessful) {
-                    Result.success(fallback.body() ?: emptyList())
-                } else if (fallback.code() == 404) {
-                    println("BookingRepository: No booking history found (404), returning empty list")
-                    Result.success(emptyList())
-                } else {
-                    Result.failure(Exception("Failed to load booking history: ${fallback.message()}"))
-                }
+                Result.failure(Exception("Failed to load booking history: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -105,13 +91,17 @@ class BookingRepository(private val context: Context) {
             println("BookingRepository: checkOutTime: $checkOutTimeStr")
             println("BookingRepository: vehicleNumber: $vehicleNumber")
             
-            val response = apiService.startBooking(
-                userId = userId,
+            val body = CreateBookingRequest(
                 spotId = spotId,
                 lotId = lotId,
                 checkInTime = checkInTimeStr,
                 checkOutTime = checkOutTimeStr,
                 vehicleNumber = vehicleNumber
+            )
+
+            val response = apiService.createBooking(
+                userId = userId,
+                request = body
             )
             
             println("BookingRepository: API response code: ${response.code()}")
@@ -139,14 +129,7 @@ class BookingRepository(private val context: Context) {
                         if (walletResponse.isSuccessful) {
                             println("BookingRepository: Wallet created successfully, retrying booking...")
                             // Retry the booking
-                            val retryResponse = apiService.startBooking(
-                                userId = userId,
-                                spotId = spotId,
-                                lotId = lotId,
-                                checkInTime = checkInTimeStr,
-                                checkOutTime = checkOutTimeStr,
-                                vehicleNumber = vehicleNumber
-                            )
+                            val retryResponse = apiService.createBooking(userId, body)
                             if (retryResponse.isSuccessful) {
                                 val booking = retryResponse.body()
                                 if (booking != null) {
@@ -175,8 +158,8 @@ class BookingRepository(private val context: Context) {
             if (userId.isNullOrEmpty()) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
-            
-            val response = apiService.confirmBooking(userId, bookingId)
+            // Update booking status to ACTIVE to mimic confirm
+            val response = apiService.updateBookingStatus(userId, bookingId, mapOf("status" to "ACTIVE"))
             if (response.isSuccessful) {
                 val booking = response.body()
                 if (booking != null) {
@@ -225,19 +208,11 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = QrCodeRequest(qrCode)
-            val response = apiService.validateQrCodeForCheckIn(userId, bookingId, request)
-
-            if (response.isSuccessful) {
-                val result = response.body()
-                if (result != null) {
-                    Result.success(result)
-                } else {
-                    Result.failure(Exception("Empty response"))
-                }
+            val response = apiService.getBookingById(userId, bookingId)
+            return@withContext if (response.isSuccessful) {
+                Result.success(QrValidationResult(true, 0.0, "Booking verified. Ready to check in."))
             } else {
-                val errorBody = response.errorBody()?.string()
-                Result.failure(Exception(errorBody ?: "Validation failed"))
+                Result.failure(Exception("Validation failed: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -257,7 +232,7 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = QrCodeRequest(qrCode)
+            val request = CheckInRequest(mode = "QR_CODE", qrCode = qrCode)
             val response = apiService.checkInBooking(userId, bookingId, request)
 
             if (response.isSuccessful) {
@@ -289,19 +264,12 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = QrCodeRequest(qrCode)
-            val response = apiService.validateQrCodeForCheckOut(userId, bookingId, request)
-
-            if (response.isSuccessful) {
-                val result = response.body()
-                if (result != null) {
-                    Result.success(result)
-                } else {
-                    Result.failure(Exception("Empty response"))
-                }
+            val response = apiService.getPenaltyInfo(userId, bookingId)
+            return@withContext if (response.isSuccessful) {
+                val penalty = response.body() ?: 0.0
+                Result.success(QrValidationResult(true, penalty, "Estimated additional charges: ${'$'}penalty"))
             } else {
-                val errorBody = response.errorBody()?.string()
-                Result.failure(Exception(errorBody ?: "Validation failed"))
+                Result.failure(Exception("Validation failed: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -321,7 +289,7 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = QrCodeRequest(qrCode)
+            val request = CheckInRequest(mode = "QR_CODE", qrCode = qrCode)
             val response = apiService.checkOutBooking(userId, bookingId, request)
 
             if (response.isSuccessful) {
