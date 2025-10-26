@@ -105,6 +105,23 @@ public class GlobalExceptionControllerAdvice {
     }
 
     /**
+     * Handle IllegalArgumentException (400)
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ResponseEntity<ApiErrorResponse> handleIllegalArgumentException(
+            IllegalArgumentException ex, HttpServletRequest request) {
+
+        return buildErrorResponse(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_ARGUMENT",
+                ex.getMessage(),
+                request.getRequestURI(),
+                null
+        );
+    }
+
+    /**
      * Handle InsufficientFundsException (402)
      */
     @ExceptionHandler(InsufficientFundsException.class)

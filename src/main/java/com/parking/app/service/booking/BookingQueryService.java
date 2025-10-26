@@ -1,5 +1,6 @@
 package com.parking.app.service.booking;
 
+import com.parking.app.constants.BookingStatus;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.Users;
 import com.parking.app.repository.BookingRepository;
@@ -33,29 +34,29 @@ public class BookingQueryService {
                                                   int page, int size) {
         Query query = new Query();
         if (status != null && !status.isEmpty()) {
-            query.addCriteria(Criteria.where("status").is(status));
+            query.addCriteria(Criteria.where(Bookings.FIELD_STATUS).is(status));
         }
         if (lotId != null && !lotId.isEmpty()) {
-            query.addCriteria(Criteria.where("lotId").is(lotId));
+            query.addCriteria(Criteria.where(Bookings.FIELD_LOT_ID).is(lotId));
         }
         if (fromDate != null) {
-            query.addCriteria(Criteria.where("checkInTime").gte(Date.from(fromDate.toInstant())));
+            query.addCriteria(Criteria.where(Bookings.FIELD_CHECK_IN_TIME).gte(Date.from(fromDate.toInstant())));
         }
         if (toDate != null) {
-            query.addCriteria(Criteria.where("checkOutTime").lte(Date.from(toDate.toInstant())));
+            query.addCriteria(Criteria.where(Bookings.FIELD_CHECK_OUT_TIME).lte(Date.from(toDate.toInstant())));
         }
-        query.with(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
+        query.with(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, Bookings.FIELD_CREATED_AT)));
         return mongoOperations.find(query, Bookings.class);
     }
 
     public List<Bookings> getBookingHistoryByUserId(String userId) {
         Date now = Date.from(ZonedDateTime.now().toInstant());
         Query query = new Query(
-                Criteria.where("userId").is(userId)
-                        .and("status").is("completed")
-                        .and("checkOutTime").lt(now)
+                Criteria.where(Bookings.FIELD_USER_ID).is(userId)
+                        .and(Bookings.FIELD_STATUS).is(BookingStatus.COMPLETED.name())
+                        .and(Bookings.FIELD_CHECK_OUT_TIME).lt(now)
         );
-        query.with(Sort.by(Sort.Direction.DESC, "checkOutTime"));
+        query.with(Sort.by(Sort.Direction.DESC, Bookings.FIELD_CHECK_OUT_TIME));
         return mongoOperations.find(query, Bookings.class);
     }
 
@@ -80,4 +81,3 @@ public class BookingQueryService {
         return user.getVehicleNumbers();
     }
 }
-

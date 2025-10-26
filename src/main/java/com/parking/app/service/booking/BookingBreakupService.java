@@ -1,5 +1,6 @@
 package com.parking.app.service.booking;
 
+import com.parking.app.constants.BookingStatus;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
 import com.parking.app.util.BookingUtility;
@@ -29,7 +30,7 @@ public class BookingBreakupService {
 
         boolean isAutoCompleted = booking.getAutoCompleted() != null && booking.getAutoCompleted();
 
-        if ("cancelled".equalsIgnoreCase(booking.getStatus())) {
+        if (BookingStatus.CANCELLED.name().equalsIgnoreCase(booking.getStatus())) {
             boolean isAutoCancelled = actualCheckIn == null && now.isAfter(scheduledCheckIn);
             if (isAutoCancelled) {
                 lateCheckInPenalty = BookingUtility.calculatePenaltyWithGrace(scheduledCheckIn, now, spot.getCheckInPenaltyRate());
@@ -40,7 +41,7 @@ public class BookingBreakupService {
             } else {
                 refund = booking.getAmount();
             }
-        } else if ("completed".equalsIgnoreCase(booking.getStatus())) {
+        } else if (BookingStatus.COMPLETED.name().equalsIgnoreCase(booking.getStatus())) {
             ZonedDateTime actualCheckOut = ZonedDateTime.ofInstant(booking.getCheckOutTime().toInstant(), now.getZone());
             lateCheckInPenalty = BookingUtility.calculatePenaltyWithGrace(scheduledCheckIn, actualCheckIn, spot.getCheckInPenaltyRate());
             lateCheckOutPenalty = BookingUtility.calculatePenaltyWithGrace(scheduledEnd, actualCheckOut, spot.getCheckOutPenaltyRate());
@@ -69,8 +70,8 @@ public class BookingBreakupService {
 
     public void applyBreakupAndRefund(Bookings booking, ParkingSpot spot,
                                      BookingWalletService walletService) {
-        if (!"completed".equalsIgnoreCase(booking.getStatus()) &&
-            !"cancelled".equalsIgnoreCase(booking.getStatus())) {
+        if (!BookingStatus.COMPLETED.name().equalsIgnoreCase(booking.getStatus()) &&
+            !BookingStatus.CANCELLED.name().equalsIgnoreCase(booking.getStatus())) {
             return;
         }
 
@@ -82,4 +83,3 @@ public class BookingBreakupService {
         }
     }
 }
-

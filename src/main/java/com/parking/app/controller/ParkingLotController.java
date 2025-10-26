@@ -28,7 +28,7 @@ public class ParkingLotController {
     public ResponseEntity<ParkingLot> getParkingLotById(@PathVariable String id) {
         ParkingLot lot = parkingLotService.getParkingLotById(id);
         if (lot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with id: " + id);
         }
         return ResponseEntity.ok(lot);
     }
@@ -37,7 +37,7 @@ public class ParkingLotController {
     public ResponseEntity<ParkingLot> getParkingLotByName(@RequestParam String name) {
         ParkingLot lot = parkingLotService.getParkingLotByName(name);
         if (lot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with name: " + name);
         }
         return ResponseEntity.ok(lot);
     }
@@ -65,7 +65,7 @@ public class ParkingLotController {
     public ResponseEntity<ParkingLot> updateParkingLot(@PathVariable String id, @RequestBody ParkingLot lotDetails) {
         ParkingLot updated = parkingLotService.updateParkingLot(id, lotDetails);
         if (updated == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking lot not found with id: " + id);
         }
         return ResponseEntity.ok(updated);
     }

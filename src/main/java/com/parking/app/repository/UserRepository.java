@@ -16,6 +16,8 @@ public interface UserRepository extends MongoRepository<Users, String> {
 
     Optional<Users> findByVehicleNumbers(String vehicleNumbers);
 
+    Optional<Users> findByCheckInPin(String checkInPin);
+
     List<Users> findByNameContainingIgnoreCase(String nameFragment);
 
     List<Users> findByFirstUser(boolean firstUser);

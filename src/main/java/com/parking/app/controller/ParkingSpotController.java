@@ -7,7 +7,6 @@ import com.parking.app.service.ParkingSpotService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +45,7 @@ public class ParkingSpotController {
     public ResponseEntity<ParkingSpot> getParkingSpotById(@PathVariable String id) {
         ParkingSpot spot = parkingSpotService.getParkingSpotById(id);
         if (spot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking spot not found with id: " + id);
         }
         return ResponseEntity.ok(spot);
     }
@@ -63,7 +62,7 @@ public class ParkingSpotController {
     public ResponseEntity<ParkingSpot> updateParkingSpot(@PathVariable String id, @RequestBody ParkingSpot spotDetails) {
         ParkingSpot updated = parkingSpotService.updateParkingSpot(id, spotDetails);
         if (updated == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking spot not found with id: " + id);
         }
         return ResponseEntity.ok(updated);
     }
@@ -81,7 +80,7 @@ public class ParkingSpotController {
     public ResponseEntity<ParkingSpot> holdSpot(@PathVariable String id, @RequestParam String userId) {
         ParkingSpot spot = parkingSpotService.holdSpot(id, userId);
         if (spot == null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);  // no availability
+            throw new com.parking.app.exception.ConflictException("No availability for parking spot with id: " + id);
         }
         return ResponseEntity.ok(spot);
     }
@@ -91,7 +90,7 @@ public class ParkingSpotController {
     public ResponseEntity<ParkingSpot> releaseSpot(@PathVariable String id) {
         ParkingSpot spot = parkingSpotService.releaseSpot(id);
         if (spot == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            throw new com.parking.app.exception.NotFoundException("Parking spot not found with id: " + id);
         }
         return ResponseEntity.ok(spot);
     }
@@ -117,11 +116,7 @@ public class ParkingSpotController {
     @PostMapping("/admin/reset-spots")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> resetAllSpots() {
-        try {
-            parkingSpotService.resetAllSpotsCapacity();
-            return ResponseEntity.ok("All parking spots have been reset to max capacity.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to reset parking spots.");
-        }
+        parkingSpotService.resetAllSpotsCapacity();
+        return ResponseEntity.ok("All parking spots have been reset to max capacity.");
     }
 }
