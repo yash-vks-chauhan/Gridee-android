@@ -93,7 +93,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     val bookingHistory: LiveData<List<BookingDetails>> = _bookingHistory
     
     init {
-        loadMockBookings()
+        // No dummy data; bookings will be populated from backend when needed
     }
     
     fun setStartTime(time: Date) {
@@ -115,14 +115,8 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     fun loadParkingSpotById(spotId: String, onResult: (ParkingSpot?) -> Unit) {
         viewModelScope.launch {
             try {
-                val spotsResponse = parkingRepository.getParkingSpots()
-                if (spotsResponse.isSuccessful) {
-                    val spots = spotsResponse.body() ?: emptyList()
-                    val spot = spots.find { it.id == spotId }
-                    onResult(spot)
-                } else {
-                    onResult(null)
-                }
+                val spotResponse = parkingRepository.getParkingSpotById(spotId)
+                if (spotResponse.isSuccessful) onResult(spotResponse.body()) else onResult(null)
             } catch (e: Exception) {
                 onResult(null)
             }
@@ -132,14 +126,8 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     fun loadParkingSpotsForLot(lotId: String, onResult: (List<ParkingSpot>) -> Unit) {
         viewModelScope.launch {
             try {
-                val spotsResponse = parkingRepository.getParkingSpots()
-                if (spotsResponse.isSuccessful) {
-                    val allSpots = spotsResponse.body() ?: emptyList()
-                    val lotsSpots = allSpots.filter { it.lotId == lotId }
-                    onResult(lotsSpots)
-                } else {
-                    onResult(emptyList())
-                }
+                val spotsResponse = parkingRepository.getParkingSpotsByLot(lotId)
+                if (spotsResponse.isSuccessful) onResult(spotsResponse.body() ?: emptyList()) else onResult(emptyList())
             } catch (e: Exception) {
                 onResult(emptyList())
             }
@@ -149,13 +137,18 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     fun loadAllParkingSpots(onResult: (List<ParkingSpot>) -> Unit) {
         viewModelScope.launch {
             try {
-                val spotsResponse = parkingRepository.getParkingSpots()
-                if (spotsResponse.isSuccessful) {
-                    val allSpots = spotsResponse.body() ?: emptyList()
-                    onResult(allSpots)
-                } else {
-                    onResult(emptyList())
+                // Aggregate by-lot to avoid ADMIN-only all-spots endpoint
+                val lotsResponse = parkingRepository.getParkingLots()
+                if (!lotsResponse.isSuccessful) return@launch onResult(emptyList())
+                val lots = lotsResponse.body() ?: emptyList()
+                val combined = mutableListOf<ParkingSpot>()
+                for (lot in lots) {
+                    try {
+                        val resp = parkingRepository.getParkingSpotsByLot(lot.id)
+                        if (resp.isSuccessful) combined.addAll(resp.body() ?: emptyList())
+                    } catch (_: Exception) { /* skip lot on error */ }
                 }
+                onResult(combined)
             } catch (e: Exception) {
                 onResult(emptyList())
             }
@@ -234,35 +227,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    // Remove the mock data method
-    private fun generateMockVehicles(): List<Vehicle> {
-        return listOf(
-            Vehicle(
-                id = "1",
-                number = "MH 12 AB 1234",
-                type = "Car",
-                brand = "Maruti",
-                model = "Swift",
-                isDefault = true
-            ),
-            Vehicle(
-                id = "2", 
-                number = "MH 14 CD 5678",
-                type = "Car",
-                brand = "Honda",
-                model = "City",
-                isDefault = false
-            ),
-            Vehicle(
-                id = "3",
-                number = "MH 01 EF 9012", 
-                type = "Bike",
-                brand = "Honda",
-                model = "Activa",
-                isDefault = false
-            )
-        )
-    }
+    // Removed mock vehicle generator
     
     // Backend integration - Create actual booking
     fun createBackendBooking() {
@@ -375,73 +340,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
         return "BK${System.currentTimeMillis()}"
     }
     
-    private fun loadMockBookings() {
-        val mockBookings = generateMockBookings()
-        _bookings.value = mockBookings
-        
-        // Separate active and history
-        val active = mockBookings.filter { 
-            it.status == BookingStatus.ACTIVE || it.status == BookingStatus.CONFIRMED 
-        }
-        val history = mockBookings.filter { 
-            it.status == BookingStatus.COMPLETED || it.status == BookingStatus.CANCELLED 
-        }
-        
-        _activeBookings.value = active
-        _bookingHistory.value = history
-    }
-    
-    private fun generateMockBookings(): List<BookingDetails> {
-        val calendar = Calendar.getInstance()
-        
-        return listOf(
-            BookingDetails(
-                id = "BK001",
-                parkingSpotId = "1",
-                parkingSpotName = "Downtown Parking Garage",
-                startTime = calendar.apply { add(Calendar.HOUR, 2) }.time,
-                endTime = calendar.apply { add(Calendar.HOUR, 2) }.time,
-                duration = "4h",
-                pricePerHour = 15.0,
-                totalPrice = 60.0,
-                selectedSpot = "Level 2, Spot A-15",
-                status = BookingStatus.CONFIRMED,
-                createdAt = calendar.apply { add(Calendar.DAY_OF_MONTH, -1) }.time,
-                paymentMethod = "Credit Card",
-                transactionId = "TXN123456"
-            ),
-            BookingDetails(
-                id = "BK002",
-                parkingSpotId = "2",
-                parkingSpotName = "Union Square Parking",
-                startTime = calendar.apply { set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH) - 3) }.time,
-                endTime = calendar.apply { add(Calendar.HOUR, 3) }.time,
-                duration = "3h",
-                pricePerHour = 20.0,
-                totalPrice = 60.0,
-                selectedSpot = "Level 1, Spot B-08",
-                status = BookingStatus.COMPLETED,
-                createdAt = calendar.apply { add(Calendar.DAY_OF_MONTH, -4) }.time,
-                paymentMethod = "Digital Wallet",
-                transactionId = "TXN123457"
-            ),
-            BookingDetails(
-                id = "BK003",
-                parkingSpotId = "3",
-                parkingSpotName = "Mission Bay Parking Lot",
-                startTime = calendar.apply { set(Calendar.DAY_OF_MONTH, calendar.get(Calendar.DAY_OF_MONTH) - 7) }.time,
-                endTime = calendar.apply { add(Calendar.HOUR, 2) }.time,
-                duration = "2h",
-                pricePerHour = 8.0,
-                totalPrice = 16.0,
-                selectedSpot = null,
-                status = BookingStatus.COMPLETED,
-                createdAt = calendar.apply { add(Calendar.DAY_OF_MONTH, -8) }.time,
-                paymentMethod = "Credit Card",
-                transactionId = "TXN123458"
-            )
-        )
-    }
+    // Removed mock bookings; rely on backend data only
     
     fun extendBooking(bookingId: String, additionalHours: Int) {
         // TODO: Implement booking extension

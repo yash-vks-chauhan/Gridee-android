@@ -1,28 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <set xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="400"
-    android:interpolator="@android:interpolator/decelerate_cubic">
-    
-    <!-- Slide up from 50dp below -->
+    android:interpolator="@android:interpolator/decelerate_quad">
     <translate
-        android:fromYDelta="50dp"
-        android:toYDelta="0"
-        android:duration="400" />
-    
-    <!-- Fade in smoothly -->
+        android:duration="240"
+        android:fromYDelta="20dp"
+        android:toYDelta="0dp" />
     <alpha
+        android:duration="240"
         android:fromAlpha="0.0"
-        android:toAlpha="1.0"
-        android:duration="300" />
-    
-    <!-- Subtle scale for depth -->
-    <scale
-        android:fromXScale="0.95"
-        android:fromYScale="0.95"
-        android:toXScale="1.0"
-        android:toYScale="1.0"
-        android:pivotX="50%"
-        android:pivotY="50%"
-        android:duration="400" />
-    
+        android:toAlpha="1.0" />
 </set>

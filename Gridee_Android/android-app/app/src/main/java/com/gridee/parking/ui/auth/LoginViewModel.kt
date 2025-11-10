@@ -7,10 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.gridee.parking.data.model.User
 import com.gridee.parking.data.model.AuthResponse
+import com.gridee.parking.data.model.ErrorResponse
 import com.gridee.parking.data.repository.UserRepository
 import com.gridee.parking.utils.JwtTokenManager
 import kotlinx.coroutines.launch
 import java.security.MessageDigest
+import com.google.gson.Gson
 
 import android.content.Context
 
@@ -51,30 +53,45 @@ class LoginViewModel : ViewModel() {
                             userName = auth.name,
                             userRole = auth.role
                         )
-                        // Build a minimal User object for UI compatibility
+                        // Build a User object from the response
                         val user = User(
                             id = auth.id,
                             name = auth.name,
-                            email = if (normalized.contains("@")) normalized else "",
-                            phone = if (!normalized.contains("@")) normalized else "",
-                            vehicleNumbers = emptyList()
+                            email = auth.email,
+                            phone = auth.phone,
+                            vehicleNumbers = auth.user.vehicleNumbers ?: emptyList(),
+                            role = auth.role
                         )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
                         _loginState.value = LoginState.Error("Login successful but no token received")
                     }
                 } else {
-                    val errorBody = runCatching { jwtResponse.errorBody()?.string() }.getOrNull()
-                    val errorMessage = when (jwtResponse.code()) {
-                        400, 401 -> errorBody ?: "Invalid email/phone or password"
-                        404 -> errorBody ?: "User not found"
-                        else -> errorBody ?: "Login failed (${jwtResponse.code()})"
+                    // Parse error response from backend
+                    val errorMessage = try {
+                        val errorBody = jwtResponse.errorBody()?.string()
+                        if (errorBody != null) {
+                            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                            errorResponse.message ?: getDefaultErrorMessage(jwtResponse.code())
+                        } else {
+                            getDefaultErrorMessage(jwtResponse.code())
+                        }
+                    } catch (e: Exception) {
+                        getDefaultErrorMessage(jwtResponse.code())
                     }
                     _loginState.value = LoginState.Error(errorMessage)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
             }
+        }
+    }
+    
+    private fun getDefaultErrorMessage(code: Int): String {
+        return when (code) {
+            400, 401, 404 -> "Invalid email/phone or password"
+            500 -> "Server error. Please try again later"
+            else -> "Login failed. Please check your connection"
         }
     }
     
@@ -126,20 +143,33 @@ class LoginViewModel : ViewModel() {
                             userRole = auth.role
                         )
                         
-                        // Build a minimal User object for UI compatibility
+                        // Build a User object from the response
                         val user = User(
                             id = auth.id,
                             name = auth.name,
-                            email = account.email ?: "",
-                            phone = "",
-                            vehicleNumbers = emptyList()
+                            email = auth.email,
+                            phone = auth.phone,
+                            vehicleNumbers = auth.user.vehicleNumbers ?: emptyList(),
+                            role = auth.role
                         )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
                         _loginState.value = LoginState.Error("Sign in successful but no token received")
                     }
                 } else {
-                    _loginState.value = LoginState.Error("Google Sign In failed: ${response.errorBody()?.string()}")
+                    // Parse error response from backend
+                    val errorMessage = try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody != null) {
+                            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                            errorResponse.message ?: "Google Sign In failed. Please try again"
+                        } else {
+                            "Google Sign In failed. Please try again"
+                        }
+                    } catch (e: Exception) {
+                        "Google Sign In failed. Please try again"
+                    }
+                    _loginState.value = LoginState.Error(errorMessage)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
@@ -166,20 +196,33 @@ class LoginViewModel : ViewModel() {
                             userRole = auth.role
                         )
                         
-                        // Build a minimal User object for UI compatibility
+                        // Build a User object from the response
                         val user = User(
                             id = auth.id,
                             name = auth.name,
-                            email = "",  // Apple may not provide email
-                            phone = "",
-                            vehicleNumbers = emptyList()
+                            email = auth.email,
+                            phone = auth.phone,
+                            vehicleNumbers = auth.user.vehicleNumbers ?: emptyList(),
+                            role = auth.role
                         )
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
                         _loginState.value = LoginState.Error("Sign in successful but no user data received")
                     }
                 } else {
-                    _loginState.value = LoginState.Error("Apple Sign In failed: ${response.errorBody()?.string()}")
+                    // Parse error response from backend
+                    val errorMessage = try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody != null) {
+                            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                            errorResponse.message ?: "Apple Sign In failed. Please try again"
+                        } else {
+                            "Apple Sign In failed. Please try again"
+                        }
+                    } catch (e: Exception) {
+                        "Apple Sign In failed. Please try again"
+                    }
+                    _loginState.value = LoginState.Error(errorMessage)
                 }
             } catch (e: Exception) {
                 _loginState.value = LoginState.Error("Network error: ${e.message}")

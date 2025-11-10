@@ -12,6 +12,10 @@ class ParkingRepository {
     suspend fun getParkingLots(): Response<List<ParkingLot>> {
         return apiService.getParkingLots()
     }
+
+    suspend fun getParkingLotNames(): Response<List<String>> {
+        return apiService.getParkingLotNames()
+    }
     
     suspend fun getParkingSpots(): Response<List<ParkingSpot>> {
         return apiService.getParkingSpots()
@@ -19,5 +23,13 @@ class ParkingRepository {
     
     suspend fun getParkingSpotsByLot(lotId: String): Response<List<ParkingSpot>> {
         return apiService.getParkingSpotsByLot(lotId)
+    }
+
+    suspend fun getParkingSpotById(id: String): Response<ParkingSpot> {
+        return apiService.getParkingSpotById(id)
+    }
+
+    suspend fun getAvailableSpots(lotId: String, startTime: String, endTime: String): Response<List<ParkingSpot>> {
+        return apiService.getAvailableSpots(lotId, startTime, endTime)
     }
 }

@@ -87,6 +87,13 @@
             android:name=".ui.main.MainContainerActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
+        
+        <activity
+            android:name=".ui.operator.OperatorDashboardActivity"
+            android:exported="false"
+            android:label="Operator Dashboard"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.Gridee.NoActionBar" />
 
         <activity
             android:name=".ui.wallet.WalletTopUpActivity"

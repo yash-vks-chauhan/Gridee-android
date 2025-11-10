@@ -162,6 +162,32 @@ class BookingDetailBottomSheet : BottomSheetDialogFragment() {
     private fun setupClickListeners(bookingId: String) {
         binding.btnClose.setOnClickListener { dismissAllowingStateLoss() }
         binding.btnRefresh.setOnClickListener { viewModel.refreshBooking(bookingId) }
+        // Show price breakup when tapping on amount
+        binding.tvAmount.setOnClickListener {
+            val b = booking ?: return@setOnClickListener
+            lifecycleScope.launch {
+                try {
+                    val result = bookingRepository.getPriceBreakup(b.id ?: "")
+                    if (result.isSuccess) {
+                        val map = result.getOrNull() ?: emptyMap()
+                        val message = buildString {
+                            map.forEach { (k, v) ->
+                                append("• ").append(k).append(": ").append(v.toString()).append('\n')
+                            }
+                        }
+                        MaterialAlertDialogBuilder(requireContext())
+                            .setTitle("Price Breakup")
+                            .setMessage(message.trim())
+                            .setPositiveButton("OK", null)
+                            .show()
+                    } else {
+                        Toast.makeText(requireContext(), result.exceptionOrNull()?.message ?: "Failed to load price breakup", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(requireContext(), e.message ?: "Failed to load price breakup", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
         binding.btnCheckIn.setOnClickListener {
             val intent = Intent(requireContext(), QrScannerActivity::class.java)
             setCheckInLoading(true, validating = true)
@@ -171,6 +197,9 @@ class BookingDetailBottomSheet : BottomSheetDialogFragment() {
             val intent = Intent(requireContext(), QrScannerActivity::class.java)
             setCheckOutLoading(true, validating = true)
             scanLauncher.launch(intent)
+        }
+        binding.btnExtendBooking.setOnClickListener {
+            showExtendDialog()
         }
         binding.btnCancelBooking.setOnClickListener {
             val b = booking ?: return@setOnClickListener
@@ -228,16 +257,19 @@ class BookingDetailBottomSheet : BottomSheetDialogFragment() {
             "pending" -> {
                 binding.btnCheckIn.visibility = View.VISIBLE
                 binding.btnCheckOut.visibility = View.GONE
+                binding.btnExtendBooking.visibility = View.VISIBLE
                 binding.btnCancelBooking.visibility = View.VISIBLE
             }
             "active" -> {
                 binding.btnCheckIn.visibility = View.GONE
                 binding.btnCheckOut.visibility = View.VISIBLE
+                binding.btnExtendBooking.visibility = View.VISIBLE
                 binding.btnCancelBooking.visibility = View.GONE
             }
             else -> {
                 binding.btnCheckIn.visibility = View.GONE
                 binding.btnCheckOut.visibility = View.GONE
+                binding.btnExtendBooking.visibility = View.GONE
                 binding.btnCancelBooking.visibility = View.GONE
             }
         }
@@ -250,6 +282,62 @@ class BookingDetailBottomSheet : BottomSheetDialogFragment() {
         booking.checkInTime?.let { binding.tvCheckInTime.text = "Check-in: ${df.format(it)}" }
         booking.checkOutTime?.let { binding.tvCheckOutTime.text = "Check-out: ${df.format(it)}" }
         binding.tvAmount.text = "₹${String.format("%.2f", booking.amount)}"
+    }
+
+    private fun showExtendDialog() {
+        val b = booking ?: return
+        val dialogView = layoutInflater.inflate(R.layout.dialog_extend_booking, null)
+        val tvCurrent = dialogView.findViewById<android.widget.TextView>(R.id.tv_current_end_time)
+        val datePicker = dialogView.findViewById<android.widget.DatePicker>(R.id.date_picker)
+        val timePicker = dialogView.findViewById<android.widget.TimePicker>(R.id.time_picker)
+        val btnCancel = dialogView.findViewById<android.widget.Button>(R.id.btn_cancel)
+        val btnExtend = dialogView.findViewById<android.widget.Button>(R.id.btn_extend)
+
+        val ctx = requireContext()
+        val fmt = java.text.SimpleDateFormat("EEE, MMM d, yyyy h:mm a", java.util.Locale.getDefault())
+        val currentEnd = b.checkOutTime ?: java.util.Date()
+        tvCurrent.text = "Current end: ${fmt.format(currentEnd)}"
+
+        // Initialize pickers with current end time
+        val cal = java.util.Calendar.getInstance().apply { time = currentEnd }
+        datePicker.updateDate(cal.get(java.util.Calendar.YEAR), cal.get(java.util.Calendar.MONTH), cal.get(java.util.Calendar.DAY_OF_MONTH))
+        if (android.os.Build.VERSION.SDK_INT >= 23) {
+            timePicker.hour = cal.get(java.util.Calendar.HOUR_OF_DAY)
+            timePicker.minute = cal.get(java.util.Calendar.MINUTE)
+        } else {
+            @Suppress("DEPRECATION")
+            run {
+                timePicker.currentHour = cal.get(java.util.Calendar.HOUR_OF_DAY)
+                timePicker.currentMinute = cal.get(java.util.Calendar.MINUTE)
+            }
+        }
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(ctx)
+            .setView(dialogView)
+            .create()
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnExtend.setOnClickListener {
+            val newCal = java.util.Calendar.getInstance()
+            newCal.set(datePicker.year, datePicker.month, datePicker.dayOfMonth)
+            val selHour: Int = if (android.os.Build.VERSION.SDK_INT >= 23) timePicker.hour else @Suppress("DEPRECATION") { timePicker.currentHour }
+            val selMinute: Int = if (android.os.Build.VERSION.SDK_INT >= 23) timePicker.minute else @Suppress("DEPRECATION") { timePicker.currentMinute }
+            newCal.set(java.util.Calendar.HOUR_OF_DAY, selHour)
+            newCal.set(java.util.Calendar.MINUTE, selMinute)
+            newCal.set(java.util.Calendar.SECOND, 0)
+            val newDate = newCal.time
+
+            if (newDate <= currentEnd) {
+                android.widget.Toast.makeText(ctx, "Select a time after current end", android.widget.Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Call VM to extend
+            viewModel.extendBooking(b.id ?: return@setOnClickListener, newDate)
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun setCheckInLoading(loading: Boolean, validating: Boolean = false, processing: Boolean = false) {

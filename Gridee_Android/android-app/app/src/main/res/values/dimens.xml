@@ -16,6 +16,11 @@
     <dimen name="button_height">48dp</dimen>
     <dimen name="button_corner_radius">8dp</dimen>
 
+    <!-- Segmented control sizing -->
+    <dimen name="segmented_control_height">56dp</dimen>
+    <dimen name="segmented_control_padding">6dp</dimen>
+    <dimen name="segmented_control_item_padding">16dp</dimen>
+
     <!-- Transaction header animation - Enhanced for smoother professional transitions -->
     <dimen name="transaction_header_collapse_range">48dp</dimen>
     <dimen name="transaction_header_padding_reduction">6dp</dimen>

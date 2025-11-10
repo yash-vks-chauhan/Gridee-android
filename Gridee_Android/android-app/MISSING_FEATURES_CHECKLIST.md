@@ -53,7 +53,6 @@
 
 ### 11. Authentication Extended
 - [ ] `POST /api/auth/login` - JWT-based login (separate from /api/users/login)
-- [ ] `GET /api/oauth2/user` - Get OAuth2 user information
 
 ### 12. Booking Management Extended
 - [ ] `GET /api/bookings` - Get all bookings with filters (admin)

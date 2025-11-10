@@ -60,7 +60,7 @@ class BookingApiHelper(private val context: Context) {
             })
         */
         
-        // For now, return empty list since no real bookings exist
+        // No dummy data; integrate with BookingRepository instead
         callback(emptyList(), null)
     }
 
@@ -117,24 +117,8 @@ class BookingApiHelper(private val context: Context) {
             })
         */
         
-        // For demo, create a mock booking
-        val mockBooking = BookingResponse(
-            id = "BK${System.currentTimeMillis()}",
-            vehicleNumber = vehicleNumber,
-            spotId = spotId,
-            locationName = locationName,
-            locationAddress = locationAddress,
-            startTime = startTime,
-            endTime = endTime,
-            duration = duration,
-            amount = amount,
-            status = "PENDING",
-            bookingDate = java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(java.util.Date()),
-            createdAt = java.util.Date().toString(),
-            updatedAt = java.util.Date().toString()
-        )
-        
-        callback(mockBooking, null)
+        // Do not create mock bookings; indicate unimplemented
+        callback(null, "createBooking not implemented; use BookingRepository")
     }
 
     /**
@@ -172,8 +156,8 @@ class BookingApiHelper(private val context: Context) {
             })
         */
         
-        // For demo, simulate successful update
-        callback(true, null)
+        // Do not simulate success for demo
+        callback(false, "updateBookingStatus not implemented; use BookingRepository")
     }
 
     /**
@@ -206,8 +190,8 @@ class BookingApiHelper(private val context: Context) {
             })
         */
         
-        // For demo, simulate successful cancellation
-        callback(true, null)
+        // Do not simulate success for demo
+        callback(false, "cancelBooking not implemented; use BookingRepository")
     }
 }
 

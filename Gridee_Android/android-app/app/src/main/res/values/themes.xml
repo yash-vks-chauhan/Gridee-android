@@ -127,4 +127,94 @@
         <item name="cornerSize">50%</item>
     </style>
     
+    <!-- Custom Material Date Picker Theme - White & Grey with Black Buttons -->
+    <style name="CustomDatePickerTheme" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <!-- Primary color (selected date) - Black -->
+        <item name="colorPrimary">#1A1A1A</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        
+        <!-- Container colors - White & Light Grey -->
+        <item name="colorSurface">#FFFFFF</item>
+        <item name="colorOnSurface">#1A1A1A</item>
+        <item name="colorSurfaceVariant">#F5F5F5</item>
+        <item name="colorOnSurfaceVariant">#666666</item>
+        
+        <!-- Header background - Light Grey -->
+        <item name="colorPrimaryContainer">#F8F8F8</item>
+        <item name="colorOnPrimaryContainer">#1A1A1A</item>
+        
+        <!-- Secondary colors for today indicator -->
+        <item name="colorSecondary">#757575</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="colorSecondaryContainer">#E8E8E8</item>
+        <item name="colorOnSecondaryContainer">#424242</item>
+        
+        <!-- Outline color - Grey border -->
+        <item name="colorOutline">#D0D0D0</item>
+        <item name="colorOutlineVariant">#E8E8E8</item>
+        
+        <!-- Background -->
+        <item name="android:colorBackground">#FFFFFF</item>
+        
+        <!-- Ripple color for date cells - Subtle black -->
+        <item name="colorControlHighlight">#1A000000</item>
+        
+        <!-- Button colors - Black for action buttons -->
+        <item name="materialButtonStyle">@style/Widget.DatePicker.BlackButton</item>
+        <item name="borderlessButtonStyle">@style/Widget.DatePicker.BlackTextButton</item>
+        
+        <!-- Smooth animations -->
+        <item name="android:windowEnterAnimation">@anim/date_picker_enter</item>
+        <item name="android:windowExitAnimation">@anim/date_picker_exit</item>
+        
+        <!-- Text appearance -->
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.DatePicker.Body</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.DatePicker.Body</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.DatePicker.Label</item>
+        
+        <!-- Shape and corners -->
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.DatePicker.MediumComponent</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.DatePicker.SmallComponent</item>
+    </style>
+    
+    <!-- Text Appearances for Date Picker -->
+    <style name="TextAppearance.DatePicker.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+    
+    <style name="TextAppearance.DatePicker.Label" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:textColor">#666666</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    
+    <!-- Shape Appearances for Date Picker -->
+    <style name="ShapeAppearance.DatePicker.MediumComponent" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    
+    <style name="ShapeAppearance.DatePicker.SmallComponent" parent="ShapeAppearance.Material3.SmallComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    
+    <!-- Black Button Styles for Date Picker -->
+    <style name="Widget.DatePicker.BlackButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">#1A1A1A</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="rippleColor">#33000000</item>
+    </style>
+    
+    <style name="Widget.DatePicker.BlackTextButton" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textColor">#1A1A1A</item>
+        <item name="rippleColor">#1A000000</item>
+    </style>
+    
+    <!-- Date Picker Dialog Animation Style -->
+    <style name="DatePickerDialogAnimation" parent="Animation.AppCompat.Dialog">
+        <item name="android:windowEnterAnimation">@anim/date_picker_enter</item>
+        <item name="android:windowExitAnimation">@anim/date_picker_exit</item>
+    </style>
+    
 </resources>

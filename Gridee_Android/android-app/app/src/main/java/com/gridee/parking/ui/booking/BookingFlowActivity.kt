@@ -210,8 +210,16 @@ class BookingFlowActivity : AppCompatActivity() {
                 updateParkingSpotDisplay()
             }
         } else {
-            // Fallback for missing data
-            parkingSpot = createMockParkingSpot(spotId)
+            // Fallback for missing/unknown spot without injecting dummy location data
+            parkingSpot = ParkingSpot(
+                id = if (spotId.isNotEmpty()) spotId else "unknown",
+                lotId = selectedLotId,
+                name = null,
+                zoneName = null,
+                capacity = 0,
+                available = 0,
+                status = "unknown"
+            )
             updateParkingSpotDisplay()
         }
     }
@@ -323,18 +331,20 @@ class BookingFlowActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val parkingRepository = com.gridee.parking.data.repository.ParkingRepository()
-                val spotsResponse = parkingRepository.getParkingSpots()
+                val start = viewModel.startTime.value ?: java.util.Calendar.getInstance().time
+                val end = viewModel.endTime.value ?: java.util.Calendar.getInstance().apply { add(java.util.Calendar.HOUR_OF_DAY, 2) }.time
+                val df = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.getDefault())
+                val startStr = df.format(start)
+                val endStr = df.format(end)
+                val spotsResponse = if (selectedLotId.isNotEmpty()) {
+                    parkingRepository.getAvailableSpots(selectedLotId, startStr, endStr)
+                } else {
+                    retrofit2.Response.success(emptyList<com.gridee.parking.data.model.ParkingSpot>())
+                }
                 
                 runOnUiThread {
                     if (spotsResponse.isSuccessful) {
-                        val allSpots = spotsResponse.body() ?: emptyList()
-                        showToast("Total spots from API: ${allSpots.size}")
-                        
-                        val filteredSpots = if (selectedLotId.isNotEmpty()) {
-                            allSpots.filter { it.lotId == selectedLotId }
-                        } else {
-                            allSpots
-                        }
+                        val filteredSpots = spotsResponse.body() ?: emptyList()
                         
                         showToast("Filtered spots for lot '$selectedLotId': ${filteredSpots.size}")
                         println("BookingFlowActivity: Received ${filteredSpots.size} spots for lot $selectedLotId")
@@ -591,27 +601,17 @@ class BookingFlowActivity : AppCompatActivity() {
         viewModel.createBackendBooking()
     }
 
-    private fun createMockParkingSpot(spotId: String): ParkingSpot {
-        return ParkingSpot(
-            id = spotId,
-            lotId = "pl1",
-            name = "Downtown Parking Garage",
-            zoneName = "Downtown Parking Garage",
-            capacity = 100,
-            available = 25,
-            status = "available"
-        )
-    }
+    
     
     private fun createDefaultParkingSpot(): ParkingSpot {
         return ParkingSpot(
             id = "default_spot",
-            lotId = "pl1",
-            name = "Quick Book Parking",
-            zoneName = "Quick Book Parking",
-            capacity = 100,
-            available = 50,
-            status = "available"
+            lotId = selectedLotId,
+            name = null,
+            zoneName = null,
+            capacity = 0,
+            available = 0,
+            status = "unknown"
         )
     }
 

@@ -11,11 +11,13 @@ import androidx.lifecycle.lifecycleScope
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityLoginBinding
 import com.gridee.parking.ui.main.MainContainerActivity
+import com.gridee.parking.ui.operator.OperatorDashboardActivity
 import com.gridee.parking.utils.AppleSignInManager
 import com.gridee.parking.utils.AppleSignInResult
 import com.gridee.parking.utils.GoogleSignInManager
 import com.gridee.parking.utils.GoogleSignInResult
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 class LoginActivity : AppCompatActivity() {
     
@@ -134,6 +136,8 @@ class LoginActivity : AppCompatActivity() {
                     showLoading(false)
                     Toast.makeText(this, "Welcome back, ${state.user.name}!", Toast.LENGTH_LONG).show()
                     
+                    val normalizedRole = state.user.role?.uppercase(Locale.ROOT) ?: "USER"
+                    
                     // Save user data to SharedPreferences
                     val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
                     sharedPref.edit()
@@ -141,14 +145,24 @@ class LoginActivity : AppCompatActivity() {
                         .putString("user_name", state.user.name)
                         .putString("user_email", state.user.email)
                         .putString("user_phone", state.user.phone)
+                        .putString("user_role", normalizedRole)
                         .putBoolean("is_logged_in", true)
                         .apply()
                     
-                    // Navigate to main activity
-                    val intent = Intent(this, MainContainerActivity::class.java)
-                    intent.putExtra("USER_NAME", state.user.name)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    startActivity(intent)
+                    // Navigate based on role
+                    when (normalizedRole) {
+                        "OPERATOR" -> {
+                            val intent = Intent(this, OperatorDashboardActivity::class.java)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+                        }
+                        else -> {
+                            val intent = Intent(this, MainContainerActivity::class.java)
+                            intent.putExtra("USER_NAME", state.user.name)
+                            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            startActivity(intent)
+                        }
+                    }
                     finish()
                 }
                 is LoginState.Error -> {

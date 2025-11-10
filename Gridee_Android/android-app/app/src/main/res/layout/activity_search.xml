@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/search_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -140,7 +141,8 @@
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Downtown Plaza"
+                    android:text=""
+                    tools:text="Downtown Plaza"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     app:chipBackgroundColor="@color/booking_sheet_chip_bg"
                     app:chipStrokeWidth="0dp"
@@ -149,7 +151,8 @@
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Airport T2 Garage"
+                    android:text=""
+                    tools:text="Airport T2 Garage"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     app:chipBackgroundColor="@color/booking_sheet_chip_bg"
                     app:chipStrokeWidth="0dp"
@@ -158,7 +161,8 @@
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Westend Mall"
+                    android:text=""
+                    tools:text="Westend Mall"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     app:chipBackgroundColor="@color/booking_sheet_chip_bg"
                     app:chipStrokeWidth="0dp"

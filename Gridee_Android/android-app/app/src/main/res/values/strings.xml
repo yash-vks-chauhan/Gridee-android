@@ -7,6 +7,46 @@
     <string name="validating_qr">Validating QR…</string>
     <string name="processing_check_in">Processing check-in…</string>
     <string name="processing_check_out">Processing check-out…</string>
+    <string name="vehicle_scan_hint">Align the license plate within the frame</string>
+    <string name="vehicle_scan_detecting">Scanning license plate…</string>
+    <string name="vehicle_scan_detected">Detected %1$s</string>
+    <string name="vehicle_scan_not_clear">Adjusting focus…</string>
+    <string name="vehicle_scan_not_clear_hint">Move closer and reduce glare for a clear scan.</string>
+    <string name="vehicle_scan_timeout_title">Scan timeout</string>
+    <string name="vehicle_scan_timeout_message">We couldn’t read the plate in time. Align the vehicle and try again.</string>
+    <string name="vehicle_scan_retry_button">Scan again</string>
+    <string name="vehicle_scan_error_camera">Camera unavailable. Please try again.</string>
+    <string name="vehicle_scan_error_generic">Unable to detect the plate. Adjust lighting and retry.</string>
+    <string name="vehicle_scan_success_toast">Vehicle %1$s detected</string>
+    <string name="vehicle_scan_success_title">Vehicle detected</string>
+    <string name="vehicle_scan_success_message">Vehicle %1$s found and ready for check-in.</string>
+    <string name="scanner_corner">Scanner frame corner</string>
+    <string name="vehicle_scan_best_guess">Possible match: %1$s</string>
+    <string name="vehicle_scan_flash_on">Flash on</string>
+    <string name="vehicle_scan_flash_off">Flash off</string>
+    <string name="vehicle_scan_hint_move_closer">Move closer and align within the frame</string>
+    <string name="vehicle_sheet_status_fetching">Fetching active booking…</string>
+    <string name="vehicle_sheet_status_not_found">No booking is linked to %1$s.</string>
+    <string name="vehicle_sheet_status_error">Failed to fetch booking. %1$s</string>
+    <string name="vehicle_sheet_status_checkin_ready">Check-in booking found for %1$s</string>
+    <string name="vehicle_sheet_status_checkout_ready">Vehicle %1$s is currently checked in</string>
+    <string name="vehicle_sheet_status_info_generic">Booking found for %1$s</string>
+    <string name="vehicle_sheet_processing_checkin">Checking in vehicle…</string>
+    <string name="vehicle_sheet_processing_checkout">Checking out vehicle…</string>
+    <string name="vehicle_sheet_check_in">Check in vehicle</string>
+    <string name="vehicle_sheet_check_out">Check out vehicle</string>
+    <string name="vehicle_sheet_scan_again">Scan again</string>
+    <string name="vehicle_sheet_booking_status">Status: %1$s</string>
+    <string name="vehicle_sheet_booking_location">Lot %1$s • Spot %2$s</string>
+    <string name="vehicle_sheet_booking_window">%1$s - %2$s</string>
+    <string name="vehicle_sheet_manual_label">Enter vehicle number manually</string>
+    <string name="vehicle_sheet_manual_hint">Vehicle number</string>
+    <string name="vehicle_sheet_manual_submit">Use vehicle number</string>
+    <string name="vehicle_sheet_manual_button">Enter manually</string>
+    <string name="vehicle_sheet_manual_error">Enter a valid vehicle number</string>
+    <string name="vehicle_sheet_checkin_success">Check-in completed for %1$s</string>
+    <string name="vehicle_sheet_checkout_success">Check-out completed for %1$s</string>
+    <string name="vehicle_sheet_status_ready">Vehicle %1$s detected</string>
     <string name="qr_invalid">Invalid QR code</string>
     <string name="qr_validation_message">%1$s</string>
     <string name="registration_title">Create Account</string>
@@ -53,6 +93,15 @@
     <string name="new_time_must_be_later">New end time must be after current end time</string>
     <string name="extend_failed_default">Failed to extend booking</string>
     <string name="cancel">Cancel</string>
+    <string name="content_desc_filter_bookings">Filter and sort bookings</string>
+    <string name="sort_sheet_title">Sort &amp; Filter</string>
+    <string name="sort_sheet_subtitle">Choose how your bookings are ordered</string>
+    <string name="sort_option_newest">Latest to oldest</string>
+    <string name="sort_option_oldest">First to last</string>
+    <string name="sort_option_spot">Parking spot (A-Z)</string>
+    <string name="spot_filter_heading">Filter by parking spot</string>
+    <string name="spot_filter_all">All spots</string>
+    <string name="spot_filter_no_data">Parking spots will appear once bookings are loaded.</string>
 
     <!-- Wallet -->
     <string name="wallet_transaction_icon_content_description">Transaction type icon</string>
@@ -83,4 +132,9 @@
     
     <!-- Razorpay Test Key (client-side public key). Replace in production. -->
     <string name="razorpay_key_id">rzp_test_RS3SKqbTQFAamy</string>
+    
+    <!-- Splash Screen -->
+    <string name="app_name_gridee">Gridee</string>
+    <string name="card_on_road">Card on road</string>
+    <string name="bike_on_road">Bike on road</string>
 </resources>

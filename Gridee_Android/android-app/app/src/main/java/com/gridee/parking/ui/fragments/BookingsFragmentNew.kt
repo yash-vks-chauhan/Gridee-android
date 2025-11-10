@@ -1,25 +1,31 @@
 package com.gridee.parking.ui.fragments
 
-import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.RenderEffect
 import android.graphics.Shader
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
-import android.view.animation.OvershootInterpolator
 import android.widget.TextView
 import android.widget.DatePicker
 import android.widget.TimePicker
 import android.widget.Button
 import android.app.Dialog
-import androidx.core.content.ContextCompat
+import android.view.HapticFeedbackConstants
+import android.util.TypedValue
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.ColorInt
 import androidx.core.animation.doOnEnd
+import androidx.core.content.ContextCompat
+import androidx.core.view.doOnLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.gridee.parking.R
@@ -31,11 +37,13 @@ import com.gridee.parking.ui.adapters.Booking
 import com.gridee.parking.ui.adapters.BookingStatus
 import com.gridee.parking.ui.adapters.BookingsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
-import com.gridee.parking.ui.components.EnhancedSegmentedControlGestureHandler
+import com.gridee.parking.databinding.BottomSheetBookingFiltersBinding
 import com.gridee.parking.databinding.BottomSheetBookingOverviewBinding
+import android.view.WindowManager
+import android.graphics.Typeface
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import android.view.WindowManager
+import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import android.content.Intent
 import com.gridee.parking.ui.qr.QrScannerActivity
@@ -43,14 +51,30 @@ import com.gridee.parking.data.repository.BookingRepository
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import android.animation.AnimatorSet
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.OvershootInterpolator
+import com.google.android.material.ripple.RippleUtils
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
     private lateinit var bookingsAdapter: BookingsAdapter
     private var userBookings = mutableListOf<BackendBooking>()
     private var currentTab = BookingStatus.ACTIVE
-    private lateinit var gestureHandler: EnhancedSegmentedControlGestureHandler
     private var blurOverlayView: View? = null
+    private var isSliderDragging = false
+    private var sliderDragOffset = 0f
+    private val selectedLabelColor by lazy { ContextCompat.getColor(requireContext(), R.color.text_primary) }
+    private val unselectedLabelColor by lazy { ContextCompat.getColor(requireContext(), R.color.segment_button_text_unchecked) }
+    private var currentSortOption = BookingSortOption.NEWEST_FIRST
+    private var sortBottomSheetDialog: BottomSheetDialog? = null
+    private var selectedSpotFilter: String? = null
     
     // Cache for parking lot and spot names
     private val parkingLotCache = mutableMapOf<String, String>() // lotId -> name
@@ -63,6 +87,15 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private val bookingRepository by lazy { BookingRepository(requireContext()) }
 
     private enum class ScanType { CHECK_IN, CHECK_OUT }
+    private enum class BookingSortOption {
+        NEWEST_FIRST,
+        OLDEST_FIRST
+    }
+    
+    // Date filter fields
+    private var filterStartDate: Long? = null
+    private var filterEndDate: Long? = null
+    
     private var pendingScanBookingId: String? = null
     private var pendingScanType: ScanType? = null
 
@@ -100,6 +133,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     override fun setupUI() {
         setupRecyclerView()
         setupPullToRefresh()
+        setupFilterButton()
         setupSegmentedControl()
         loadUserBookings() // Use real API instead of sample data
     }
@@ -109,6 +143,185 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         binding.swipeRefresh.setOnRefreshListener {
             loadUserBookings()
         }
+    }
+
+    private fun setupFilterButton() {
+        binding.buttonFilter.setOnClickListener {
+            // Add haptic feedback
+            it.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            
+            // Add subtle scale animation
+            it.animate()
+                .scaleX(0.92f)
+                .scaleY(0.92f)
+                .setDuration(100)
+                .withEndAction {
+                    it.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(100)
+                        .start()
+                }
+                .start()
+            
+            showSortBottomSheet()
+        }
+    }
+
+    private fun showSortBottomSheet() {
+        if (sortBottomSheetDialog?.isShowing == true) return
+        val sheetBinding = BottomSheetBookingFiltersBinding.inflate(layoutInflater)
+
+        sheetBinding.radioNewestFirst.isChecked = currentSortOption == BookingSortOption.NEWEST_FIRST
+        sheetBinding.radioOldestFirst.isChecked = currentSortOption == BookingSortOption.OLDEST_FIRST
+
+        // Setup date filter UI
+        setupDateFilter(sheetBinding)
+        
+        populateSpotFilterChips(sheetBinding)
+
+        val dialog = BottomSheetDialog(requireContext())
+        dialog.setContentView(sheetBinding.root)
+
+        fun handleSelection(option: BookingSortOption) {
+            applySortOption(option)
+        }
+
+        sheetBinding.radioNewestFirst.setOnClickListener { 
+            handleSelection(BookingSortOption.NEWEST_FIRST)
+            it.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+        }
+        sheetBinding.radioOldestFirst.setOnClickListener { 
+            handleSelection(BookingSortOption.OLDEST_FIRST)
+            it.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+        }
+        
+        // Reset All button
+        sheetBinding.buttonResetAll.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            resetAllFilters()
+            dialog.dismiss()
+        }
+        
+        // Apply Filters button
+        sheetBinding.buttonApplyFilters.setOnClickListener {
+            it.performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+            dialog.dismiss()
+        }
+
+        dialog.setOnDismissListener { sortBottomSheetDialog = null }
+        dialog.show()
+        sortBottomSheetDialog = dialog
+    }
+    
+    private fun resetAllFilters() {
+        // Reset sort to default
+        currentSortOption = BookingSortOption.NEWEST_FIRST
+        
+        // Reset date filters
+        filterStartDate = null
+        filterEndDate = null
+        
+        // Reset spot filter
+        selectedSpotFilter = null
+        
+        // Refresh the view
+        showBookingsForStatus(currentTab)
+        
+        showToast("Filters reset")
+    }
+
+    private fun applySortOption(option: BookingSortOption) {
+        if (currentSortOption == option) return
+        currentSortOption = option
+        showBookingsForStatus(currentTab)
+    }
+
+    private fun populateSpotFilterChips(sheetBinding: BottomSheetBookingFiltersBinding) {
+        val chipGroup = sheetBinding.chipGroupSpots
+        chipGroup.setOnCheckedStateChangeListener(null)
+        chipGroup.removeAllViews()
+
+        val availableSpots = userBookings
+            .map { getSpotLabel(it).trim() }
+            .filter { it.isNotEmpty() }
+            .distinctBy { it.lowercase(Locale.ROOT) }
+            .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it })
+
+        sheetBinding.textNoSpots.visibility = if (availableSpots.isEmpty()) View.VISIBLE else View.GONE
+
+        val normalizedSelection = selectedSpotFilter?.lowercase(Locale.ROOT)
+        val allChip = createSpotChip(getString(R.string.spot_filter_all), true).apply {
+            id = View.generateViewId()
+            tag = ALL_SPOTS_TAG
+        }
+        chipGroup.addView(allChip)
+
+        availableSpots.forEach { spotName ->
+            val chip = createSpotChip(spotName).apply {
+                id = View.generateViewId()
+                tag = spotName
+            }
+            chipGroup.addView(chip)
+            if (normalizedSelection != null && spotName.lowercase(Locale.ROOT) == normalizedSelection) {
+                chipGroup.check(chip.id)
+            }
+        }
+
+        if (normalizedSelection == null || chipGroup.checkedChipId == View.NO_ID) {
+            chipGroup.check(allChip.id)
+        }
+
+        chipGroup.setOnCheckedStateChangeListener { group, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: View.NO_ID
+            val selectedChip = if (checkedId != View.NO_ID) group.findViewById<Chip>(checkedId) else null
+            val tag = selectedChip?.tag as? String
+            val newSelection = when (tag) {
+                null, ALL_SPOTS_TAG -> null
+                else -> tag
+            }
+            val currentNormalized = selectedSpotFilter?.lowercase(Locale.ROOT)
+            val newNormalized = newSelection?.lowercase(Locale.ROOT)
+            if (currentNormalized != newNormalized) {
+                selectedSpotFilter = newSelection
+                showBookingsForStatus(currentTab)
+            }
+        }
+    }
+
+    private fun createSpotChip(label: String, isAllChip: Boolean = false): Chip {
+        val chip = Chip(requireContext())
+        chip.text = label
+        chip.isCheckable = true
+        chip.isCheckedIconVisible = false
+        chip.isClickable = true
+        chip.setEnsureMinTouchTargetSize(false)
+        chip.textSize = 14f
+        chip.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+        chip.chipStrokeWidth = dpToPx(1f)
+        chip.chipStrokeColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.segment_shell_border))
+        chip.chipCornerRadius = dpToPx(20f)
+        chip.rippleColor = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.filter_button_ripple))
+        val checkedBackground = ContextCompat.getColor(requireContext(), R.color.text_primary)
+        val uncheckedBackground = ContextCompat.getColor(requireContext(), R.color.segment_shell_surface)
+        val backgroundColors = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(checkedBackground, uncheckedBackground)
+        )
+        chip.chipBackgroundColor = backgroundColors
+        val textColors = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(ContextCompat.getColor(requireContext(), R.color.white), ContextCompat.getColor(requireContext(), R.color.text_primary))
+        )
+        chip.setTextColor(textColors)
+        chip.chipStartPadding = dpToPx(12f)
+        chip.chipEndPadding = dpToPx(12f)
+        chip.tag = if (isAllChip) ALL_SPOTS_TAG else label
+        return chip
+    }
+
+    private fun dpToPx(value: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
     }
 
     fun handleExternalNavigation(showPending: Boolean, highlightBookingId: String?) {
@@ -139,179 +352,77 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         }
     }
 
-    private fun updateSegmentTabs(selectedStatus: BookingStatus) {
-        when (selectedStatus) {
-            BookingStatus.ACTIVE -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-            }
-            BookingStatus.PENDING -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-            }
-            BookingStatus.COMPLETED -> {
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_selected, null))
-            }
-            else -> {
-                // Handle other cases (CONFIRMED, CANCELLED, EXPIRED)
-                binding.segmentedControlContainer.textActive.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textPending.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-                binding.segmentedControlContainer.textCompleted.setTextColor(resources.getColor(R.color.bulky_glass_text_unselected, null))
-            }
-        }
-
-        currentTab = selectedStatus
-    }
-
-    private fun animateTextColor(textView: TextView, isSelected: Boolean) {
-        val fromColor = textView.currentTextColor
-        val target = if (isSelected) R.color.bulky_glass_text_selected else R.color.bulky_glass_text_unselected
-        val toColor = ValueAnimator.ofArgb(fromColor, resources.getColor(target, null))
-        toColor.duration = 200
-        toColor.addUpdateListener { animation ->
-            textView.setTextColor(animation.animatedValue as Int)
-        }
-        toColor.start()
-    }
-
-    private fun animateTextScale(textView: TextView, isSelected: Boolean) {
-        ObjectAnimator.ofFloat(textView, "scaleX", if (isSelected) 1.02f else 1.0f).apply {
-            duration = 160
-            start()
-        }
-        ObjectAnimator.ofFloat(textView, "scaleY", if (isSelected) 1.02f else 1.0f).apply {
-            duration = 160
-            start()
-        }
-    }
-
-    private fun animateTextAlpha(textView: TextView, isSelected: Boolean) {
-        ObjectAnimator.ofFloat(textView, "alpha", if (isSelected) 1.0f else 0.7f).apply {
-            duration = 160
-            start()
-        }
-        ObjectAnimator.ofFloat(textView, "alpha", if (isSelected) 1.0f else 0.7f).apply {
-            duration = 160
-            start()
-        }
-    }
-
     private fun filterBookingsByStatus(status: BookingStatus) {
         android.util.Log.d("BookingsFragment", "filterBookingsByStatus: status=$status, total bookings=${userBookings.size}")
         val filteredBookings: List<BackendBooking> = userBookings.filter {
             mapBackendStatus(it.status) == status
         }
+        val spotFiltered = applySpotFilter(filteredBookings)
+        val sortedBookings = sortBookings(spotFiltered)
         android.util.Log.d("BookingsFragment", "Filtered bookings count: ${filteredBookings.size}")
         
         // Convert to UI bookings before updating adapter
-        val uiBookings = filteredBookings.map { convertToBooking(it) }
+        val uiBookings = sortedBookings.map { convertToBooking(it) }
         updateAdapterWithBookings(uiBookings)
 
         // Update visibility
-        binding.rvBookings.visibility = if (filteredBookings.isEmpty()) View.GONE else View.VISIBLE
-        binding.layoutEmptyState.visibility = if (filteredBookings.isEmpty()) View.VISIBLE else View.GONE
+        binding.rvBookings.visibility = if (spotFiltered.isEmpty()) View.GONE else View.VISIBLE
+        binding.layoutEmptyState.visibility = if (spotFiltered.isEmpty()) View.VISIBLE else View.GONE
         android.util.Log.d("BookingsFragment", "RecyclerView visibility: ${binding.rvBookings.visibility}, EmptyState visibility: ${binding.layoutEmptyState.visibility}")
     }
 
-    private fun handleSegmentSelection(index: Int) {
-        android.util.Log.d("BookingsFragment", "handleSegmentSelection called with index: $index")
-        val newStatus = when (index) {
-            0 -> BookingStatus.ACTIVE
-            1 -> BookingStatus.PENDING
-            2 -> BookingStatus.COMPLETED
-            else -> BookingStatus.ACTIVE
-        }
-        
-        updateSegmentTextColors(newStatus)
+    private fun handleSegmentSelection(newStatus: BookingStatus, userTriggered: Boolean = true) {
+        android.util.Log.d("BookingsFragment", "handleSegmentSelection called with status: $newStatus")
+        updateSegmentVisualState(newStatus)
 
-        android.util.Log.d("BookingsFragment", "Switching from ${currentTab} to ${newStatus}")
         if (newStatus != currentTab) {
-            showToast("Switched to ${getSegmentTitle(newStatus)}")
+            if (userTriggered) {
+                val rootView = binding.segmentedControlContainer.segmentRoot
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    rootView?.performHapticFeedback(
+                        HapticFeedbackConstants.VIRTUAL_KEY,
+                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
+                } else {
+                    rootView?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                }
+                showToast("Switched to ${getSegmentTitle(newStatus)}")
+            }
             currentTab = newStatus
-            showBookingsForStatus(newStatus) // Use the correct method that handles empty states
+            showBookingsForStatus(newStatus)
         }
     }
 
     private fun loadBookingsFromAPI() {
         android.util.Log.d("BookingsFragment", "loadBookingsFromAPI called")
-        // TODO: Implement API loading when backend methods are available
-        // For now, load sample data to demonstrate the enhanced segmented control
-        // Load sample data for demonstration
-        loadSampleBookings()
-        filterBookingsByStatus(currentTab)
+        // Use real API; do not inject sample data
+        loadUserBookings()
     }
 
-    private fun generateSampleBookings(): List<Booking> {
-        return listOf(
-            Booking(
-                id = "1",
-                locationName = "Main Parking Lot",
-                spotName = "A1",
-                vehicleNumber = "ABC123",
-                amount = "₹50.00",
-                status = BookingStatus.ACTIVE,
-                spotId = "spot_1",
-                locationAddress = "123 Main St",
-                startTime = "10:00 AM",
-                endTime = "12:00 PM",
-                duration = "2h 0m",
-                bookingDate = "Today"
-            ),
-            Booking(
-                id = "2", 
-                locationName = "Side Parking",
-                spotName = "B2",
-                vehicleNumber = "XYZ789",
-                amount = "₹30.00",
-                status = BookingStatus.PENDING,
-                spotId = "spot_2",
-                locationAddress = "456 Side St",
-                startTime = "2:00 PM",
-                endTime = "5:00 PM",
-                duration = "3h 0m",
-                bookingDate = "Tomorrow"
-            ),
-            Booking(
-                id = "3",
-                locationName = "Back Parking",
-                spotName = "C3",
-                vehicleNumber = "PQR456",
-                amount = "₹25.00",
-                status = BookingStatus.COMPLETED,
-                spotId = "spot_3",
-                locationAddress = "789 Back St",
-                startTime = "9:00 AM",
-                endTime = "10:00 AM",
-                duration = "1h 0m",
-                bookingDate = "Yesterday"
-            )
-        )
-    }
+    // Removed sample bookings generator
 
         private fun mapBackendBookingToUI(backendBooking: BackendBooking): Booking {
         // TODO: Implement proper mapping when all backend properties are available
+        val loc = parkingLotCache[backendBooking.lotId] ?: (backendBooking.lotId ?: "")
+        val spot = backendBooking.spotId ?: ""
         return Booking(
             id = backendBooking.id ?: "unknown",
-            locationName = "Sample Location",
-            spotName = backendBooking.spotId,
-            vehicleNumber = backendBooking.vehicleNumber ?: "N/A",
-            amount = "₹${backendBooking.amount}",
-            status = when (backendBooking.status) {
+            locationName = loc,
+            spotName = spot,
+            vehicleNumber = backendBooking.vehicleNumber ?: "",
+            amount = backendBooking.amount?.let { "₹${String.format("%.2f", it)}" } ?: "",
+            status = when (backendBooking.status?.lowercase(Locale.ROOT)) {
                 "active" -> BookingStatus.ACTIVE
                 "pending" -> BookingStatus.PENDING
                 "completed" -> BookingStatus.COMPLETED
                 else -> BookingStatus.PENDING
             },
-            spotId = backendBooking.spotId,
-            locationAddress = "Address TBD",
-            startTime = "TBD",
-            endTime = "TBD",
-            duration = "TBD",
-            bookingDate = "TBD"
+            spotId = spot,
+            locationAddress = "",
+            startTime = "",
+            endTime = "",
+            duration = "",
+            bookingDate = ""
         )
     }
 
@@ -333,191 +444,348 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun setupSegmentedControl() {
-        // Wait for views to be laid out before setting up gesture handler
-        binding.segmentedControlContainer.segmentContainer.post {
-            setupEnhancedGestureHandler()
-            initializeSegmentedControlState()
-            applyPendingNavigationIfReady()
-            // Recalculate indicator width/position on layout changes (rotation, font scale)
-            binding.segmentedControlContainer.segmentContainer.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-                val widthChanged = (right - left) != (oldRight - oldLeft)
-                val heightChanged = (bottom - top) != (oldBottom - oldTop)
-                if (widthChanged || heightChanged) {
-                    initializeSegmentedControlState()
-                }
-            }
-        }
-    }
-    
-    /**
-     * Setup the enhanced gesture handler with tap and drag support
-     */
-    private fun setupEnhancedGestureHandler() {
+        val container = binding.segmentedControlContainer
         val segments = listOf(
-            binding.segmentedControlContainer.segmentActive,
-            binding.segmentedControlContainer.segmentPending,
-            binding.segmentedControlContainer.segmentCompleted
+            container.segmentActive to BookingStatus.ACTIVE,
+            container.segmentPending to BookingStatus.PENDING,
+            container.segmentCompleted to BookingStatus.COMPLETED
         )
-        
-        gestureHandler = EnhancedSegmentedControlGestureHandler(
-            context = requireContext(),
-            containerView = binding.segmentedControlContainer.segmentContainer,
-            indicatorView = binding.segmentedControlContainer.segmentIndicator,
-            segments = segments,
-            onSelectionChanged = { index ->
-                handleSegmentSelection(index)
-            },
-            onAccessibilityAnnouncement = { message ->
-                announceForAccessibility(message)
+
+        segments.forEach { (segmentView, status) ->
+            applySegmentRipple(segmentView)
+            segmentView.setOnClickListener {
+                handleSegmentSelection(status)
             }
-        )
-        
-        // Set initial selection to active (index 0) to match layout and currentTab
-        gestureHandler.setSelectedIndex(0, animated = false)
-    }
-    
-    /**
-     * Initialize segmented control visual state
-     */
-    private fun initializeSegmentedControlState() {
-        val indicatorMargin = resources.displayMetrics.density * 4f
-        val indicator = binding.segmentedControlContainer.segmentIndicator
-        val selectedSegment = when (currentTab) {
-            BookingStatus.ACTIVE -> binding.segmentedControlContainer.segmentActive
-            BookingStatus.PENDING -> binding.segmentedControlContainer.segmentPending
-            BookingStatus.COMPLETED -> binding.segmentedControlContainer.segmentCompleted
         }
 
-        if (selectedSegment.width == 0) {
-            indicator.post { initializeSegmentedControlState() }
+        container.segmentGroup.doOnLayout {
+            positionSliderInstantly(getSegmentView(currentTab), currentTab)
+        }
+
+        setupSliderDragGesture()
+
+        updateSegmentVisualState(currentTab)
+        applyPendingNavigationIfReady()
+    }
+
+    private fun updateSegmentVisualState(selectedStatus: BookingStatus) {
+        val container = binding.segmentedControlContainer
+        val isActive = selectedStatus == BookingStatus.ACTIVE
+        val isPending = selectedStatus == BookingStatus.PENDING
+        val isCompleted = selectedStatus == BookingStatus.COMPLETED
+
+        // Animate the previously selected segment out
+        val segments = listOf(
+            container.segmentActive to isActive,
+            container.segmentPending to isPending,
+            container.segmentCompleted to isCompleted
+        )
+
+        segments.forEach { (segment, shouldBeSelected) ->
+            if (segment.isSelected != shouldBeSelected) {
+                // Animate selection change
+                if (shouldBeSelected) {
+                    // Animate in
+                    animateSegmentIn(segment)
+                } else {
+                    // Animate out
+                    animateSegmentOut(segment)
+                }
+                segment.isSelected = shouldBeSelected
+            }
+        }
+
+        animateSegmentSlider(getSegmentView(selectedStatus), selectedStatus)
+    }
+
+    private fun getSegmentView(status: BookingStatus): View {
+        val container = binding.segmentedControlContainer
+        return when (status) {
+            BookingStatus.ACTIVE -> container.segmentActive
+            BookingStatus.PENDING -> container.segmentPending
+            BookingStatus.COMPLETED -> container.segmentCompleted
+            else -> container.segmentActive
+        }
+    }
+
+    private fun positionSliderInstantly(targetSegment: View, targetStatus: BookingStatus) {
+        val container = binding.segmentedControlContainer
+        val slider = container.segmentSlider ?: return
+        val root = container.segmentRoot ?: return
+
+        if (targetSegment.width == 0 || !root.isLaidOut) {
+            root.doOnLayout { positionSliderInstantly(targetSegment, targetStatus) }
             return
         }
 
-        val targetWidth = (selectedSegment.width - indicatorMargin * 2).coerceAtLeast(0f)
-        val layoutParams = indicator.layoutParams
-        val targetWidthInt = targetWidth.toInt()
-        if (layoutParams.width != targetWidthInt) {
-            layoutParams.width = targetWidthInt
-            indicator.layoutParams = layoutParams
-        }
-
-        indicator.x = selectedSegment.x + indicatorMargin
-        updateSegmentTextColors(currentTab)
-
-        // Adjust corner radii at runtime to maintain perfect pill shape
-        adjustGlassCornerRadii()
+        val params = slider.layoutParams
+        params.width = targetSegment.width
+        slider.layoutParams = params
+        slider.translationX = calculateSliderTargetX(targetSegment, root)
+        slider.visibility = View.VISIBLE
+        updateSegmentLabelsForSlider(selectedStatusOverride = targetStatus)
     }
 
-    private fun adjustGlassCornerRadii() {
-        val container = binding.segmentedControlContainer.segmentContainer
-        val indicator = binding.segmentedControlContainer.segmentIndicator
+    private fun animateSegmentSlider(targetSegment: View, targetStatus: BookingStatus) {
+        if (isSliderDragging) return
+        val container = binding.segmentedControlContainer
+        val slider = container.segmentSlider ?: return
+        val root = container.segmentRoot ?: return
 
-        val containerHeight = container.height.toFloat()
-        val indicatorHeight = indicator.height.toFloat()
-        val containerRadius = (containerHeight / 2f).coerceAtLeast(0f)
-        val indicatorRadius = (indicatorHeight / 2f).coerceAtLeast(0f)
+        if (!targetSegment.isLaidOut || !root.isLaidOut || !slider.isLaidOut) {
+            root.post { animateSegmentSlider(targetSegment, targetStatus) }
+            return
+        }
 
-        // Update container background radii (layer-list)
-        (container.background as? android.graphics.drawable.LayerDrawable)?.let { layer ->
-            for (i in 0 until layer.numberOfLayers) {
-                (layer.getDrawable(i) as? android.graphics.drawable.GradientDrawable)?.cornerRadius = containerRadius
+        val targetWidth = targetSegment.width.takeIf { it > 0 } ?: return
+        val targetX = calculateSliderTargetX(targetSegment, root)
+
+        if (slider.visibility != View.VISIBLE) {
+            positionSliderInstantly(targetSegment, targetStatus)
+            return
+        }
+
+        if (slider.translationX == targetX && slider.width == targetWidth) {
+            updateSegmentLabelsForSlider(selectedStatusOverride = targetStatus)
+            return
+        }
+
+        val widthAnimator = ValueAnimator.ofInt(slider.width, targetWidth).apply {
+            addUpdateListener { animator ->
+                val params = slider.layoutParams
+                params.width = animator.animatedValue as Int
+                slider.layoutParams = params
+                updateSegmentLabelsForSlider(
+                    selectedStatusOverride = targetStatus,
+                    allowPostLayout = false
+                )
             }
         }
-        // Update indicator background radii (layer-list)
-        (indicator.background as? android.graphics.drawable.LayerDrawable)?.let { layer ->
-            for (i in 0 until layer.numberOfLayers) {
-                (layer.getDrawable(i) as? android.graphics.drawable.GradientDrawable)?.cornerRadius = indicatorRadius
+
+        val translationAnimator = ObjectAnimator.ofFloat(
+            slider,
+            View.TRANSLATION_X,
+            slider.translationX,
+            targetX
+        ).apply {
+            addUpdateListener {
+                updateSegmentLabelsForSlider(
+                    selectedStatusOverride = targetStatus,
+                    allowPostLayout = false
+                )
             }
+            doOnEnd {
+                updateSegmentLabelsForSlider(
+                    selectedStatusOverride = targetStatus,
+                    allowPostLayout = false
+                )
+            }
+        }
+
+        AnimatorSet().apply {
+            playTogether(widthAnimator, translationAnimator)
+            duration = 280
+            interpolator = OvershootInterpolator(0.55f)
+            start()
+        }
+    }
+
+    private fun updateSegmentLabelsForSlider(
+        sliderCenterOverride: Float? = null,
+        selectedStatusOverride: BookingStatus? = null,
+        allowPostLayout: Boolean = true
+    ) {
+        val container = binding.segmentedControlContainer
+        val slider = container.segmentSlider ?: return
+        val root = container.segmentRoot ?: return
+
+        val needsLayout = !root.isLaidOut ||
+            slider.width == 0 ||
+            container.segmentActive.width == 0 ||
+            container.segmentPending.width == 0 ||
+            container.segmentCompleted.width == 0
+
+        if (needsLayout) {
+            if (allowPostLayout) {
+                root.doOnLayout {
+                    updateSegmentLabelsForSlider(
+                        sliderCenterOverride,
+                        selectedStatusOverride,
+                        false
+                    )
+                }
+            }
+            return
+        }
+
+        val sliderCenter = sliderCenterOverride ?: (slider.translationX + slider.width / 2f)
+        val selection = selectedStatusOverride ?: currentTab
+
+        val segments = listOf(
+            Triple(BookingStatus.ACTIVE, container.segmentActive, container.textActive),
+            Triple(BookingStatus.PENDING, container.segmentPending, container.textPending),
+            Triple(BookingStatus.COMPLETED, container.segmentCompleted, container.textCompleted)
+        )
+
+        segments.forEach { (status, segment, label) ->
+            val width = segment.width
+            if (width == 0) return@forEach
+            val segmentCenter = segment.left + width / 2f
+            val distance = abs(sliderCenter - segmentCenter)
+            val influenceRadius = (width * 0.9f).coerceAtLeast(1f)
+            val emphasis = (1f - (distance / influenceRadius)).coerceIn(0f, 1f)
+            val blendedColor = blendColors(unselectedLabelColor, selectedLabelColor, emphasis)
+            if (label.currentTextColor != blendedColor) {
+                label.setTextColor(blendedColor)
+            }
+            val scale = 0.94f + 0.06f * emphasis
+            label.scaleX = scale
+            label.scaleY = scale
+            label.alpha = 0.6f + 0.4f * emphasis
+            label.isSelected = status == selection
+        }
+    }
+
+    @ColorInt
+    private fun blendColors(@ColorInt fromColor: Int, @ColorInt toColor: Int, ratio: Float): Int {
+        val clamped = ratio.coerceIn(0f, 1f)
+        val inverse = 1f - clamped
+        val a = (Color.alpha(fromColor) * inverse + Color.alpha(toColor) * clamped).roundToInt()
+        val r = (Color.red(fromColor) * inverse + Color.red(toColor) * clamped).roundToInt()
+        val g = (Color.green(fromColor) * inverse + Color.green(toColor) * clamped).roundToInt()
+        val b = (Color.blue(fromColor) * inverse + Color.blue(toColor) * clamped).roundToInt()
+        return Color.argb(a, r, g, b)
+    }
+
+    private fun calculateSliderTargetX(targetSegment: View, root: View): Float {
+        val segmentLeft = targetSegment.left.toFloat()
+        return segmentLeft.coerceIn(0f, (root.width - targetSegment.width).coerceAtLeast(0).toFloat())
+    }
+
+    private fun animateSegmentIn(segment: View) {
+        // Subtle scale up and fade in for selected state
+        val scaleX = ObjectAnimator.ofFloat(segment, "scaleX", 0.98f, 1.0f)
+        val scaleY = ObjectAnimator.ofFloat(segment, "scaleY", 0.98f, 1.0f)
+        val alpha = ObjectAnimator.ofFloat(segment, "alpha", 0.7f, 1.0f)
+        
+        val animatorSet = AnimatorSet()
+        animatorSet.playTogether(scaleX, scaleY, alpha)
+        animatorSet.duration = 200
+        animatorSet.interpolator = DecelerateInterpolator()
+        animatorSet.start()
+    }
+
+    private fun animateSegmentOut(segment: View) {
+        // Subtle scale down and fade out for unselected state
+        val scaleX = ObjectAnimator.ofFloat(segment, "scaleX", 1.0f, 0.98f)
+        val scaleY = ObjectAnimator.ofFloat(segment, "scaleY", 1.0f, 0.98f)
+        val alpha = ObjectAnimator.ofFloat(segment, "alpha", 1.0f, 0.85f)
+        
+        val animatorSet = AnimatorSet()
+        animatorSet.playTogether(scaleX, scaleY, alpha)
+        animatorSet.duration = 200
+        animatorSet.interpolator = DecelerateInterpolator()
+        animatorSet.start()
+    }
+
+    private fun setupSliderDragGesture() {
+        val container = binding.segmentedControlContainer
+        container.segmentRoot?.setOnTouchListener { view, event ->
+            val slider = container.segmentSlider ?: return@setOnTouchListener false
+            if (!slider.isShown || slider.width == 0) {
+                return@setOnTouchListener false
+            }
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    val sliderStart = slider.translationX
+                    val sliderEnd = sliderStart + slider.width
+                    val withinSlider = event.x in sliderStart..sliderEnd
+                    if (withinSlider) {
+                        isSliderDragging = true
+                        sliderDragOffset = event.x - sliderStart
+                        view.parent?.requestDisallowInterceptTouchEvent(true)
+                        true
+                    } else {
+                        isSliderDragging = false
+                        false
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (!isSliderDragging) return@setOnTouchListener false
+                    val desiredTranslation = event.x - sliderDragOffset
+                    slider.translationX = clampSliderTranslation(desiredTranslation, view, slider)
+                    updateSegmentLabelsForSlider()
+                    true
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (!isSliderDragging) return@setOnTouchListener false
+                    isSliderDragging = false
+                    view.parent?.requestDisallowInterceptTouchEvent(false)
+                    val status = determineNearestStatus(slider, view)
+                    handleSegmentSelection(status)
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun clampSliderTranslation(desiredTranslation: Float, root: View, slider: View): Float {
+        val min = 0f
+        val max = (root.width - slider.width).coerceAtLeast(0).toFloat()
+        return desiredTranslation.coerceIn(min, max)
+    }
+
+    private fun determineNearestStatus(slider: View, root: View): BookingStatus {
+        val sliderCenter = slider.translationX + slider.width / 2f
+        val container = binding.segmentedControlContainer
+        val centers = listOf(
+            BookingStatus.ACTIVE to container.segmentActive,
+            BookingStatus.PENDING to container.segmentPending,
+            BookingStatus.COMPLETED to container.segmentCompleted
+        )
+        return centers.minByOrNull { (_, view) ->
+            abs(sliderCenter - (view.left + view.width / 2f))
+        }?.first ?: currentTab
+    }
+
+    private fun applySegmentRipple(segment: View) {
+        val rippleColor = RippleUtils.convertToRippleDrawableColor(
+            ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.segment_ripple_active))
+        )
+        val cornerRadius = resources.getDimension(R.dimen.segmented_control_height) / 2f
+        val shapeAppearance = ShapeAppearanceModel.builder()
+            .setAllCornerSizes(cornerRadius)
+            .build()
+        val mask = MaterialShapeDrawable(shapeAppearance).apply {
+            fillColor = ColorStateList.valueOf(Color.WHITE)
+        }
+        val ripple = RippleDrawable(rippleColor, ColorDrawable(Color.TRANSPARENT), mask)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            segment.foreground = ripple
+        } else {
+            segment.background = ripple
         }
     }
     
     /**
-     * Handle segment selection from gesture handler
+     * Handle segment selection from tap
      */
     override fun onDestroyView() {
-        if (::gestureHandler.isInitialized) {
-            gestureHandler.cleanup()
-        }
+        sortBottomSheetDialog?.dismiss()
+        sortBottomSheetDialog = null
         toggleBackgroundBlur(false)
         super.onDestroyView()
     }
 
-    private fun updateSegmentTextColors(selectedStatus: BookingStatus) {
-        // Enhanced cross-fade animation for text color transitions (140ms as specified)
-        val fadeDuration = 140L
-        
-        // Reset all to unselected color with fade animation
-        animateTextColor(binding.segmentedControlContainer.textActive, resources.getColor(R.color.bulky_glass_text_unselected, null), fadeDuration)
-        animateTextColor(binding.segmentedControlContainer.textPending, resources.getColor(R.color.bulky_glass_text_unselected, null), fadeDuration)
-        animateTextColor(binding.segmentedControlContainer.textCompleted, resources.getColor(R.color.bulky_glass_text_unselected, null), fadeDuration)
-
-        // Set selected to primary color with fade animation
-        when (selectedStatus) {
-            BookingStatus.ACTIVE -> {
-                animateTextColor(binding.segmentedControlContainer.textActive, resources.getColor(R.color.bulky_glass_text_selected, null), fadeDuration)
-                // Optional subtle scale effect for selected text
-                animateTextScale(binding.segmentedControlContainer.textActive, 1.02f, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textPending, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textCompleted, fadeDuration)
-            }
-            BookingStatus.PENDING -> {
-                animateTextColor(binding.segmentedControlContainer.textPending, resources.getColor(R.color.bulky_glass_text_selected, null), fadeDuration)
-                animateTextScale(binding.segmentedControlContainer.textPending, 1.02f, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textActive, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textCompleted, fadeDuration)
-            }
-            BookingStatus.COMPLETED -> {
-                animateTextColor(binding.segmentedControlContainer.textCompleted, resources.getColor(R.color.bulky_glass_text_selected, null), fadeDuration)
-                animateTextScale(binding.segmentedControlContainer.textCompleted, 1.02f, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textActive, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textPending, fadeDuration)
-            }
-            else -> {
-                // Handle other booking statuses (CONFIRMED, CANCELLED, EXPIRED)
-                resetTextScale(binding.segmentedControlContainer.textActive, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textPending, fadeDuration)
-                resetTextScale(binding.segmentedControlContainer.textCompleted, fadeDuration)
-            }
-        }
-    }
-
-    private fun animateTextColor(textView: TextView, targetColor: Int, duration: Long) {
-        val currentColor = textView.currentTextColor
-        val colorAnimator = ValueAnimator.ofArgb(currentColor, targetColor).apply {
-            this.duration = duration
-            addUpdateListener { animator ->
-                textView.setTextColor(animator.animatedValue as Int)
-            }
-        }
-        colorAnimator.start()
-    }
-
-    private fun animateTextScale(textView: TextView, targetScale: Float, duration: Long) {
-        ObjectAnimator.ofFloat(textView, "scaleX", targetScale).apply {
-            this.duration = duration
-            start()
-        }
-        ObjectAnimator.ofFloat(textView, "scaleY", targetScale).apply {
-            this.duration = duration
-            start()
-        }
-    }
-
-    private fun resetTextScale(textView: TextView, duration: Long) {
-        ObjectAnimator.ofFloat(textView, "scaleX", 1.0f).apply {
-            this.duration = duration
-            start()
-        }
-        ObjectAnimator.ofFloat(textView, "scaleY", 1.0f).apply {
-            this.duration = duration
-            start()
-        }
-    }
-
     private fun showBookingsForStatus(status: BookingStatus) {
+        updateSegmentBadges()
         val filteredBookings = userBookings.filter { mapBackendStatus(it.status) == status }
+        val spotFiltered = applySpotFilter(filteredBookings)
+        val dateFiltered = applyDateFilter(spotFiltered)
+        val sortedBookings = sortBookings(dateFiltered)
         
-        if (filteredBookings.isEmpty()) {
+        if (sortedBookings.isEmpty()) {
             // Show empty state
             binding.rvBookings.visibility = View.GONE
             binding.layoutEmptyState.visibility = View.VISIBLE
@@ -547,9 +815,309 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             binding.layoutEmptyState.visibility = View.GONE
             
             // Convert to UI bookings before updating adapter
-            val uiBookings = filteredBookings.map { convertToBooking(it) }
+            val uiBookings = sortedBookings.map { convertToBooking(it) }
             updateAdapterWithBookings(uiBookings)
         }
+    }
+
+    private fun updateSegmentBadges() {
+        val active = userBookings.count { mapBackendStatus(it.status) == BookingStatus.ACTIVE }
+        val pending = userBookings.count { mapBackendStatus(it.status) == BookingStatus.PENDING }
+        val completed = userBookings.count { mapBackendStatus(it.status) == BookingStatus.COMPLETED }
+
+        val container = binding.segmentedControlContainer
+        setBadgeState(container.badgeActive, active)
+        setBadgeState(container.badgePending, pending)
+        setBadgeState(container.badgeCompleted, completed)
+    }
+
+    private fun sortBookings(bookings: List<BackendBooking>): List<BackendBooking> {
+        return when (currentSortOption) {
+            BookingSortOption.NEWEST_FIRST -> bookings.sortedByDescending { getComparableTimestamp(it) }
+            BookingSortOption.OLDEST_FIRST -> bookings.sortedBy { getComparableTimestamp(it) }
+        }
+    }
+
+    private fun applySpotFilter(bookings: List<BackendBooking>): List<BackendBooking> {
+        val selection = selectedSpotFilter?.takeUnless { it.isBlank() } ?: return bookings
+        val normalized = selection.lowercase(Locale.ROOT)
+        return bookings.filter {
+            val label = getSpotLabel(it).trim().lowercase(Locale.ROOT)
+            label == normalized
+        }
+    }
+
+    private fun applyDateFilter(bookings: List<BackendBooking>): List<BackendBooking> {
+        val startDate = filterStartDate
+        val endDate = filterEndDate
+        
+        if (startDate == null && endDate == null) return bookings
+        
+        return bookings.filter { booking ->
+            val bookingTime = booking.checkInTime?.time ?: booking.createdAt?.time ?: return@filter true
+            
+            when {
+                startDate != null && endDate != null -> {
+                    bookingTime >= startDate && bookingTime <= endDate + 86400000L // Add 24h to include end date
+                }
+                startDate != null -> bookingTime >= startDate
+                endDate != null -> bookingTime <= endDate + 86400000L
+                else -> true
+            }
+        }
+    }
+
+    private fun setupDateFilter(sheetBinding: BottomSheetBookingFiltersBinding) {
+        // Update date display
+        updateDateDisplay(sheetBinding)
+        
+        // Start date picker with haptic feedback and scale animation
+        sheetBinding.cardStartDate.setOnClickListener { view ->
+            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            animateCardPress(view)
+            showMinimalDatePicker(
+                title = "Select Start Date",
+                selectedDate = filterStartDate,
+                maxDate = filterEndDate
+            ) { selectedDate ->
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                filterStartDate = selectedDate
+                updateDateDisplay(sheetBinding)
+                animateDateSelected(sheetBinding.textStartDate)
+                showBookingsForStatus(currentTab)
+            }
+        }
+        
+        // End date picker with haptic feedback and scale animation
+        sheetBinding.cardEndDate.setOnClickListener { view ->
+            view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            animateCardPress(view)
+            showMinimalDatePicker(
+                title = "Select End Date",
+                selectedDate = filterEndDate,
+                minDate = filterStartDate
+            ) { selectedDate ->
+                view.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                filterEndDate = selectedDate
+                updateDateDisplay(sheetBinding)
+                animateDateSelected(sheetBinding.textEndDate)
+                showBookingsForStatus(currentTab)
+            }
+        }
+        
+        // Clear date filter with haptic feedback
+        sheetBinding.buttonClearDateFilter.setOnClickListener { view ->
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            filterStartDate = null
+            filterEndDate = null
+            updateDateDisplay(sheetBinding)
+            animateClearFilter(sheetBinding)
+            showBookingsForStatus(currentTab)
+        }
+    }
+
+    private fun animateCardPress(view: View) {
+        view.animate()
+            .scaleX(0.95f)
+            .scaleY(0.95f)
+            .setDuration(100)
+            .withEndAction {
+                view.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(100)
+                    .start()
+            }
+            .start()
+    }
+
+    private fun animateDateSelected(textView: TextView) {
+        textView.alpha = 0f
+        textView.animate()
+            .alpha(1f)
+            .setDuration(300)
+            .start()
+    }
+
+    private fun animateClearFilter(sheetBinding: BottomSheetBookingFiltersBinding) {
+        listOf(sheetBinding.textStartDate, sheetBinding.textEndDate).forEach { textView ->
+            textView.animate()
+                .alpha(0.5f)
+                .setDuration(150)
+                .withEndAction {
+                    textView.animate()
+                        .alpha(1f)
+                        .setDuration(150)
+                        .start()
+                }
+                .start()
+        }
+    }
+
+    private fun updateDateDisplay(sheetBinding: BottomSheetBookingFiltersBinding) {
+        val dateFormat = java.text.SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        
+        sheetBinding.textStartDate.text = filterStartDate?.let { 
+            dateFormat.format(java.util.Date(it)) 
+        } ?: "Select Date"
+        
+        sheetBinding.textEndDate.text = filterEndDate?.let { 
+            dateFormat.format(java.util.Date(it)) 
+        } ?: "Select Date"
+        
+        // Show/hide clear button with animation
+        val shouldShow = filterStartDate != null || filterEndDate != null
+        if (shouldShow && sheetBinding.buttonClearDateFilter.visibility != View.VISIBLE) {
+            sheetBinding.buttonClearDateFilter.alpha = 0f
+            sheetBinding.buttonClearDateFilter.visibility = View.VISIBLE
+            sheetBinding.buttonClearDateFilter.animate()
+                .alpha(1f)
+                .setDuration(200)
+                .start()
+        } else if (!shouldShow && sheetBinding.buttonClearDateFilter.visibility == View.VISIBLE) {
+            sheetBinding.buttonClearDateFilter.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .withEndAction {
+                    sheetBinding.buttonClearDateFilter.visibility = View.GONE
+                }
+                .start()
+        }
+    }
+
+    private fun showMinimalDatePicker(
+        title: String,
+        selectedDate: Long? = null,
+        minDate: Long? = null,
+        maxDate: Long? = null,
+        onDateSelected: (Long) -> Unit
+    ) {
+        val calendar = java.util.Calendar.getInstance()
+        selectedDate?.let { calendar.timeInMillis = it }
+        
+        // Build constraints
+        val constraintsBuilder = com.google.android.material.datepicker.CalendarConstraints.Builder()
+        
+        minDate?.let { 
+            constraintsBuilder.setStart(it)
+        }
+        maxDate?.let { 
+            constraintsBuilder.setEnd(it)
+        }
+        
+        // Create date picker with custom theme, smooth animations, and haptic feedback
+        val datePickerDialog = com.google.android.material.datepicker.MaterialDatePicker.Builder.datePicker()
+            .setTitleText(title)
+            .setSelection(selectedDate ?: calendar.timeInMillis)
+            .setTheme(R.style.CustomDatePickerTheme)
+            .setCalendarConstraints(constraintsBuilder.build())
+            .build()
+        
+        // Add haptic feedback on positive button (Confirm)
+        datePickerDialog.addOnPositiveButtonClickListener { selection ->
+            view?.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+            onDateSelected(selection)
+        }
+        
+        // Add subtle haptic feedback on negative button (Cancel)
+        datePickerDialog.addOnNegativeButtonClickListener {
+            view?.performHapticFeedback(HapticFeedbackConstants.REJECT)
+        }
+        
+        // Add subtle haptic feedback on dismiss
+        datePickerDialog.addOnDismissListener {
+            view?.performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+        }
+        
+        datePickerDialog.show(parentFragmentManager, "DATE_PICKER")
+        
+        // Apply smooth backdrop animation and setup date selection haptics
+        Handler(Looper.getMainLooper()).postDelayed({
+            datePickerDialog.dialog?.window?.apply {
+                setDimAmount(0.5f)
+                attributes?.windowAnimations = R.style.DatePickerDialogAnimation
+            }
+            
+            // Add haptic feedback for date cell selections
+            setupDatePickerHaptics(datePickerDialog)
+        }, 50)
+    }
+    
+    private fun setupDatePickerHaptics(datePickerDialog: com.google.android.material.datepicker.MaterialDatePicker<Long>) {
+        try {
+            // Find the calendar view and add touch listeners for haptic feedback
+            datePickerDialog.dialog?.findViewById<View>(com.google.android.material.R.id.month_grid)?.let { monthGrid ->
+                if (monthGrid is ViewGroup) {
+                    addHapticToDateCells(monthGrid)
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.d("BookingsFragment", "Could not add haptics to date cells: ${e.message}")
+        }
+    }
+    
+    private fun addHapticToDateCells(viewGroup: ViewGroup) {
+        for (i in 0 until viewGroup.childCount) {
+            val child = viewGroup.getChildAt(i)
+            if (child is ViewGroup) {
+                addHapticToDateCells(child)
+            } else {
+                // Add subtle haptic feedback and scale animation on date cell touch
+                child.setOnTouchListener { v, event ->
+                    when (event.action) {
+                        MotionEvent.ACTION_DOWN -> {
+                            // Haptic feedback
+                            v.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                            
+                            // Subtle scale animation
+                            v.animate()
+                                .scaleX(1.08f)
+                                .scaleY(1.08f)
+                                .setDuration(75)
+                                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                                .start()
+                        }
+                        MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                            // Scale back to normal
+                            v.animate()
+                                .scaleX(1.0f)
+                                .scaleY(1.0f)
+                                .setDuration(75)
+                                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                                .start()
+                        }
+                    }
+                    false // Don't consume the event
+                }
+            }
+        }
+    }
+
+    private fun getComparableTimestamp(booking: BackendBooking): Long {
+        return booking.checkInTime?.time
+            ?: booking.createdAt?.time
+            ?: abs(booking.id?.hashCode() ?: 0).toLong()
+    }
+
+    private fun getSpotLabel(booking: BackendBooking): String {
+        val spotId = booking.spotId?.takeIf { it.isNotBlank() } ?: return ""
+        return parkingSpotCache[spotId] ?: spotId
+    }
+
+    private fun ensureSpotFilterIsValid() {
+        val currentSelection = selectedSpotFilter?.lowercase(Locale.ROOT) ?: return
+        val hasMatch = userBookings.any {
+            val label = getSpotLabel(it).trim()
+            label.isNotEmpty() && label.lowercase(Locale.ROOT) == currentSelection
+        }
+        if (!hasMatch) {
+            selectedSpotFilter = null
+        }
+    }
+
+    private fun setBadgeState(badge: TextView, @Suppress("UNUSED_PARAMETER") count: Int) {
+        // Hide badge counts per latest design; leave the view gone regardless of data
+        badge.visibility = View.GONE
     }
 
     private fun updateAdapterWithBookings(bookings: List<Booking>) {
@@ -594,19 +1162,21 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     loadParkingDataCache()
                 }
                 
-                // Get user bookings from backend using real user ID (with legacy fallback)
+                // Get user bookings from backend using real user ID
                 val primary = ApiClient.apiService.getUserBookings(userId)
                 val backendBookings = if (primary.isSuccessful) {
                     primary.body() ?: emptyList()
+                } else if (primary.code() == 404) {
+                    emptyList()
                 } else {
-                    val legacy = ApiClient.apiService.getUserBookingsLegacy(userId)
-                    if (legacy.isSuccessful) legacy.body() ?: emptyList() else emptyList()
+                    emptyList()
                 }
                 if (backendBookings.isNotEmpty()) {
                     
                     // Convert backend bookings to UI bookings
                     userBookings.clear()
                     userBookings.addAll(backendBookings)
+                    ensureSpotFilterIsValid()
 
                     backendBookings.forEach { booking ->
                         android.util.Log.d(
@@ -620,6 +1190,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 } else {
                     // No bookings found - show empty state
                     userBookings.clear()
+                    selectedSpotFilter = null
                     showBookingsForStatus(currentTab)
                 }
                 
@@ -640,26 +1211,12 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         val request = pendingNavigationRequest ?: return
         if (!isAdded || view == null) return
 
-        if (!::gestureHandler.isInitialized) {
-            binding.segmentedControlContainer.segmentContainer.post { applyPendingNavigationIfReady() }
-            return
-        }
-
         pendingNavigationRequest = null
 
         val targetStatus = if (request.showPending) BookingStatus.PENDING else BookingStatus.ACTIVE
         pendingHighlightBookingId = request.highlightBookingId
 
-        val targetIndex = when (targetStatus) {
-            BookingStatus.ACTIVE -> 0
-            BookingStatus.PENDING -> 1
-            BookingStatus.COMPLETED -> 2
-        }
-
-        gestureHandler.setSelectedIndex(targetIndex, animated = true)
-        updateSegmentTextColors(targetStatus)
-        currentTab = targetStatus
-        showBookingsForStatus(targetStatus)
+        handleSegmentSelection(targetStatus, userTriggered = false)
     }
     
     private suspend fun loadParkingDataCache() {
@@ -687,15 +1244,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                 }
             }
             
-            // Also load all parking spots directly
-            val spotsResponse = ApiClient.apiService.getParkingSpots()
-            if (spotsResponse.isSuccessful) {
-                spotsResponse.body()?.forEach { spot ->
-                    val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
-                    parkingSpotCache[spot.id] = spotName
-                    android.util.Log.d("BookingsFragment", "Cached spot: ${spot.id} -> ${spotName}")
-                }
-            }
+            // Avoid admin-only all-spots endpoint; rely on by-lot cache above
             
             isCacheLoaded = true
             android.util.Log.d("BookingsFragment", "Cache loaded: ${parkingLotCache.size} lots, ${parkingSpotCache.size} spots")
@@ -705,132 +1254,19 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         }
     }
 
-    private fun loadSampleBookings() {
-        // NOTE: This is fallback sample data shown only when:
-        // 1. User is not logged in, OR
-        // 2. API call fails due to network/server errors
-        // In normal operation, real user bookings from the backend are displayed
-        
-        // Populate cache with sample location and spot names
-        if (!isCacheLoaded) {
-            parkingLotCache["Downtown Mall Parking"] = "Phoenix Mall"
-            parkingLotCache["Office Complex"] = "Tech Park Business Center"
-            parkingLotCache["Shopping Center"] = "City Square Mall"
-            
-            parkingSpotCache["A-12"] = "North Wing - A12"
-            parkingSpotCache["B-05"] = "South Wing - B05"
-            parkingSpotCache["C-08"] = "East Wing - C08"
-            
-            isCacheLoaded = true
-        }
-        
-        // Create sample date/time data
-        val calendar = Calendar.getInstance()
-        val today = calendar.time
-        
-        // Create active booking (started 1 hour ago, ends in 1 hour)
-        calendar.add(Calendar.HOUR, -1)
-        val activeStartTime = calendar.time
-        calendar.add(Calendar.HOUR, 2)
-        val activeEndTime = calendar.time
-        
-        // Create completed booking (yesterday)
-        calendar.add(Calendar.DAY_OF_MONTH, -1)
-        calendar.set(Calendar.HOUR_OF_DAY, 10)
-        calendar.set(Calendar.MINUTE, 0)
-        val completedStartTime = calendar.time
-        calendar.add(Calendar.HOUR, 2)
-        val completedEndTime = calendar.time
-        val completedCreatedAt = completedStartTime
-        
-        // Create pending booking (tomorrow)
-        calendar.time = today
-        calendar.add(Calendar.DAY_OF_MONTH, 1)
-        calendar.set(Calendar.HOUR_OF_DAY, 14)
-        calendar.set(Calendar.MINUTE, 0)
-        val pendingStartTime = calendar.time
-        calendar.add(Calendar.HOUR, 3)
-        val pendingEndTime = calendar.time
-        val pendingCreatedAt = today
-        
-        // Create sample bookings for demonstration using Booking model
-        val sampleBookings = listOf(
-            BackendBooking(
-                id = "BK001",
-                userId = "user123",
-                lotId = "Downtown Mall Parking",
-                spotId = "A-12",
-                status = "active",
-                amount = 150.0,
-                vehicleNumber = "MH01AB1234",
-                checkInTime = activeStartTime,
-                checkOutTime = activeEndTime,
-                createdAt = today
-            ),
-            BackendBooking(
-                id = "BK002",
-                userId = "user123",
-                lotId = "Office Complex",
-                spotId = "B-05",
-                status = "completed",
-                amount = 200.0,
-                vehicleNumber = "MH01AB1234",
-                checkInTime = completedStartTime,
-                checkOutTime = completedEndTime,
-                createdAt = completedCreatedAt
-            ),
-            BackendBooking(
-                id = "BK003",
-                userId = "user123",
-                lotId = "Shopping Center",
-                spotId = "C-08",
-                status = "pending",
-                amount = 180.0,
-                vehicleNumber = "MH01AB1234",
-                checkInTime = pendingStartTime,
-                checkOutTime = pendingEndTime,
-                createdAt = pendingCreatedAt
-            )
-        )
-        
-        userBookings.clear()
-        userBookings.addAll(sampleBookings)
-        showBookingsForStatus(currentTab)
-    }
+    // Removed sample bookings loader; rely on backend only
 
     private fun convertToBooking(backendBooking: BackendBooking): Booking {
         // Get parking location name from cache, fallback to generated name
-        val parkingLocation = parkingLotCache[backendBooking.lotId] ?: when (backendBooking.lotId) {
-            "1", "101" -> "City Mall Parking"
-            "2", "102" -> "Airport Terminal"
-            "3", "103" -> "Shopping Center"
-            "4", "104" -> "Business District"
-            "5", "105" -> "Metro Station"
-            else -> "Parking Lot ${backendBooking.lotId}"
-        }
+        val parkingLocation = parkingLotCache[backendBooking.lotId]
+            ?: (backendBooking.lotId ?: "Unknown Lot")
         
         // Get spot name from cache with debug logging
         val spotId = backendBooking.spotId ?: "Unknown"
         android.util.Log.d("BookingsFragment", "Looking up spot: $spotId in cache (${parkingSpotCache.size} entries)")
         
-        val spotName = parkingSpotCache[spotId]?.also { 
-            android.util.Log.d("BookingsFragment", "Found spot name: $it for ID: $spotId")
-        } ?: run {
-            android.util.Log.d("BookingsFragment", "Spot $spotId not found in cache, using fallback")
-            // Fallback to generated name
-            when {
-                spotId.toIntOrNull() != null -> {
-                    val spotNum = spotId.toInt()
-                    when {
-                        spotNum <= 20 -> "A-${spotNum}"
-                        spotNum <= 40 -> "B-${spotNum - 20}"
-                        spotNum <= 60 -> "C-${spotNum - 40}"
-                        else -> "D-${spotNum - 60}"
-                    }
-                }
-                else -> spotId
-            }
-        }
+        val spotName = parkingSpotCache[spotId]
+            ?: spotId
         
         // Format date and time from backend data
         val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -854,11 +1290,11 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
             id = backendBooking.id ?: "Unknown",
             locationName = parkingLocation,
             spotName = spotName,
-            vehicleNumber = backendBooking.vehicleNumber ?: "Vehicle not specified",
-            amount = "₹${String.format("%.2f", backendBooking.amount)}",
+            vehicleNumber = backendBooking.vehicleNumber ?: "",
+            amount = if (backendBooking.amount != null) "₹${String.format("%.2f", backendBooking.amount)}" else "",
             status = mapBackendStatus(backendBooking.status),
-            spotId = backendBooking.spotId ?: "Unknown",
-            locationAddress = "Address TBD",
+            spotId = backendBooking.spotId ?: "",
+            locationAddress = "",
             startTime = startTime,
             endTime = endTime,
             duration = duration,
@@ -900,6 +1336,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     companion object {
+        private const val ALL_SPOTS_TAG = "__ALL_SPOTS__"
         private val PENDING_STATUSES = setOf(
             "pending",
             "created",

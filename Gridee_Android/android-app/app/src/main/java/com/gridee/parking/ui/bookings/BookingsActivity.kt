@@ -247,29 +247,11 @@ class BookingsActivity : BaseActivityWithBottomNav<ActivityBookingsBinding>() {
         val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
         val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
         
-        // Generate better parking location names based on lot ID
-        val parkingLocation = when (backendBooking.lotId) {
-            "1", "101" -> "City Mall Parking"
-            "2", "102" -> "Airport Terminal"
-            "3", "103" -> "Shopping Center"
-            "4", "104" -> "Business District"
-            "5", "105" -> "Metro Station"
-            else -> "Parking Lot ${backendBooking.lotId}"
-        }
+        // Use backend lot ID or cached name; avoid injecting dummy names
+        val parkingLocation = backendBooking.lotId ?: "Unknown Lot"
         
-        // Generate better spot names
-        val spotName = when {
-            backendBooking.spotId.toIntOrNull() != null -> {
-                val spotNum = backendBooking.spotId.toInt()
-                when {
-                    spotNum <= 20 -> "A-${spotNum}"
-                    spotNum <= 40 -> "B-${spotNum - 20}"
-                    spotNum <= 60 -> "C-${spotNum - 40}"
-                    else -> "D-${spotNum - 60}"
-                }
-            }
-            else -> backendBooking.spotId
-        }
+        // Use spot ID directly without generating pseudo names
+        val spotName = backendBooking.spotId
         
         return Booking(
             id = backendBooking.id ?: "Unknown",

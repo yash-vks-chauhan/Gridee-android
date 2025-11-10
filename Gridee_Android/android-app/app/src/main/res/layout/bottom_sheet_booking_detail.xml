@@ -2,6 +2,7 @@
 <androidx.core.widget.NestedScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bottom_sheet_background">
@@ -85,7 +86,8 @@
                     android:id="@+id/tv_spot_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Spot: A-15"
+                    android:text=""
+                    tools:text="Spot: A-15"
                     android:textSize="16sp"
                     android:textStyle="bold"/>
 
@@ -94,7 +96,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Lot ID: 101"
+                    android:text=""
+                    tools:text="Lot ID: 101"
                     android:textSize="14sp"/>
 
                 <TextView
@@ -102,7 +105,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Vehicle: DL01AB1234"
+                    android:text=""
+                    tools:text="Vehicle: DL01AB1234"
                     android:textSize="14sp"/>
 
                 <View
@@ -116,7 +120,8 @@
                     android:id="@+id/tv_check_in_time"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Check-in: Oct 24, 2025 at 10:00 AM"
+                    android:text=""
+                    tools:text="Check-in: Oct 24, 2025 at 10:00 AM"
                     android:textSize="14sp"/>
 
                 <TextView
@@ -124,7 +129,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Check-out: Oct 24, 2025 at 06:00 PM"
+                    android:text=""
+                    tools:text="Check-out: Oct 24, 2025 at 06:00 PM"
                     android:textSize="14sp"/>
 
                 <!-- Live countdown to scheduled checkout (with 10-min grace) -->
@@ -133,7 +139,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Time left: 02:00:00"
+                    android:text=""
+                    tools:text="Time left: 02:00:00"
                     android:textColor="@color/booking_sheet_secondary_text"
                     android:textSize="13sp"/>
 
@@ -193,6 +200,16 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/btn_extend_booking"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="8dp"
+            android:text="Extend Booking"
+            android:textSize="14sp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:visibility="gone"/>
 
         <Button

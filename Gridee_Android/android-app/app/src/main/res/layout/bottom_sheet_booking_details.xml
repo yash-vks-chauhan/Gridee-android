@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bottom_sheet_background"
@@ -151,7 +152,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="City Mall Parking"
+                        android:text=""
+                        tools:text="City Mall Parking"
                         android:textColor="#1E1E1E"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -192,7 +194,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Spot A-15"
+                        android:text=""
+                        tools:text="Spot A-15"
                         android:textColor="#1E1E1E"
                         android:textSize="16sp"
                         android:textStyle="bold" />

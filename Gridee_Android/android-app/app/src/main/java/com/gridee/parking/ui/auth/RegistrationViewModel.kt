@@ -5,10 +5,9 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewModelScope
 import com.gridee.parking.data.model.User
-import com.gridee.parking.data.model.AuthResponse
 import com.gridee.parking.data.model.UserRegistration
+import com.gridee.parking.data.repository.ParkingRepository
 import com.gridee.parking.data.repository.UserRepository
 import com.gridee.parking.utils.JwtTokenManager
 import kotlinx.coroutines.launch
@@ -17,12 +16,22 @@ import java.security.MessageDigest
 class RegistrationViewModel : ViewModel() {
     
     private val userRepository = UserRepository()
+    private val parkingRepository = ParkingRepository()
     
     private val _registrationState = MutableLiveData<RegistrationState>()
     val registrationState: LiveData<RegistrationState> = _registrationState
     
     private val _validationErrors = MutableLiveData<Map<String, String>>()
     val validationErrors: LiveData<Map<String, String>> = _validationErrors
+
+    private val _parkingLotNames = MutableLiveData<List<String>>()
+    val parkingLotNames: LiveData<List<String>> = _parkingLotNames
+
+    private val _parkingLotLoading = MutableLiveData<Boolean>()
+    val parkingLotLoading: LiveData<Boolean> = _parkingLotLoading
+
+    private val _parkingLotError = MutableLiveData<String?>()
+    val parkingLotError: LiveData<String?> = _parkingLotError
     
     fun registerUser(
         context: Context,
@@ -30,11 +39,11 @@ class RegistrationViewModel : ViewModel() {
         email: String,
         phone: String,
         password: String,
-        confirmPassword: String,
-        vehicleNumbers: List<String>
+        parkingLotName: String
     ) {
+        val normalizedParkingLot = parkingLotName.trim()
         // Validate input
-        val errors = validateInput(name, email, phone, password, vehicleNumbers)
+        val errors = validateInput(name, email, phone, password, normalizedParkingLot)
         if (errors.isNotEmpty()) {
             _validationErrors.value = errors
             return
@@ -50,7 +59,8 @@ class RegistrationViewModel : ViewModel() {
                     phone = phone.trim(),
                     // Send plain password; backend will BCrypt-hash it
                     passwordHash = password,
-                    vehicleNumbers = vehicleNumbers.filter { it.isNotBlank() }
+                    parkingLotName = normalizedParkingLot,
+                    vehicleNumbers = emptyList()
                 )
                 
                 val response = userRepository.registerUser(userRegistration)
@@ -72,7 +82,7 @@ class RegistrationViewModel : ViewModel() {
                             name = auth.name,
                             email = email.trim(),
                             phone = phone.trim(),
-                            vehicleNumbers = vehicleNumbers.filter { it.isNotBlank() }
+                            parkingLotName = normalizedParkingLot
                         )
                         _registrationState.value = RegistrationState.Success(registeredUser)
                     } ?: run {
@@ -93,7 +103,7 @@ class RegistrationViewModel : ViewModel() {
         email: String,
         phone: String,
         password: String,
-        vehicleNumbers: List<String>
+        parkingLotName: String
     ): Map<String, String> {
         val errors = mutableMapOf<String, String>()
         
@@ -118,26 +128,38 @@ class RegistrationViewModel : ViewModel() {
         } else if (password.length < 6) {
             errors["password"] = "Password must be at least 6 characters"
         }
-        
-        // Validate vehicle numbers
-        val nonEmptyVehicles = vehicleNumbers.filter { it.isNotBlank() }
-        if (nonEmptyVehicles.isEmpty()) {
-            errors["vehicle"] = "At least one vehicle number is required"
-        } else {
-            // Validate vehicle number format (basic Indian vehicle number pattern)
-            val vehiclePattern = Regex("^[A-Z]{2}[0-9]{1,2}[A-Z]{1,2}[0-9]{4}$")
-            val invalidVehicles = nonEmptyVehicles.filter { !vehiclePattern.matches(it.uppercase()) }
-            if (invalidVehicles.isNotEmpty()) {
-                errors["vehicle"] = "Invalid vehicle number format (e.g., MH12AB1234)"
-            }
-            
-            // Check for duplicates
-            if (nonEmptyVehicles.size != nonEmptyVehicles.toSet().size) {
-                errors["vehicle"] = "Duplicate vehicle numbers not allowed"
-            }
+
+        if (parkingLotName.isBlank()) {
+            errors["parkingLot"] = "Parking lot selection is required"
         }
         
         return errors
+    }
+
+    fun loadParkingLotNames(forceRefresh: Boolean = false) {
+        if (!forceRefresh && !_parkingLotNames.value.isNullOrEmpty()) {
+            return
+        }
+
+        _parkingLotLoading.value = true
+
+        viewModelScope.launch {
+            try {
+                val response = parkingRepository.getParkingLotNames()
+                if (response.isSuccessful) {
+                    val names = response.body().orEmpty()
+                    _parkingLotNames.value = names
+                    _parkingLotError.value = if (names.isEmpty()) "No parking lots available yet" else null
+                } else {
+                    val error = runCatching { response.errorBody()?.string() }.getOrNull()
+                    _parkingLotError.value = error ?: "Unable to load parking lots"
+                }
+            } catch (e: Exception) {
+                _parkingLotError.value = "Unable to load parking lots: ${e.message}"
+            } finally {
+                _parkingLotLoading.value = false
+            }
+        }
     }
     
     private fun hashPassword(password: String): String {

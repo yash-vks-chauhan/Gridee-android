@@ -6,7 +6,6 @@ import androidx.appcompat.app.AlertDialog
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AnimationUtils
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.gridee.parking.R
@@ -43,7 +42,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     override fun setupUI() {
         setupRecyclerView()
         setupClickListeners()
-        setupAnimations()
         loadWalletData()
     }
 
@@ -64,26 +62,14 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun setupClickListeners() {
-        // Add money button with rotation animation
-        binding.btnAddMoney.setOnClickListener { view ->
-            // Rotate animation
-            val rotatePress = AnimationUtils.loadAnimation(requireContext(), R.anim.button_rotate_press)
-            val rotateRelease = AnimationUtils.loadAnimation(requireContext(), R.anim.button_rotate_release)
-            
-            view.startAnimation(rotatePress)
-            view.postDelayed({
-                view.startAnimation(rotateRelease)
-                showTopUpDialog()
-            }, 200)
+        // Add money button
+        binding.btnAddMoney.setOnClickListener {
+            showTopUpDialog()
         }
         
-        // Tap balance with bounce animation
-        binding.tvBalanceAmount.setOnClickListener { view ->
-            val bounceAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.balance_bounce)
-            view.startAnimation(bounceAnim)
-            view.postDelayed({
-                showTopUpDialog()
-            }, 150)
+        // Tap balance to show/hide (privacy feature)
+        binding.tvBalanceAmount.setOnClickListener {
+            showTopUpDialog()
         }
         
         // Quick add buttons
@@ -103,31 +89,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             // Navigate to TransactionHistoryActivity to show all transactions
             val intent = Intent(requireContext(), TransactionHistoryActivity::class.java)
             startActivity(intent)
-        }
-    }
-    
-    private fun setupAnimations() {
-        // Card entrance animation
-        try {
-            val entranceAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.wallet_card_entrance)
-            binding.cardWalletBalance.startAnimation(entranceAnim)
-        } catch (e: Exception) {
-            // Animation optional - continue without it
-        }
-        
-        // Setup pull-to-refresh
-        binding.swipeRefresh.setColorSchemeResources(
-            R.color.primary,
-            R.color.primary_dark,
-            R.color.accent
-        )
-        binding.swipeRefresh.setProgressBackgroundColorSchemeResource(R.color.white)
-        binding.swipeRefresh.setOnRefreshListener {
-            // Reload wallet data with smooth animation
-            loadWalletData()
-            binding.swipeRefresh.postDelayed({
-                binding.swipeRefresh.isRefreshing = false
-            }, 800)
         }
     }
     
@@ -225,14 +186,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
 
     private fun updateBalanceDisplay() {
         binding.tvBalanceAmount.text = "₹${String.format("%.2f", currentBalance)}"
-        
-        // Animate balance update
-        try {
-            val updateAnim = AnimationUtils.loadAnimation(requireContext(), R.anim.balance_update)
-            binding.tvBalanceAmount.startAnimation(updateAnim)
-        } catch (e: Exception) {
-            // Animation optional
-        }
         
         // Update last updated time
         binding.tvLastUpdated.text = "Updated now"

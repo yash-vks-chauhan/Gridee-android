@@ -1,17 +1,22 @@
 package com.gridee.parking.data.repository
 
 import android.content.Context
+import com.gridee.parking.GrideeApplication
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.Booking
+import com.gridee.parking.data.model.CheckInMode
 import com.gridee.parking.data.model.CheckInRequest
 import com.gridee.parking.data.model.CreateBookingRequest
 import com.gridee.parking.data.model.QrValidationResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
 
-class BookingRepository(private val context: Context) {
+class BookingRepository(
+    private val context: Context = GrideeApplication.instance.applicationContext
+) {
     
     private val apiService = ApiClient.apiService
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
@@ -232,7 +237,7 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = CheckInRequest(mode = "QR_CODE", qrCode = qrCode)
+            val request = CheckInRequest(mode = CheckInMode.QR_CODE, qrCode = qrCode)
             val response = apiService.checkInBooking(userId, bookingId, request)
 
             if (response.isSuccessful) {
@@ -289,7 +294,7 @@ class BookingRepository(private val context: Context) {
                 return@withContext Result.failure(Exception("User not logged in"))
             }
 
-            val request = CheckInRequest(mode = "QR_CODE", qrCode = qrCode)
+            val request = CheckInRequest(mode = CheckInMode.QR_CODE, qrCode = qrCode)
             val response = apiService.checkOutBooking(userId, bookingId, request)
 
             if (response.isSuccessful) {
@@ -311,6 +316,20 @@ class BookingRepository(private val context: Context) {
         }
     }
 
+    /**
+     * Operator check-in (vehicle number / QR, no bookingId required)
+     */
+    suspend fun operatorCheckIn(request: CheckInRequest): Response<Booking> {
+        return apiService.operatorCheckIn(request)
+    }
+
+    /**
+     * Operator check-out (vehicle number / QR, no bookingId required)
+     */
+    suspend fun operatorCheckOut(request: CheckInRequest): Response<Booking> {
+        return apiService.operatorCheckOut(request)
+    }
+    
     /**
      * Get real-time penalty for active booking
      */
@@ -359,6 +378,27 @@ class BookingRepository(private val context: Context) {
                 }
             } else {
                 Result.failure(Exception("Failed to refresh booking"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Fetch price breakup for a booking
+     */
+    suspend fun getPriceBreakup(bookingId: String): Result<Map<String, Any>> = withContext(Dispatchers.IO) {
+        try {
+            val userId = getUserId()
+            if (userId.isNullOrEmpty()) {
+                return@withContext Result.failure(Exception("User not logged in"))
+            }
+
+            val response = apiService.getBookingPriceBreakup(userId, bookingId)
+            if (response.isSuccessful) {
+                Result.success(response.body() ?: emptyMap())
+            } else {
+                Result.failure(Exception("Failed to fetch price breakup: ${response.message()}"))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -205,12 +205,13 @@
                                 android:id="@+id/tvParkingSpotName"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Parking Name"
+                                android:text=""
+                                tools:text="Parking Name"
                                 android:textColor="@color/text_primary"
                                 android:textSize="15sp"
                                 android:textStyle="bold"
                                 android:fontFamily="sans-serif-medium"
-                                tools:text="Phoenix Mall Parking" />
+                                 />
 
                             <TextView
                                 android:id="@+id/tvParkingAddress"

@@ -305,4 +305,28 @@ class BookingsViewModel(application: Application) : AndroidViewModel(application
     fun clearQrValidation() { _qrValidation.value = null }
     fun clearCheckInSuccess() { _checkInSuccess.value = null }
     fun clearCheckOutSuccess() { _checkOutSuccess.value = null }
+
+    // Extend booking to a new checkout time
+    fun extendBooking(bookingId: String, newCheckOutTime: Date) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val iso = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", java.util.Locale.getDefault()).format(newCheckOutTime)
+                bookingRepository.extendBooking(bookingId, iso).fold(
+                    onSuccess = { booking ->
+                        _selectedBooking.value = booking
+                        _errorMessage.value = null
+                        loadUserBookings()
+                    },
+                    onFailure = { ex ->
+                        _errorMessage.value = ex.message
+                    }
+                )
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to extend booking: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

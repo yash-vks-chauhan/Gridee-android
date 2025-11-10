@@ -26,7 +26,16 @@ data class User(
     val firstUser: Boolean = true,
     
     @SerializedName("walletCoins")
-    val walletCoins: Int = 0
+    val walletCoins: Int = 0,
+    
+    @SerializedName("role")
+    val role: String? = null,
+    
+    @SerializedName("parkingLotId")
+    val parkingLotId: String? = null,
+    
+    @SerializedName("parkingLotName")
+    val parkingLotName: String? = null
     
     // Removed createdAt and passwordHash to avoid serialization issues
 )
@@ -36,5 +45,6 @@ data class UserRegistration(
     val email: String,
     val phone: String,
     val passwordHash: String,
+    val parkingLotName: String,
     val vehicleNumbers: List<String> = emptyList()
 )

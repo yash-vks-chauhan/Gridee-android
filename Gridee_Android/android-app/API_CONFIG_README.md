@@ -23,7 +23,7 @@ This guide explains how to switch between AWS production server and localhost de
 - **SSL**: Disabled
 
 ### AWS Configuration (Commented/Preserved)
-- **AWS URL**: `https://15.206.211.142:8443/`
+- **AWS URL**: `https://65.2.80.78:8443/` (or https://ec2-65-2-80-78.compute.amazonaws.com:8443/)
 - **Authentication**: Basic Auth (username: rajeev, password: parking)
 - **SSL**: Custom SSL with trust-all certificates
 

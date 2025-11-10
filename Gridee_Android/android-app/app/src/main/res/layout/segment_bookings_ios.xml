@@ -1,144 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- iOS-Style Glass Segmented Control - Professional & Neat -->
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/segmentContainer"
     android:layout_width="match_parent"
-    android:layout_height="52dp"
+    android:layout_height="wrap_content"
     android:layout_gravity="center_horizontal"
-    android:background="@drawable/glass_segment_container"
-    android:elevation="4dp"
     android:clipToPadding="false"
     android:clipChildren="false"
-    android:paddingStart="4dp"
-    android:paddingEnd="4dp">
+    android:padding="@dimen/segmented_control_padding"
+    app:cardCornerRadius="32dp"
+    app:cardElevation="0dp"
+    app:cardBackgroundColor="@color/segment_shell_surface"
+    app:strokeWidth="1.5dp"
+    app:strokeColor="@color/segment_shell_border">
 
-    <!-- Glass Selection Indicator (Moving Pill) - place behind labels for correct z-order -->
-    <View
-        android:id="@+id/segmentIndicator"
-        android:layout_width="0dp"
-        android:layout_height="44dp"
-        android:layout_marginStart="4dp"
-        android:layout_marginEnd="4dp"
-        android:background="@drawable/glass_segment_indicator"
-        android:visibility="visible"
-        android:importantForAccessibility="no"
-        app:layout_constraintStart_toStartOf="@id/segmentActive"
-        app:layout_constraintEnd_toEndOf="@id/segmentActive"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
+    <FrameLayout
+        android:id="@+id/segmentRoot"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false">
 
-    <!-- Active Segment -->
-    <LinearLayout
-        android:id="@+id/segmentActive"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/segment_focus_bg"
-        android:foreground="@drawable/ripple_segment_white"
-        android:clickable="false"
-        android:focusable="false"
-        android:enabled="true"
-        android:paddingVertical="12dp"
-        android:paddingHorizontal="8dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/segmentPending"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_chainStyle="spread"
-        app:layout_constraintHorizontal_weight="1">
+        <View
+            android:id="@+id/segmentSlider"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/segmented_control_height"
+            android:layout_gravity="center_vertical|start"
+            android:alpha="1"
+            android:visibility="invisible"
+            android:elevation="0dp"
+            android:translationZ="0dp"
+            android:stateListAnimator="@null"
+            android:background="@drawable/segment_slider_background" />
 
-        <TextView
-            android:id="@+id/textActive"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:id="@+id/segmentGroup"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Active"
-            android:textSize="15sp"
-            android:textColor="@color/bulky_glass_text_selected"
-            android:fontFamily="@font/inter_medium"
-            android:textStyle="normal"
-            android:letterSpacing="0.01"
-            android:includeFontPadding="false"
+            android:animateLayoutChanges="true"
             android:gravity="center"
-            android:importantForAccessibility="yes"
-            android:contentDescription="Active bookings tab" />
+            android:orientation="horizontal">
 
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/segmentActive"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/segmented_control_height"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:background="@android:color/transparent"
+                android:stateListAnimator="@animator/segment_state_list_animator"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/segmented_control_item_padding">
 
-    <!-- Pending Segment -->
-    <LinearLayout
-        android:id="@+id/segmentPending"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/segment_focus_bg"
-        android:foreground="@drawable/ripple_segment_white"
-        android:clickable="false"
-        android:focusable="false"
-        android:enabled="true"
-        android:paddingVertical="12dp"
-        android:paddingHorizontal="8dp"
-        app:layout_constraintStart_toEndOf="@id/segmentActive"
-        app:layout_constraintEnd_toStartOf="@id/segmentCompleted"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_weight="1">
+            <TextView
+                android:id="@+id/textActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:duplicateParentState="true"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.01"
+                android:text="Active"
+                android:textAllCaps="false"
+                android:textColor="@color/segment_button_text_selector"
+                android:textSize="14sp" />
 
-        <TextView
-            android:id="@+id/textPending"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Pending"
-            android:textSize="15sp"
-            android:textColor="@color/bulky_glass_text_unselected"
-            android:fontFamily="@font/inter_medium"
-            android:textStyle="normal"
-            android:letterSpacing="0.01"
-            android:includeFontPadding="false"
-            android:gravity="center"
-            android:importantForAccessibility="yes"
-            android:contentDescription="Pending bookings tab" />
+            <TextView
+                android:id="@+id/badgeActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/segment_badge_background"
+                android:text="0"
+                android:textColor="@color/segment_badge_text"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_medium"
+                android:visibility="gone" />
+            </LinearLayout>
 
-    </LinearLayout>
+            <LinearLayout
+                android:id="@+id/segmentPending"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/segmented_control_height"
+                android:layout_weight="1"
+                android:layout_marginHorizontal="3dp"
+                android:background="@android:color/transparent"
+                android:stateListAnimator="@animator/segment_state_list_animator"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/segmented_control_item_padding">
 
-    <!-- Completed Segment -->
-    <LinearLayout
-        android:id="@+id/segmentCompleted"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="@drawable/segment_focus_bg"
-        android:foreground="@drawable/ripple_segment_white"
-        android:clickable="false"
-        android:focusable="false"
-        android:enabled="true"
-        android:paddingVertical="12dp"
-        android:paddingHorizontal="8dp"
-        app:layout_constraintStart_toEndOf="@id/segmentPending"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintHorizontal_weight="1">
+            <TextView
+                android:id="@+id/textPending"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:duplicateParentState="true"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.01"
+                android:text="Pending"
+                android:textAllCaps="false"
+                android:textColor="@color/segment_button_text_selector"
+                android:textSize="14sp" />
 
-        <TextView
-            android:id="@+id/textCompleted"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Completed"
-            android:textSize="15sp"
-            android:textColor="@color/bulky_glass_text_unselected"
-            android:fontFamily="@font/inter_medium"
-            android:textStyle="normal"
-            android:letterSpacing="0.01"
-            android:includeFontPadding="false"
-            android:gravity="center"
-            android:importantForAccessibility="yes"
-            android:contentDescription="Completed bookings tab" />
+            <TextView
+                android:id="@+id/badgePending"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/segment_badge_background"
+                android:text="0"
+                android:textColor="@color/segment_badge_text"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_medium"
+                android:visibility="gone" />
+            </LinearLayout>
 
-    </LinearLayout>
-    
+            <LinearLayout
+                android:id="@+id/segmentCompleted"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/segmented_control_height"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:background="@android:color/transparent"
+                android:stateListAnimator="@animator/segment_state_list_animator"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/segmented_control_item_padding">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView
+                android:id="@+id/textCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:duplicateParentState="true"
+                android:fontFamily="@font/inter_semibold"
+                android:includeFontPadding="false"
+                android:letterSpacing="0.01"
+                android:text="Completed"
+                android:textAllCaps="false"
+                android:textColor="@color/segment_button_text_selector"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/badgeCompleted"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:paddingStart="6dp"
+                android:paddingEnd="6dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/segment_badge_background"
+                android:text="0"
+                android:textColor="@color/segment_badge_text"
+                android:textSize="11sp"
+                android:fontFamily="@font/inter_medium"
+                android:visibility="gone" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </FrameLayout>
+
+</com.google.android.material.card.MaterialCardView>

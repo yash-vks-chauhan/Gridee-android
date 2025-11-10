@@ -57,6 +57,9 @@ interface ApiService {
     // Parking lots and spots endpoints
     @GET("api/parking-lots")
     suspend fun getParkingLots(): Response<List<ParkingLot>>
+    
+    @GET("api/parking-lots/list/by-names")
+    suspend fun getParkingLotNames(): Response<List<String>>
 
     // ADMIN-only on backend; avoid using from app for regular users
     @GET("api/parking-spots")
@@ -65,6 +68,10 @@ interface ApiService {
     // Correct backend path for by-lot spots
     @GET("api/parking-spots/lot/{lotId}")
     suspend fun getParkingSpotsByLot(@Path("lotId") lotId: String): Response<List<ParkingSpot>>
+
+    // Single spot by ID (non-admin)
+    @GET("api/parking-spots/{id}")
+    suspend fun getParkingSpotById(@Path("id") id: String): Response<ParkingSpot>
     
     // Backend endpoints for user bookings list/history
     @GET("api/bookings/{userId}/all")
@@ -134,7 +141,27 @@ interface ApiService {
         @Path("bookingId") bookingId: String,
         @Body request: CheckInRequest
     ): Response<Booking>
+    
+    // ========== Operator Check-In/Out Endpoints ==========
+    
+    /**
+     * Operator check-in (no userId/bookingId required)
+     * POST /api/bookings/checkin
+     */
+    @POST("api/bookings/checkin")
+    suspend fun operatorCheckIn(
+        @Body request: CheckInRequest
+    ): Response<Booking>
 
+    /**
+     * Operator check-out (no userId/bookingId required)
+     * POST /api/bookings/checkout
+     */
+    @POST("api/bookings/checkout")
+    suspend fun operatorCheckOut(
+        @Body request: CheckInRequest
+    ): Response<Booking>
+    
     // Get booking by ID (for refreshing data)
     @GET("api/bookings/{userId}/{bookingId}")
     suspend fun getBookingById(
@@ -164,4 +191,19 @@ interface ApiService {
         @Path("bookingId") bookingId: String,
         @Body body: Map<String, String>
     ): Response<Booking>
+
+    // Price breakup for a booking
+    @GET("api/bookings/{userId}/{bookingId}/priceBreakup")
+    suspend fun getBookingPriceBreakup(
+        @Path("userId") userId: String,
+        @Path("bookingId") bookingId: String
+    ): Response<Map<String, Any>>
+
+    // Availability by time window
+    @POST("api/parking-spots/available")
+    suspend fun getAvailableSpots(
+        @Query("lotId") lotId: String,
+        @Query("startTime") startTime: String,
+        @Query("endTime") endTime: String
+    ): Response<List<ParkingSpot>>
 }

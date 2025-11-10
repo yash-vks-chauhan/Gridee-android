@@ -54,39 +54,47 @@ class ParkingDiscoveryViewModel : ViewModel() {
     
     fun loadParkingData() {
         _isLoading.value = true
-        
+
         viewModelScope.launch {
             try {
                 // Load parking lots
                 val lotsResponse = parkingRepository.getParkingLots()
-                
-                // Load parking spots
-                val spotsResponse = parkingRepository.getParkingSpots()
-                
-                if (lotsResponse.isSuccessful && spotsResponse.isSuccessful) {
-                    val lots = lotsResponse.body() ?: emptyList()
-                    val spots = spotsResponse.body() ?: emptyList()
-                    
-                    // Update lot data with actual spot counts from parking spots API
-                    val updatedLots = lots.map { lot ->
-                        val lotsSpots = spots.filter { it.lotId == lot.id }
-                        val actualTotalSpots = lotsSpots.size
-                        val actualAvailableSpots = lotsSpots.count { it.status == "available" }
-                        
-                        lot.copy(
-                            totalSpots = actualTotalSpots,
-                            availableSpots = actualAvailableSpots
-                        )
-                    }
-                    
-                    _parkingLots.value = updatedLots
-                    _parkingSpots.value = spots
+                if (!lotsResponse.isSuccessful) { _isLoading.value = false; return@launch }
+                val lots = lotsResponse.body() ?: emptyList()
+
+                // Filter out known dummy/test lots by name (case-insensitive)
+                val blocked = setOf(
+                    "tp avenue parking",
+                    "db city mall parking",
+                    "new market parking"
+                )
+                val filteredLots = lots.filter { lot ->
+                    val name = lot.name.trim().lowercase()
+                    name !in blocked
                 }
-                
+
+                // Aggregate spots per lot (avoid admin-only all-spots)
+                val allSpots = mutableListOf<ParkingSpot>()
+                for (lot in filteredLots) {
+                    try {
+                        val resp = parkingRepository.getParkingSpotsByLot(lot.id)
+                        if (resp.isSuccessful) allSpots.addAll(resp.body() ?: emptyList())
+                    } catch (_: Exception) { /* skip lot on error */ }
+                }
+
+                // Update lots with counts from aggregated spots
+                val updatedLots = filteredLots.map { lot ->
+                    val lotsSpots = allSpots.filter { it.lotId == lot.id }
+                    val actualTotalSpots = lotsSpots.size
+                    val actualAvailableSpots = lotsSpots.count { it.status == "available" }
+                    lot.copy(totalSpots = actualTotalSpots, availableSpots = actualAvailableSpots)
+                }
+
+                _parkingLots.value = updatedLots
+                _parkingSpots.value = allSpots
                 _isLoading.value = false
             } catch (e: Exception) {
                 _isLoading.value = false
-                // Handle error - could emit error state
             }
         }
     }
@@ -96,18 +104,11 @@ class ParkingDiscoveryViewModel : ViewModel() {
         
         viewModelScope.launch {
             try {
-                // Load all parking spots and filter by lot ID
-                val spotsResponse = parkingRepository.getParkingSpots()
-                if (spotsResponse.isSuccessful) {
-                    val allSpots = spotsResponse.body() ?: emptyList()
-                    val filteredSpots = allSpots.filter { it.lotId == lotId }
-                    _parkingSpots.value = filteredSpots
-                }
-                
+                val spotsResponse = parkingRepository.getParkingSpotsByLot(lotId)
+                if (spotsResponse.isSuccessful) _parkingSpots.value = spotsResponse.body() ?: emptyList()
                 _isLoading.value = false
             } catch (e: Exception) {
                 _isLoading.value = false
-                // Handle error - could emit error state
             }
         }
     }

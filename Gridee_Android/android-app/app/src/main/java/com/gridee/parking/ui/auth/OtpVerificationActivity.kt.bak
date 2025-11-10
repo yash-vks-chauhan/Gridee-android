@@ -1,0 +1,192 @@
+package com.gridee.parking.ui.auth
+
+import android.content.Intent
+import android.os.Bundle
+import android.os.CountDownTimer
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatActivity
+import com.gridee.parking.databinding.ActivityOtpVerificationBinding
+import com.gridee.parking.ui.MainActivity
+
+class OtpVerificationActivity : AppCompatActivity() {
+    
+    private lateinit var binding: ActivityOtpVerificationBinding
+    private val viewModel: OtpVerificationViewModel by viewModels()
+    private var phoneNumber: String = ""
+    private var userName: String = ""
+    private var countDownTimer: CountDownTimer? = null
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityOtpVerificationBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        
+        // Get phone number from intent
+        phoneNumber = intent.getStringExtra("PHONE_NUMBER") ?: ""
+        userName = intent.getStringExtra("USER_NAME") ?: ""
+        
+        setupUI()
+        observeViewModel()
+        startResendTimer()
+        
+        // Auto-generate OTP when activity starts
+        viewModel.generateOtp(phoneNumber)
+    }
+    
+    private fun setupUI() {
+        binding.tvPhoneNumber.text = "Enter the 6-digit code sent to +91 $phoneNumber"
+        
+        // Setup OTP input fields
+        setupOtpInputs()
+        
+        binding.btnVerify.setOnClickListener {
+            val otp = getEnteredOtp()
+            if (otp.length == 6) {
+                viewModel.validateOtp(phoneNumber, otp)
+            } else {
+                Toast.makeText(this, "Please enter complete OTP", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        binding.tvResendOtp.setOnClickListener {
+            if (binding.tvResendOtp.isEnabled) {
+                viewModel.generateOtp(phoneNumber)
+                startResendTimer()
+                clearOtpInputs()
+            }
+        }
+        
+        binding.btnBack.setOnClickListener {
+            finish()
+        }
+    }
+    
+    private fun setupOtpInputs() {
+        val otpInputs = listOf(
+            binding.etOtp1, binding.etOtp2, binding.etOtp3,
+            binding.etOtp4, binding.etOtp5, binding.etOtp6
+        )
+        
+        otpInputs.forEachIndexed { index, editText ->
+            editText.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                    if (!s.isNullOrEmpty() && index < otpInputs.size - 1) {
+                        otpInputs[index + 1].requestFocus()
+                    }
+                }
+                
+                override fun afterTextChanged(s: Editable?) {
+                    // Auto-verify when all 6 digits are entered
+                    if (getEnteredOtp().length == 6) {
+                        viewModel.validateOtp(phoneNumber, getEnteredOtp())
+                    }
+                }
+            })
+            
+            editText.setOnKeyListener { _, keyCode, event ->
+                if (keyCode == android.view.KeyEvent.KEYCODE_DEL && 
+                    event.action == android.view.KeyEvent.ACTION_DOWN && 
+                    editText.text.isEmpty() && index > 0) {
+                    otpInputs[index - 1].requestFocus()
+                    otpInputs[index - 1].setText("")
+                }
+                false
+            }
+        }
+        
+        // Focus on first input
+        binding.etOtp1.requestFocus()
+    }
+    
+    private fun getEnteredOtp(): String {
+        return "${binding.etOtp1.text}${binding.etOtp2.text}${binding.etOtp3.text}" +
+                "${binding.etOtp4.text}${binding.etOtp5.text}${binding.etOtp6.text}"
+    }
+    
+    private fun clearOtpInputs() {
+        binding.etOtp1.setText("")
+        binding.etOtp2.setText("")
+        binding.etOtp3.setText("")
+        binding.etOtp4.setText("")
+        binding.etOtp5.setText("")
+        binding.etOtp6.setText("")
+        binding.etOtp1.requestFocus()
+    }
+    
+    private fun startResendTimer() {
+        binding.tvResendOtp.isEnabled = false
+        binding.tvResendOtp.text = "Resend OTP in 60s"
+        
+        countDownTimer?.cancel()
+        countDownTimer = object : CountDownTimer(60000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds = millisUntilFinished / 1000
+                binding.tvResendOtp.text = "Resend OTP in ${seconds}s"
+            }
+            
+            override fun onFinish() {
+                binding.tvResendOtp.isEnabled = true
+                binding.tvResendOtp.text = "Resend OTP"
+            }
+        }
+        countDownTimer?.start()
+    }
+    
+    private fun observeViewModel() {
+        viewModel.otpState.observe(this) { state ->
+            when (state) {
+                is OtpState.Loading -> {
+                    showLoading(true)
+                }
+                is OtpState.OtpGenerated -> {
+                    showLoading(false)
+                    Toast.makeText(this, "OTP sent to your phone", Toast.LENGTH_SHORT).show()
+                    // For testing, you can uncomment the line below to see the generated OTP
+                    Toast.makeText(this, "OTP: ${state.otp}", Toast.LENGTH_LONG).show()
+                }
+                is OtpState.OtpValidated -> {
+                    showLoading(false)
+                    if (state.isValid) {
+                        Toast.makeText(this, "Phone number verified successfully!", Toast.LENGTH_SHORT).show()
+                        
+                        // Save verification status
+                        val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
+                        sharedPref.edit()
+                            .putBoolean("phone_verified", true)
+                            .apply()
+                        
+                        // Navigate to main activity
+                        val intent = Intent(this, MainActivity::class.java)
+                        intent.putExtra("USER_NAME", userName)
+                        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        Toast.makeText(this, "Invalid OTP. Please try again.", Toast.LENGTH_SHORT).show()
+                        clearOtpInputs()
+                    }
+                }
+                is OtpState.Error -> {
+                    showLoading(false)
+                    Toast.makeText(this, state.message, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+    
+    private fun showLoading(show: Boolean) {
+        binding.progressBar.visibility = if (show) View.VISIBLE else View.GONE
+        binding.btnVerify.isEnabled = !show
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        countDownTimer?.cancel()
+    }
+}

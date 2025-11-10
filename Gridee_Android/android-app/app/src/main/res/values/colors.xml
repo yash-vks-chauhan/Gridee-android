@@ -66,14 +66,14 @@
     <color name="glass_focus_ring">#3388CCFF</color>
 
     <!-- Bulky Glass Segmented Control Colors -->
-    <color name="bulky_glass_container_fill">#14FFFFFF</color>
-    <color name="bulky_glass_container_border">#33FFFFFF</color>
-    <color name="bulky_glass_indicator_fill">#59FFFFFF</color>
-    <color name="bulky_glass_indicator_border">#66FFFFFF</color>
-    <color name="bulky_glass_shadow">#14000000</color>
-    <color name="bulky_glass_highlight">#12FFFFFF</color>
-    <color name="bulky_glass_text_selected">#191C19</color>
-    <color name="bulky_glass_text_unselected">#6B7280</color>
+    <color name="bulky_glass_container_fill">#F0F2F6</color>
+    <color name="bulky_glass_container_border">#E3E6EF</color>
+    <color name="bulky_glass_indicator_fill">#FFFFFFFF</color>
+    <color name="bulky_glass_indicator_border">#D2D5E0</color>
+    <color name="bulky_glass_shadow">#28000000</color>
+    <color name="bulky_glass_highlight">#44FFFFFF</color>
+    <color name="bulky_glass_text_selected">#1E232E</color>
+    <color name="bulky_glass_text_unselected">#6E7484</color>
     <color name="bulky_glass_focus_ring">#3388CCFF</color>
     <color name="bulky_glass_pressed">#5AFFFFFF</color>
 
@@ -162,6 +162,82 @@
     <color name="glass_shadow_medium">#15000000</color>
 
     <!-- Segmented control interactions -->
-    <color name="segment_ripple_white">#1AFFFFFF</color>
+    <color name="segment_ripple_white">#26FFFFFF</color>
+    <color name="segment_shell_surface">#F5F6FA</color>
+    <color name="segment_shell_border">#EDEFF5</color>
+    <color name="segment_button_bg_checked">#FFFFFFFF</color>
+    <color name="segment_button_bg_unchecked">#E8EBF3</color>
+    <color name="segment_button_border_checked">#D5D9E3</color>
+    <color name="segment_button_border_unchecked">#00FFFFFF</color>
+    <color name="segment_button_text_checked">#191C1F</color>
+    <color name="segment_button_text_unchecked">#8D92A1</color>
+    <color name="segment_slider_fill">#FFFFFFFF</color>
+    <color name="segment_slider_border">#00FFFFFF</color>
+    <color name="segment_badge_bg">#EEF2FF</color>
+    <color name="segment_badge_text">#4758F3</color>
+    <color name="segment_ripple_active">#33FFFFFF</color>
+    <color name="filter_button_ripple">#22000000</color>
+
+    <!-- Scanner palette -->
+    <color name="scanner_primary">#1E88E5</color>
+    <color name="scanner_primary_90">#E61E88E5</color>
+    <color name="scanner_primary_80">#CC1E88E5</color>
+    <color name="scanner_success_green">#4CAF50</color>
+    <color name="scanner_error_red">#F44336</color>
+    <color name="scanner_warning_orange">#FFC107</color>
+    <color name="scanner_surface">#1B1B1F</color>
+    <color name="scanner_text_primary">#DEFFFFFF</color>
+    <color name="scanner_text_secondary">#99FFFFFF</color>
+    <color name="scanner_overlay_dark">#B3000000</color>
+    <color name="scanner_status_chip_base">#26FFFFFF</color>
+    <color name="scanner_status_chip_border">#33FFFFFF</color>
+    <color name="scanner_frame_border">#33FFFFFF</color>
+    <color name="scanner_corner_idle">#E61E88E5</color>
+    <color name="scanner_corner_success">#4CAF50</color>
+    <color name="scanner_corner_error">#F44336</color>
+    <color name="scanner_corner_warning">#FFC107</color>
+    <color name="scanner_line_core">#CC1E88E5</color>
+    <color name="scanner_line_glow">#331E88E5</color>
+
+    <color name="scanner_status_scanning_bg">#331E88E5</color>
+    <color name="scanner_status_scanning_text">@color/scanner_text_primary</color>
+    <color name="scanner_status_scanning_tint">@color/scanner_primary</color>
+
+    <color name="scanner_status_success_bg">#264CAF50</color>
+    <color name="scanner_status_success_text">@color/scanner_text_primary</color>
+    <color name="scanner_status_success_tint">@color/scanner_success_green</color>
+
+    <color name="scanner_status_error_bg">#26F44336</color>
+    <color name="scanner_status_error_text">@color/scanner_text_primary</color>
+    <color name="scanner_status_error_tint">@color/scanner_error_red</color>
+
+    <color name="scanner_status_warning_bg">#26FFC107</color>
+    <color name="scanner_status_warning_text">@color/scanner_text_primary</color>
+    <color name="scanner_status_warning_tint">@color/scanner_warning_orange</color>
+
+    <color name="scanner_status_chip_shadow">#14000000</color>
+
+    <!-- Legacy scanner overlay accents -->
+    <color name="scanner_v2_white_10">#1AFFFFFF</color>
+    <color name="scanner_v2_white_85">#D9FFFFFF</color>
+    <color name="scanner_v2_white_70">#B3FFFFFF</color>
+    <color name="scanner_v2_white_40">#66FFFFFF</color>
+    <color name="scanner_v2_white_20">#33FFFFFF</color>
+    <color name="scanner_v2_black_40">#66000000</color>
+    <color name="scanner_v2_charcoal">#1E1E1E</color>
+    <color name="scanner_v2_silver">#B0B0B0</color>
+    <color name="scanner_v2_glow_success">#664CAF50</color>
+    <color name="scanner_v2_glow_error">#66F44336</color>
+    <color name="scanner_v2_glow_warning">#66FFC107</color>
+    <color name="scanner_v2_shadow_outer">#14000000</color>
+    <color name="scanner_v2_shadow_inner">#1F000000</color>
+    <color name="scanner_v2_ghost_white">#F8F8FF</color>
+    <color name="scanner_v2_highlight">#33FFFFFF</color>
+
+    <!-- Booking compact card specific colors -->
+    <color name="status_minimal_active_text">@color/booking_status_active_text</color>
+    <color name="icon_secondary">#6B7280</color>
+    <color name="text_tertiary">#9CA3AF</color>
+    <color name="price_primary">@color/primary_blue</color>
 
 </resources>
