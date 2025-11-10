@@ -170,133 +170,153 @@
             android:layout_height="match_parent"
             android:fillViewport="true"
             android:clipToPadding="false"
-            android:paddingTop="16dp"
+            android:paddingTop="24dp"
             android:paddingBottom="24dp"
-            android:paddingHorizontal="16dp">
+            android:paddingHorizontal="24dp">
 
-            <!-- Action Card (Check-In or Check-Out) -->
+            <!-- Single Action Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/card_action"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="@android:color/white"
-                app:cardCornerRadius="16dp"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="1dp"
-                app:strokeColor="#F0F0F0"
-                android:foreground="?attr/selectableItemBackground">
+                app:strokeColor="#F0F0F0">
 
-                <LinearLayout
+                <!-- Container for both modes -->
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="20dp">
+                    android:layout_height="wrap_content">
 
-                    <!-- Title -->
-                    <TextView
-                        android:id="@+id/tv_action_title"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Vehicle Check-In"
-                        android:textColor="#212121"
-                        android:textSize="18sp"
-                        android:textStyle="bold"
-                        android:fontFamily="sans-serif-medium"
-                        android:layout_marginBottom="8dp" />
-
-                    <!-- Subtitle -->
-                    <TextView
-                        android:id="@+id/tv_action_subtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Scan or enter vehicle number"
-                        android:textColor="#666666"
-                        android:textSize="14sp"
-                        android:layout_marginBottom="16dp" />
-
-                    <!-- Scan Button (Black) -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_scan"
-                        style="@style/Widget.MaterialComponents.Button"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:text="Scan Vehicle Number"
-                        android:textAllCaps="false"
-                        android:textSize="16sp"
-                        android:textColor="@android:color/white"
-                        app:icon="@drawable/ic_camera"
-                        app:iconGravity="start"
-                        app:iconPadding="8dp"
-                        app:iconTint="@android:color/white"
-                        app:cornerRadius="12dp"
-                        app:backgroundTint="#212121" />
-
-                    <!-- OR Divider -->
+                    <!-- SCAN MODE (Default) -->
                     <LinearLayout
+                        android:id="@+id/layout_scan_mode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginVertical="16dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:padding="40dp"
+                        android:visibility="visible">
 
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#E0E0E0" />
+                        <!-- Circular Scan Button -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/btn_scan_circular"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            app:cardBackgroundColor="#212121"
+                            app:cardCornerRadius="60dp"
+                            app:cardElevation="0dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground">
 
+                            <ImageView
+                                android:layout_width="48dp"
+                                android:layout_height="48dp"
+                                android:layout_gravity="center"
+                                android:src="@drawable/ic_camera"
+                                android:tint="@android:color/white"
+                                android:contentDescription="Scan vehicle" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Label -->
                         <TextView
+                            android:id="@+id/tv_scan_label"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginHorizontal="12dp"
-                            android:text="OR"
+                            android:layout_marginTop="20dp"
+                            android:text="Tap to Scan Vehicle"
+                            android:textSize="15sp"
                             android:textColor="#666666"
-                            android:textSize="12sp"
-                            android:textStyle="bold" />
+                            android:fontFamily="sans-serif" />
 
-                        <View
-                            android:layout_width="0dp"
-                            android:layout_height="1dp"
-                            android:layout_weight="1"
-                            android:background="#E0E0E0" />
+                        <!-- Manual Entry Link -->
+                        <TextView
+                            android:id="@+id/link_manual_entry"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="40dp"
+                            android:text="Enter manually"
+                            android:textSize="14sp"
+                            android:textColor="#999999"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless" />
+
                     </LinearLayout>
 
-                    <!-- Manual Entry -->
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/til_vehicle_number"
+                    <!-- MANUAL ENTRY MODE -->
+                    <LinearLayout
+                        android:id="@+id/layout_manual_mode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:hint="Enter Vehicle Number"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
-                        app:startIconDrawable="@drawable/ic_car"
-                        app:startIconTint="#666666">
+                        android:orientation="vertical"
+                        android:padding="32dp"
+                        android:visibility="gone">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_vehicle_number"
+                        <!-- Back Button -->
+                        <TextView
+                            android:id="@+id/btn_back_to_scan"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="← Back"
+                            android:textSize="14sp"
+                            android:textColor="#666666"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="8dp"
+                            android:layout_marginBottom="24dp"
+                            android:background="?attr/selectableItemBackgroundBorderless" />
+
+                        <!-- Title -->
+                        <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:text="Enter Vehicle Number"
+                            android:textSize="18sp"
+                            android:textColor="#212121"
+                            android:textStyle="bold"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center"
+                            android:layout_marginBottom="32dp" />
+
+                        <!-- Clean Input Field -->
+                        <EditText
+                            android:id="@+id/et_vehicle_number_clean"
+                            android:layout_width="match_parent"
+                            android:layout_height="60dp"
+                            android:hint="DL 01 AB 1234"
+                            android:textSize="18sp"
+                            android:textColor="#212121"
+                            android:textColorHint="#CCCCCC"
                             android:inputType="textCapCharacters"
-                            android:maxLines="1" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                            android:maxLines="1"
+                            android:gravity="center"
+                            android:background="@drawable/bg_input_clean"
+                            android:padding="16dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:importantForAutofill="no" />
 
-                    <!-- Manual Action Button (Outlined) -->
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_manual_action"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:layout_marginTop="12dp"
-                        android:text="Check In Manually"
-                        android:textAllCaps="false"
-                        android:textColor="#212121"
-                        app:cornerRadius="12dp"
-                        app:strokeColor="#212121"
-                        app:strokeWidth="1.5dp" />
+                        <!-- Submit Button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_submit_manual"
+                            style="@style/Widget.MaterialComponents.Button"
+                            android:layout_width="match_parent"
+                            android:layout_height="56dp"
+                            android:layout_marginTop="24dp"
+                            android:text="Check In"
+                            android:textSize="16sp"
+                            android:textColor="@android:color/white"
+                            android:textAllCaps="false"
+                            app:cornerRadius="12dp"
+                            app:backgroundTint="#212121" />
 
-                </LinearLayout>
+                    </LinearLayout>
+
+                </FrameLayout>
 
             </androidx.cardview.widget.CardView>
 
@@ -314,6 +334,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:visibility="gone" />
+tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,63 +4,45 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="12dp"
-    android:gravity="center_vertical"
-    android:background="?attr/selectableItemBackground">
+    android:padding="16dp"
+    android:gravity="center_vertical">
 
-    <!-- Action Icon -->
-    <FrameLayout
-        android:layout_width="40dp"
-        android:layout_height="40dp"
-        android:background="@drawable/circle_background_grey">
+    <!-- Timeline Dot -->
+    <View
+        android:id="@+id/dotIndicator"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:background="@drawable/circle_small_grey"
+        android:layout_marginEnd="12dp"/>
 
-        <ImageView
-            android:id="@+id/iv_action_icon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_car"
-            android:tint="#212121" />
-    </FrameLayout>
-
-    <!-- Activity Info -->
+    <!-- Activity Content -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="12dp"
         android:orientation="vertical">
 
+        <!-- Activity Description -->
         <TextView
-            android:id="@+id/tv_vehicle_number"
-            android:layout_width="wrap_content"
+            android:id="@+id/tvActivityDescription"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="DL01AB1234"
-            android:textColor="#212121"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:fontFamily="sans-serif-medium"
-            tools:text="DL01AB1234" />
-
-        <TextView
-            android:id="@+id/tv_action_type"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Checked In"
-            android:textColor="#757575"
+            android:textColor="#FFFFFF"
             android:textSize="14sp"
-            tools:text="Checked In" />
-    </LinearLayout>
+            android:fontFamily="@font/inter_medium"
+            tools:text="Vehicle checked in at Gate A"/>
 
-    <!-- Timestamp -->
-    <TextView
-        android:id="@+id/tv_timestamp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="2m ago"
-        android:textColor="#757575"
-        android:textSize="12sp"
-        tools:text="2m ago" />
+        <!-- Activity Timestamp -->
+        <TextView
+            android:id="@+id/tvActivityTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#999999"
+            android:textSize="12sp"
+            android:fontFamily="@font/inter_regular"
+            android:layout_marginTop="4dp"
+            tools:text="2 minutes ago"/>
+
+    </LinearLayout>
 
 </LinearLayout>

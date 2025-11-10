@@ -17,7 +17,7 @@
     
     <!-- Trust self-signed certificates for HTTPS development server -->
     <domain-config>
-        <domain includeSubdomains="true">10.223.241.92</domain>
+        <domain includeSubdomains="true">10.216.5.164</domain>
         <domain includeSubdomains="true">10.3.79.235</domain>
         <trust-anchors>
             <certificates src="system"/>

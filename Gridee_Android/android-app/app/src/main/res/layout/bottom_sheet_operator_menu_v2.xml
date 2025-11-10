@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_bottom_sheet_rounded"
+    android:background="@android:color/white"
     android:paddingTop="8dp"
     android:paddingBottom="24dp">
 
@@ -38,7 +38,7 @@
             android:padding="16dp"
             android:gravity="center_vertical">
 
-            <!-- Operator Avatar Circle -->
+            <!-- Operator Avatar with Lottie Animation -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -46,12 +46,15 @@
                 app:cardCornerRadius="24dp"
                 app:cardElevation="0dp">
 
-                <ImageView
-                    android:layout_width="28dp"
-                    android:layout_height="28dp"
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/lottie_operator_avatar"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
                     android:layout_gravity="center"
-                    android:src="@drawable/ic_account_circle"
-                    android:tint="#666666" />
+                    app:lottie_rawRes="@raw/operator_avatar"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_speed="0.8" />
 
             </com.google.android.material.card.MaterialCardView>
 
