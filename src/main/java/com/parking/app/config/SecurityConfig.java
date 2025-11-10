@@ -1,42 +1,69 @@
-// src/main/java/com/parking/app/config/SecurityConfig.java
 package com.parking.app.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 
 @Configuration
 public class SecurityConfig {
-    
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-    
+
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                           JwtAuthenticationFilter jwtFilter,
+                                           RateLimitingFilter rateLimitingFilter) throws Exception {
+
+        JwtCsrfTokenRequestHandler requestHandler = new JwtCsrfTokenRequestHandler();
+
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            // Disable HTML login page. We want JSON APIs only.
+            .csrf(csrf -> csrf
+                .csrfTokenRequestHandler(requestHandler)
+                .ignoringRequestMatchers(csrfIgnoredPaths())
+            )
             .formLogin(AbstractHttpConfigurer::disable)
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints (no auth)
-                .requestMatchers("/api/auth/login").permitAll()
-                .requestMatchers("/api/users/register").permitAll()
-                .requestMatchers("/api/users/social-signin").permitAll()
-                .requestMatchers("/api/otp/**").permitAll()
-                .requestMatchers("/api/oauth2/user").permitAll()  // Allow OAuth2 user endpoint for testing
-                .requestMatchers("/api/payments/callback").permitAll()   // Allow payment callback without JWT
-                // Everything else requires auth
-                .anyRequest().authenticated()
+                    .requestMatchers(publicEndpoints()).permitAll()
+                    .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())
-            // Add JWT filter before UsernamePasswordAuthenticationFilter
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class)
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    private RequestMatcher[] csrfIgnoredPaths() {
+        return new RequestMatcher[] {
+                new AntPathRequestMatcher("/api/auth/**"),
+                new AntPathRequestMatcher("/api/users/**"),
+                new AntPathRequestMatcher("/swagger-ui/**"),
+                new AntPathRequestMatcher("/v3/api-docs/**"),
+                new AntPathRequestMatcher("/actuator/**"),
+                new AntPathRequestMatcher("/error")
+        };
+    }
+
+    private RequestMatcher[] publicEndpoints() {
+        return new RequestMatcher[] {
+                new AntPathRequestMatcher("/api/parking-lots/list/by-names", "GET"),
+                new AntPathRequestMatcher("/api/auth/register", "POST"),
+                new AntPathRequestMatcher("/api/auth/login", "POST"),
+                new AntPathRequestMatcher("/api/users/register", "POST"),
+                new AntPathRequestMatcher("/api/users/social-signin", "POST"),
+                new AntPathRequestMatcher("/api/otp/**"),
+                new AntPathRequestMatcher("/api/oauth2/user", "GET"),
+                new AntPathRequestMatcher("/api/payments/callback", "POST"),
+                new AntPathRequestMatcher("/swagger-ui/**"),
+                new AntPathRequestMatcher("/v3/api-docs/**"),
+                new AntPathRequestMatcher("/actuator/health"),
+                new AntPathRequestMatcher("/error")
+        };
     }
 }

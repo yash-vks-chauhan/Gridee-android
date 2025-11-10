@@ -379,9 +379,10 @@
             android:textSize="15sp"
             android:fontFamily="@font/inter_medium"
             android:backgroundTint="@color/text_primary"
+            android:stateListAnimator="@null"
             app:cornerRadius="24dp"
             app:elevation="0dp"
-            app:rippleColor="#30FFFFFF" />
+            app:rippleColor="#40FFFFFF" />
     </LinearLayout>
 
 </LinearLayout>
