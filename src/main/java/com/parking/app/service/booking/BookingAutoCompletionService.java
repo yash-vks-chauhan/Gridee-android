@@ -3,9 +3,11 @@ package com.parking.app.service.booking;
 import com.parking.app.constants.BookingStatus;
 import com.parking.app.model.Bookings;
 import com.parking.app.model.ParkingSpot;
+import com.parking.app.model.event.BookingEvent;
 import com.parking.app.repository.BookingRepository;
 import com.parking.app.service.ParkingSpotService;
 import com.parking.app.util.BookingUtility;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.mongodb.core.MongoOperations;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -28,17 +30,20 @@ public class BookingAutoCompletionService {
     private final ParkingSpotService parkingSpotService;
     private final BookingWalletService walletService;
     private final BookingBreakupService breakupService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public BookingAutoCompletionService(BookingRepository bookingRepository,
                                        MongoOperations mongoOperations,
                                        ParkingSpotService parkingSpotService,
                                        BookingWalletService walletService,
-                                       BookingBreakupService breakupService) {
+                                       BookingBreakupService breakupService,
+                                       ApplicationEventPublisher eventPublisher) {
         this.bookingRepository = bookingRepository;
         this.mongoOperations = mongoOperations;
         this.parkingSpotService = parkingSpotService;
         this.walletService = walletService;
         this.breakupService = breakupService;
+        this.eventPublisher = eventPublisher;
     }
 
     public void autoCompleteLateBookings() {
@@ -94,16 +99,32 @@ public class BookingAutoCompletionService {
 
         parkingSpotService.incrementSpotAvailability(booking.getSpotId());
         breakupService.applyBreakupAndRefund(booking, spot, walletService);
+
+        // Publish auto-completion event for async ParkingLot update
+        eventPublisher.publishEvent(new BookingEvent(
+            this,
+            booking.getId(),
+            booking.getLotId(),
+            booking.getSpotId(),
+            BookingEvent.BookingEventType.BOOKING_AUTO_COMPLETED,
+            booking.getUserId()
+        ));
     }
 
     private void autoCancelNoShowBooking(Bookings booking) {
         booking.setStatus(BookingStatus.CANCELLED.name());
         bookingRepository.save(booking);
+
         parkingSpotService.incrementSpotAvailability(booking.getSpotId());
 
-        ParkingSpot spot = parkingSpotService.findById(booking.getSpotId());
-        if (spot != null) {
-            breakupService.applyBreakupAndRefund(booking, spot, walletService);
-        }
+        // Publish cancellation event for async ParkingLot update
+        eventPublisher.publishEvent(new BookingEvent(
+            this,
+            booking.getId(),
+            booking.getLotId(),
+            booking.getSpotId(),
+            BookingEvent.BookingEventType.BOOKING_CANCELLED,
+            booking.getUserId()
+        ));
     }
 }

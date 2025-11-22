@@ -10,6 +10,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -118,11 +119,8 @@ public class ParkingSpotService {
                 .collect(Collectors.toList());
     }
 
-    public List<ParkingSpot> getParkingSpotsByLotId(String lotId) {
-        List<ParkingSpot> spots = parkingSpotRepository.findByLotId(lotId);
-        return spots.stream()
-                .map(this::ensureProperZoneName)
-                .collect(Collectors.toList());
+    public List<ParkingSpot> getSpotsByLotId(String lotId) {
+        return parkingSpotRepository.findByLotId(lotId);
     }
 
     public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime, List<Bookings> overlappingBookings) {
@@ -136,6 +134,32 @@ public class ParkingSpotService {
     }
 
     // ===== Availability Management =====
+
+    /**
+     * Atomically reserves a spot for booking - prevents race conditions
+     * This method is thread-safe and ensures no overbooking even with concurrent requests
+     *
+     * @param spotId The spot to reserve
+     * @return true if reservation successful, false if no spots available
+     */
+//    @Transactional
+    public boolean atomicReserveSpotForBooking(String spotId) {
+        Query spotQuery = new Query(
+                Criteria.where(FIELD_ID).is(spotId)
+                        .and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS)
+        );
+        Update decUpdate = new Update().inc(FIELD_AVAILABLE, DECREMENT_VALUE);
+
+        // findAndModify is atomic in MongoDB - either succeeds or fails, no race condition
+        ParkingSpot updatedSpot = mongoOperations.findAndModify(
+                spotQuery,
+                decUpdate,
+                FindAndModifyOptions.options().returnNew(false), // Return old document to verify
+                ParkingSpot.class
+        );
+
+        return updatedSpot != null && updatedSpot.getAvailable() > MIN_AVAILABLE_SPOTS;
+    }
 
     public void decrementSpotAvailability(String spotId) {
         Query spotQuery = new Query(Criteria.where(FIELD_ID).is(spotId).and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS));
@@ -277,4 +301,3 @@ public class ParkingSpotService {
         System.out.println(LOG_CAPACITY_RESET);
     }
 }
-

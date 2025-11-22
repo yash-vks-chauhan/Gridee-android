@@ -17,8 +17,11 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +30,8 @@ import java.util.Map;
 public class BookingController {
 
     private static final Logger logger = LoggerFactory.getLogger(BookingController.class);
+    private static final DateTimeFormatter CUSTOM_DATE_FORMAT = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
+
     private final BookingService bookingService;
 
     @Autowired
@@ -41,17 +46,35 @@ public class BookingController {
             @PathVariable String userId,
             @RequestBody CreateBookingRequestDto request
     ) {
-        ZonedDateTime checkIn = ZonedDateTime.parse(request.getCheckInTime());
-        ZonedDateTime checkOut = ZonedDateTime.parse(request.getCheckOutTime());
-        Bookings booking = bookingService.createBooking(
-                request.getSpotId(),
-                userId,
-                request.getLotId(),
-                checkIn,
-                checkOut,
-                request.getVehicleNumber()
-        );
-        return ResponseEntity.ok(booking);
+        try {
+            // Parse dates in dd-MM-yyyy HH:mm format
+            LocalDateTime checkInLocal = LocalDateTime.parse(request.getCheckInTime(), CUSTOM_DATE_FORMAT);
+            LocalDateTime checkOutLocal = LocalDateTime.parse(request.getCheckOutTime(), CUSTOM_DATE_FORMAT);
+
+            // Convert to ZonedDateTime using system default timezone
+            ZonedDateTime checkIn = checkInLocal.atZone(ZoneId.systemDefault());
+            ZonedDateTime checkOut = checkOutLocal.atZone(ZoneId.systemDefault());
+
+            Bookings booking = bookingService.createBooking(
+                    request.getSpotId(),
+                    userId,
+                    request.getLotId(),
+                    checkIn,
+                    checkOut,
+                    request.getVehicleNumber()
+            );
+            return ResponseEntity.ok(booking);
+        } catch (DateTimeParseException e) {
+            logger.error("Invalid date format. Expected: dd-MM-yyyy HH:mm, Got: checkInTime={}, checkOutTime={}",
+                    request.getCheckInTime(), request.getCheckOutTime());
+            return ResponseEntity.badRequest()
+                    .body(Map.of(
+                            "error", "Invalid date format",
+                            "message", "Please use format: dd-MM-yyyy HH:mm (e.g., 23-11-2025 10:30)",
+                            "checkInTime", request.getCheckInTime(),
+                            "checkOutTime", request.getCheckOutTime()
+                    ));
+        }
     }
 
     @PostMapping("/{userId}/{bookingId}/cancel")

@@ -4,18 +4,12 @@ import com.parking.app.constants.BookingStatus;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.Date;
 
 @Document(collection = "bookings")
-@CompoundIndexes({
-    @CompoundIndex(name = "vehicleNumber_status_idx", def = "{'vehicleNumber': 1, 'status': 1}"),
-    @CompoundIndex(name = "userId_status_idx", def = "{'userId': 1, 'status': 1}")
-})
 @Getter
 @Setter
 public class Bookings {

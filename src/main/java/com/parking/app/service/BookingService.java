@@ -18,7 +18,7 @@ import java.util.Map;
  * Main BookingService - acts as a facade to delegate to specialized booking services
  */
 @Service
-@Transactional
+//@Transactional
 public class BookingService {
 
     private final BookingLifecycleService lifecycleService;

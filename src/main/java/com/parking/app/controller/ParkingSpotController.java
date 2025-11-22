@@ -31,7 +31,7 @@ public class ParkingSpotController {
 
     @GetMapping("/lot/{lotId}")
     public ResponseEntity<List<ParkingSpot>> getParkingSpotsByLot(@PathVariable String lotId) {
-        List<ParkingSpot> spots = parkingSpotService.getParkingSpotsByLotId(lotId);
+        List<ParkingSpot> spots = parkingSpotService.getSpotsByLotId(lotId);
         return ResponseEntity.ok(spots);
     }
 
