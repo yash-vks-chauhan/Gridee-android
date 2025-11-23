@@ -58,7 +58,6 @@ public class BookingController {
             Bookings booking = bookingService.createBooking(
                     request.getSpotId(),
                     userId,
-                    request.getLotId(),
                     checkIn,
                     checkOut,
                     request.getVehicleNumber()

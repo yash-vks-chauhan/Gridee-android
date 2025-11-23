@@ -17,7 +17,7 @@ public class Bookings {
     // Field name constants for MongoDB queries
     public static final String FIELD_ID = "_id";
     public static final String FIELD_USER_ID = "userId";
-    public static final String FIELD_LOT_ID = "lotId";
+    public static final String FIELD_LOT_NAME = "lotName";
     public static final String FIELD_SPOT_ID = "spotId";
     public static final String FIELD_STATUS = "status";
     public static final String FIELD_AMOUNT = "amount";
@@ -37,7 +37,7 @@ public class Bookings {
 
     @Indexed
     private String userId;
-    private String lotId;
+    private String lotName;
     private String spotId;
     @Indexed
     private String status;     // e.g., "pending", "active", "cancelled"

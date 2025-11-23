@@ -104,7 +104,7 @@ public class BookingAutoCompletionService {
         eventPublisher.publishEvent(new BookingEvent(
             this,
             booking.getId(),
-            booking.getLotId(),
+            booking.getLotName(),
             booking.getSpotId(),
             BookingEvent.BookingEventType.BOOKING_AUTO_COMPLETED,
             booking.getUserId()
@@ -121,7 +121,7 @@ public class BookingAutoCompletionService {
         eventPublisher.publishEvent(new BookingEvent(
             this,
             booking.getId(),
-            booking.getLotId(),
+            booking.getLotName(),
             booking.getSpotId(),
             BookingEvent.BookingEventType.BOOKING_CANCELLED,
             booking.getUserId()

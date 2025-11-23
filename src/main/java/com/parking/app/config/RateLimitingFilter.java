@@ -27,7 +27,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
 
     // Configuration
     private static final int MAX_REQUESTS_PER_MINUTE = 60;
-    private static final int MAX_LOGIN_ATTEMPTS_PER_MINUTE = 5;
+    private static final int MAX_LOGIN_ATTEMPTS_PER_MINUTE = 10;
     private static final long WINDOW_SIZE_MS = TimeUnit.MINUTES.toMillis(1);
     private static final long CLEANUP_INTERVAL_MS = TimeUnit.MINUTES.toMillis(5);
 

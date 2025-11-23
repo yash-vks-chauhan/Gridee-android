@@ -8,8 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Listens for booking events and updates ParkingLot aggregate counts asynchronously
@@ -31,21 +29,21 @@ public class BookingEventListener {
 //    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
     public void handleBookingEvent(BookingEvent event) {
-        logger.info("Received booking event: type={}, bookingId={}, lotId={}, spotId={}",
-                   event.getEventType(), event.getBookingId(), event.getLotId(), event.getSpotId());
+        logger.info("Received booking event: type={}, bookingId={}, lotName={}, spotId={}",
+                   event.getEventType(), event.getBookingId(), event.getLotName(), event.getSpotId());
 
         try {
             switch (event.getEventType()) {
                 case BOOKING_CREATED:
                     // Booking created - decrease available spots
-                    parkingLotService.decreaseAvailableSpots(event.getLotId(), event.getSpotId());
+                    parkingLotService.decreaseAvailableSpots(event.getLotName(), event.getSpotId());
                     break;
 
                 case BOOKING_CANCELLED:
                 case BOOKING_COMPLETED:
                 case BOOKING_AUTO_COMPLETED:
                     // Booking released - increase available spots
-                    parkingLotService.increaseAvailableSpots(event.getLotId(), event.getSpotId());
+                    parkingLotService.increaseAvailableSpots(event.getLotName(), event.getSpotId());
                     break;
 
                 default:

@@ -62,33 +62,71 @@ public class MongoLockService implements LockService {
     public String acquireLock(String spotId, long waitTimeMs) {
         String lockValue = UUID.randomUUID().toString();
         long startTime = System.currentTimeMillis();
+        int attemptCount = 0;
+        long backoffMs = 50; // Start with 50ms backoff
+        long maxBackoffMs = 500; // Cap at 500ms
+
+        logger.debug("🔒 Thread {} attempting to acquire lock for spot {}",
+            Thread.currentThread().getName(), spotId);
 
         while (System.currentTimeMillis() - startTime < waitTimeMs) {
+            attemptCount++;
+            long elapsedMs = System.currentTimeMillis() - startTime;
+
             try {
                 Document lock = new Document()
                         .append("_id", spotId)
                         .append("lockValue", lockValue)
                         .append("acquiredAt", new Date())
+                        .append("threadName", Thread.currentThread().getName())
                         .append("expiresAt", new Date(System.currentTimeMillis() + DEFAULT_LOCK_TIMEOUT_MS));
 
                 mongoTemplate.insert(lock, LOCK_COLLECTION);
-                logger.debug("Acquired MongoDB lock for spot {} with token {}", spotId, lockValue);
+
+                logger.info("✅ Thread {} ACQUIRED lock for spot {} (attempt #{}, elapsed: {}ms)",
+                    Thread.currentThread().getName(), spotId, attemptCount, elapsedMs);
                 return lockValue;
 
-            } catch (DuplicateKeyException e) {
-                // Lock already held by another process - wait and retry
-                logger.debug("Lock already held for spot {}, waiting...", spotId);
+            } catch (DuplicateKeyException | org.springframework.dao.DuplicateKeyException e) {
+                // Lock already held by another thread - wait and retry with exponential backoff
+                // This catches both com.mongodb.DuplicateKeyException and org.springframework.dao.DuplicateKeyException
+                long remainingTime = waitTimeMs - elapsedMs;
+
+                if (remainingTime <= 0) {
+                    logger.warn("⏱️ Thread {} TIMEOUT waiting for lock on spot {} after {}ms ({} attempts)",
+                        Thread.currentThread().getName(), spotId, elapsedMs, attemptCount);
+                    break;
+                }
+
+                // Log every 5 attempts to avoid spam
+                if (attemptCount % 5 == 0) {
+                    logger.debug("⏳ Thread {} waiting for lock on spot {} (attempt #{}, elapsed: {}ms, remaining: {}ms)",
+                        Thread.currentThread().getName(), spotId, attemptCount, elapsedMs, remainingTime);
+                }
 
                 try {
-                    Thread.sleep(100); // Backoff slightly longer than Redis
+                    // Exponential backoff: 50ms -> 100ms -> 200ms -> 400ms -> 500ms (capped)
+                    long sleepTime = Math.min(backoffMs, Math.min(maxBackoffMs, remainingTime));
+                    Thread.sleep(sleepTime);
+                    backoffMs = Math.min(backoffMs * 2, maxBackoffMs);
+
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
+                    logger.warn("⚠️ Thread {} interrupted while waiting for lock on spot {}",
+                        Thread.currentThread().getName(), spotId);
                     return null;
                 }
+            } catch (Exception e) {
+                // Truly unexpected errors (not DuplicateKey)
+                logger.error("❌ Unexpected error acquiring lock for spot {}: {}",
+                    spotId, e.getClass().getName() + ": " + e.getMessage());
+                return null;
             }
         }
 
-        logger.warn("Failed to acquire MongoDB lock for spot {} after {}ms", spotId, waitTimeMs);
+        logger.warn("❌ Thread {} FAILED to acquire lock for spot {} after {}ms ({} attempts)",
+            Thread.currentThread().getName(), spotId,
+            System.currentTimeMillis() - startTime, attemptCount);
         return null;
     }
 
@@ -104,14 +142,16 @@ public class MongoLockService implements LockService {
             Document result = mongoTemplate.findAndRemove(query, Document.class, LOCK_COLLECTION);
 
             if (result != null) {
-                logger.debug("Released MongoDB lock for spot {} with token {}", spotId, lockValue);
+                logger.info("🔓 Thread {} RELEASED lock for spot {} with token {}",
+                    Thread.currentThread().getName(), spotId, lockValue);
                 return true;
             } else {
-                logger.warn("Failed to release MongoDB lock for spot {} - token mismatch or already expired", spotId);
+                logger.warn("⚠️ Thread {} failed to release lock for spot {} - token mismatch or already expired",
+                    Thread.currentThread().getName(), spotId);
                 return false;
             }
         } catch (Exception e) {
-            logger.error("Error releasing MongoDB lock for spot {}: {}", spotId, e.getMessage());
+            logger.error("❌ Error releasing lock for spot {}: {}", spotId, e.getMessage());
             return false;
         }
     }
@@ -130,4 +170,3 @@ public class MongoLockService implements LockService {
         }
     }
 }
-

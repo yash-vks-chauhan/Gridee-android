@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ParkingLotService {
@@ -42,7 +43,7 @@ public class ParkingLotService {
         return parkingLotRepository.findById(id).orElse(null);
     }
 
-    public ParkingLot getParkingLotByName(String name) {
+    public Optional<ParkingLot> getParkingLotByName(String name) {
         return parkingLotRepository.findByName(name);
     }
 

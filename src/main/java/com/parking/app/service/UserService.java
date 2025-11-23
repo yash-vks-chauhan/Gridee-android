@@ -84,8 +84,8 @@ public class UserService {
         }
 
         // Fetch parking lot by name
-        ParkingLot lot = parkingLotRepository.findByName(userRequest.getParkingLotName());
-        if (lot == null) {
+        Optional<ParkingLot> lot = parkingLotRepository.findByName(userRequest.getParkingLotName());
+        if (lot.isEmpty()) {
             throw new IllegalArgumentException("Parking lot not found: " + userRequest.getParkingLotName());
         }
 
@@ -103,8 +103,8 @@ public class UserService {
         user.setEmail(userRequest.getEmail());
         user.setPhone(userRequest.getPhone());
         user.setVehicleNumbers(userRequest.getVehicleNumbers());
-        user.setParkingLotId(lot.getId());
-        user.setParkingLotName(lot.getName());
+        user.setParkingLotId(lot.get().getId());
+        user.setParkingLotName(lot.get().getName());
         user.setWalletCoins(0);
         user.setFirstUser(true);
         user.setCreatedAt(new java.util.Date());
@@ -155,10 +155,10 @@ public class UserService {
         if (userDetails.getName() != null && !userDetails.getName().trim().isEmpty()) {
             existingUser.setName(userDetails.getName());
         }
-        if(StringUtils.hasText(userDetails.getParkingLotId())){
-            ParkingLot lot = parkingLotRepository.findById(userDetails.getParkingLotId()).orElse(null);
+        if(StringUtils.hasText(userDetails.getParkingLotName())){
+            ParkingLot lot = parkingLotRepository.findByName(userDetails.getParkingLotName()).orElse(null);
             if(lot==null){
-                throw new IllegalArgumentException("Parking lot not found with id: " + userDetails.getParkingLotId());
+                throw new IllegalArgumentException("Parking lot not found with name: " + userDetails.getParkingLotName());
             }
             existingUser.setParkingLotId(lot.getId());
             existingUser.setParkingLotName(lot.getName());

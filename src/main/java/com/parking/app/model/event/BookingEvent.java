@@ -11,16 +11,16 @@ import org.springframework.context.ApplicationEvent;
 public class BookingEvent extends ApplicationEvent {
 
     private final String bookingId;
-    private final String lotId;
+    private final String lotName;
     private final String spotId;
     private final BookingEventType eventType;
     private final String userId;
 
-    public BookingEvent(Object source, String bookingId, String lotId, String spotId,
-                       BookingEventType eventType, String userId) {
+    public BookingEvent(Object source, String bookingId, String lotName, String spotId,
+                        BookingEventType eventType, String userId) {
         super(source);
         this.bookingId = bookingId;
-        this.lotId = lotId;
+        this.lotName = lotName;
         this.spotId = spotId;
         this.eventType = eventType;
         this.userId = userId;

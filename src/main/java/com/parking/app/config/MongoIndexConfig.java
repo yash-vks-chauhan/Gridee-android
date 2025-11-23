@@ -78,7 +78,7 @@ public class MongoIndexConfig {
 
             // Index for lot-based queries (admin dashboard)
             createIndexSafely(bookingIndexOps, new Index()
-                    .on(Bookings.FIELD_LOT_ID, Sort.Direction.ASC)
+                    .on(Bookings.FIELD_LOT_NAME, Sort.Direction.ASC)
                     .on(Bookings.FIELD_CHECK_IN_TIME, Sort.Direction.DESC)
                     .named("idx_lot_checkin")
             );
@@ -117,7 +117,7 @@ public class MongoIndexConfig {
 
             // Index for lot-based spot queries
             createIndexSafely(spotIndexOps, new Index()
-                    .on(ParkingSpot.FIELD_LOT_ID, Sort.Direction.ASC)
+                    .on(ParkingSpot.FIELD_LOT_NAME, Sort.Direction.ASC)
                     .on(ParkingSpot.FIELD_AVAILABLE, Sort.Direction.DESC)
                     .named("idx_lot_availability")
             );

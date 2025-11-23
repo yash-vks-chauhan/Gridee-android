@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.5'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'io.qameta.allure' version '2.11.2'
 }
 
 group = 'com.parking'
@@ -35,6 +36,11 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // Lombok for test code
+    testCompileOnly 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
     implementation 'org.springframework.security:spring-security-crypto'
     implementation 'org.springframework.boot:spring-boot-actuator-autoconfigure'
@@ -62,10 +68,30 @@ dependencies {
 
     // Spring Retry for handling transient failures
     implementation 'org.springframework.retry:spring-retry'
+
+    // Integration Testing Dependencies
+    testImplementation 'io.rest-assured:rest-assured:5.3.2'
+    testImplementation 'io.rest-assured:json-path:5.3.2'
+    testImplementation 'io.rest-assured:json-schema-validator:5.3.2'
+    testImplementation 'io.qameta.allure:allure-junit5:2.24.0'
+    testImplementation 'io.qameta.allure:allure-rest-assured:2.24.0'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// Allure configuration
+allure {
+	version = '2.24.0'
+	autoconfigure = true
+	adapter {
+		frameworks {
+			junit5 {
+				adapterVersion = '2.24.0'
+			}
+		}
+	}
 }
 
 // Enable Spring Boot layered JAR for optimized Docker images

@@ -10,7 +10,6 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.Date;
@@ -85,7 +84,7 @@ public class ParkingSpotService {
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
         ParkingSpot existingSpot = parkingSpotRepository.findById(spotId).orElse(null);
         if (existingSpot != null) {
-            if (spotDetails.getLotId() != null) existingSpot.setLotId(spotDetails.getLotId());
+            if (spotDetails.getLotName() != null) existingSpot.setLotName(spotDetails.getLotName());
             if (spotDetails.getZoneName() != null) existingSpot.setZoneName(spotDetails.getZoneName());
             if (spotDetails.getCapacity() > MIN_AVAILABLE_SPOTS) existingSpot.setCapacity(spotDetails.getCapacity());
             if (spotDetails.getAvailable() >= MIN_AVAILABLE_SPOTS) existingSpot.setAvailable(spotDetails.getAvailable());
@@ -120,11 +119,11 @@ public class ParkingSpotService {
     }
 
     public List<ParkingSpot> getSpotsByLotId(String lotId) {
-        return parkingSpotRepository.findByLotId(lotId);
+        return parkingSpotRepository.findByLotName(lotId);
     }
 
     public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime, List<Bookings> overlappingBookings) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotId(lotId);
+        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotName(lotId);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)
                 .collect(Collectors.toSet());

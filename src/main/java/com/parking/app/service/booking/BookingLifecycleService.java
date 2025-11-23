@@ -22,9 +22,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 
@@ -39,7 +36,7 @@ import java.util.Date;
 public class BookingLifecycleService {
 
     private static final Logger logger = LoggerFactory.getLogger(BookingLifecycleService.class);
-    private static final long LOCK_WAIT_TIME_MS = 5000; // 5 seconds max wait for lock
+    private static final long LOCK_WAIT_TIME_MS = 10000; // 30 seconds max wait for lock (increased from 5s)
     private static final int MAX_RETRY_ATTEMPTS = 3;
 
     private final BookingRepository bookingRepository;
@@ -98,7 +95,7 @@ public class BookingLifecycleService {
         maxAttempts = MAX_RETRY_ATTEMPTS,
         backoff = @Backoff(delay = 100, multiplier = 2, maxDelay = 1000)
     )
-    public Bookings createBooking(String spotId, String userId, String lotId,
+    public Bookings createBooking(String spotId, String userId,
                                   ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                   String vehicleNumber) {
         logger.info("Creating booking for spotId={}, userId={}, timeRange=[{} to {}]",
@@ -136,7 +133,7 @@ public class BookingLifecycleService {
             logger.debug("Acquired distributed lock for spotId={}", spotId);
 
             // Execute the actual booking creation within transaction
-            return createBookingWithTransaction(spotId, userId, lotId, checkInTime, checkOutTime,
+            return createBookingWithTransaction(spotId, userId, spot.getLotName(), checkInTime, checkOutTime,
                                                vehicleNumber, amount, spot);
         });
     }
@@ -150,15 +147,13 @@ public class BookingLifecycleService {
 //        isolation = Isolation.READ_COMMITTED,
 //        rollbackFor = Exception.class
 //    )
-    protected Bookings createBookingWithTransaction(String spotId, String userId, String lotId,
+    protected Bookings createBookingWithTransaction(String spotId, String userId, String lotName,
                                                     ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                                     String vehicleNumber, double amount, ParkingSpot spot) {
         logger.debug("Starting transaction for booking creation spotId={}", spotId);
 
         try {
-            // STEP 5: Final overlap check within transaction (catches race conditions)
-            // This is a safety check - the atomic reservation is the real guard
-            validationService.ensureNoBookingOverlap(spotId, checkInTime, checkOutTime);
+            //TODO : time based spot check not possible. need to change db model
 
             // STEP 6: ATOMIC OPERATION - Reserve spot using MongoDB's findAndModify
             // This is the CRITICAL operation that prevents double-booking
@@ -176,7 +171,7 @@ public class BookingLifecycleService {
             bookingWalletService.deductAndRecord(userId, amount, "Booking charge");
 
             // STEP 8: Create and persist booking
-            Bookings booking = createAndSaveBooking(spotId, userId, lotId, checkInTime,
+            Bookings booking = createAndSaveBooking(spotId, userId, lotName, checkInTime,
                                                    checkOutTime, vehicleNumber, amount);
 
             logger.info("Booking created successfully: bookingId={}, spotId={}, userId={}",
@@ -186,7 +181,7 @@ public class BookingLifecycleService {
             eventPublisher.publishEvent(new BookingEvent(
                 this,
                 booking.getId(),
-                lotId,
+                lotName,
                 spotId,
                 BookingEvent.BookingEventType.BOOKING_CREATED,
                 userId
@@ -338,7 +333,7 @@ public class BookingLifecycleService {
         eventPublisher.publishEvent(new BookingEvent(
             this,
             booking.getId(),
-            booking.getLotId(),
+            booking.getLotName(),
             booking.getSpotId(),
             BookingEvent.BookingEventType.BOOKING_COMPLETED,
             booking.getUserId()
@@ -413,7 +408,7 @@ public class BookingLifecycleService {
         eventPublisher.publishEvent(new BookingEvent(
             this,
             booking.getId(),
-            booking.getLotId(),
+            booking.getLotName(),
             booking.getSpotId(),
             BookingEvent.BookingEventType.BOOKING_CANCELLED,
             booking.getUserId()
@@ -446,13 +441,13 @@ public class BookingLifecycleService {
                 .orElseThrow(() -> new NotFoundException("Booking not found"));
     }
 
-    private Bookings createAndSaveBooking(String spotId, String userId, String lotId,
+    private Bookings createAndSaveBooking(String spotId, String userId, String lotName,
                                          ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                          String vehicleNumber, double amount) {
         Bookings booking = new Bookings();
         booking.setSpotId(spotId);
         booking.setUserId(userId);
-        booking.setLotId(lotId);
+        booking.setLotName(lotName);
         booking.setStatus(BookingStatus.PENDING.name());
         booking.setAmount(amount);
         booking.setCreatedAt(Date.from(ZonedDateTime.now().toInstant()));

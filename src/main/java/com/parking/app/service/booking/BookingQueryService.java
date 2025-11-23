@@ -37,7 +37,7 @@ public class BookingQueryService {
             query.addCriteria(Criteria.where(Bookings.FIELD_STATUS).is(status));
         }
         if (lotId != null && !lotId.isEmpty()) {
-            query.addCriteria(Criteria.where(Bookings.FIELD_LOT_ID).is(lotId));
+            query.addCriteria(Criteria.where(Bookings.FIELD_LOT_NAME).is(lotId));
         }
         if (fromDate != null) {
             query.addCriteria(Criteria.where(Bookings.FIELD_CHECK_IN_TIME).gte(Date.from(fromDate.toInstant())));
