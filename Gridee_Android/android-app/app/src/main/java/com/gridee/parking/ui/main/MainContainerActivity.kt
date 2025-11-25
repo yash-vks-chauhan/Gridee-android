@@ -28,6 +28,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
 
     private var currentFragment: Fragment? = null
     private var currentTabId = CustomBottomNavigation.TAB_HOME
+    private var lastSystemTopInset = 0
 
     // Fragment instances (create once, reuse for better performance)
     private val homeFragment by lazy { HomeFragment() }
@@ -47,11 +48,13 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         super.onCreate(savedInstanceState)
         
                 // Handle system window insets for proper edge-to-edge
+        // Handle system window insets for proper edge-to-edge
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            lastSystemTopInset = systemBarsInsets.top
             
-            // Apply top padding to fragment container to avoid status bar overlap
-            binding.fragmentContainer.updatePadding(top = systemBarsInsets.top)
+            // Update padding based on current tab
+            updateContainerPadding()
             
             // Don't add bottom padding to bottom navigation to keep original size
             // The bottom nav will handle its own positioning
@@ -176,14 +179,22 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
 
         val insetsController = WindowCompat.getInsetsController(window, binding.root)
         if (isHome) {
-            val statusColor = ContextCompat.getColor(this, R.color.status_bar_dark)
-            window.statusBarColor = statusColor
+            // For Home, we want transparent status bar so hero section goes behind it
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
             insetsController.isAppearanceLightStatusBars = false
         } else {
             val statusColor = ContextCompat.getColor(this, R.color.background_primary)
             window.statusBarColor = statusColor
             insetsController.isAppearanceLightStatusBars = true
         }
+        updateContainerPadding()
+    }
+
+    private fun updateContainerPadding() {
+        val isHome = currentTabId == CustomBottomNavigation.TAB_HOME
+        // For Home, we don't want padding (fragment handles it). For others, we do.
+        val topPadding = if (isHome) 0 else lastSystemTopInset
+        binding.fragmentContainer.updatePadding(top = topPadding)
     }
 
     private fun setupScrollBehaviorForCurrentFragment() {

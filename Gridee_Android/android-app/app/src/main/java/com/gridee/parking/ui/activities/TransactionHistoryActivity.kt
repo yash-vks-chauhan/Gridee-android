@@ -24,13 +24,10 @@ import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.WalletTransaction
 import com.gridee.parking.databinding.ActivityTransactionHistoryBinding
 import com.gridee.parking.ui.adapters.Transaction
-import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.WalletTransactionGrouping
 import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
-
+import com.gridee.parking.ui.wallet.WalletTransactionMapper
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 class TransactionHistoryActivity : AppCompatActivity() {
 
@@ -294,13 +291,15 @@ class TransactionHistoryActivity : AppCompatActivity() {
                     val transactions = response.body()
                     if (transactions != null && transactions.isNotEmpty()) {
                         allTransactions.clear()
-                        allTransactions.addAll(transactions.mapNotNull { transaction ->
-                            try {
-                                convertToUITransaction(transaction)
-                            } catch (e: Exception) {
-                                null // Skip invalid transactions
+                        allTransactions.addAll(
+                            transactions.mapNotNull { transaction ->
+                                try {
+                                    WalletTransactionMapper.map(transaction)
+                                } catch (e: Exception) {
+                                    null // Skip invalid transactions
+                                }
                             }
-                        })
+                        )
                         
                         // Sort by timestamp (newest first)
                         allTransactions.sortByDescending { it.timestamp }
@@ -323,80 +322,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
     }
-
-    private fun convertToUITransaction(walletTransaction: WalletTransaction): Transaction {
-        val id = walletTransaction.id?.trim()
-        val timestamp = walletTransaction.timestamp?.trim()
-        
-        if (id.isNullOrBlank() || timestamp.isNullOrBlank()) {
-            throw IllegalArgumentException("Transaction missing required fields")
-        }
-        
-        val dateFormats = listOf(
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        )
-        
-        val parsedTimestamp = try {
-            var parsedDate: Date? = null
-            for (format in dateFormats) {
-                try {
-                    parsedDate = format.parse(timestamp)
-                    break
-                } catch (e: Exception) {
-                    // Try next format
-                }
-            }
-            parsedDate ?: Date()
-        } catch (e: Exception) {
-            Date()
-        }
-
-        val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
-        val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
-
-        val transactionType = when (typeNorm) {
-            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
-            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
-            "refund" -> TransactionType.REFUND
-            "bonus" -> TransactionType.BONUS
-            else -> TransactionType.TOP_UP
-        }
-
-        val amount = walletTransaction.amount ?: 0.0
-        val displayAmount = when (typeNorm) {
-            "debit", "payment", "penalty_deduction" -> if (amount > 0) -amount else amount
-            "credit", "refund", "bonus", "top_up", "topup", "wallet_topup", "wallet_recharge" -> if (amount < 0) -amount else amount
-            else -> amount
-        }
-
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Bonus"
-        }
-        val description = when (statusNorm) {
-            "failed" -> "$baseDescription Failed"
-            "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> walletTransaction.description?.trim()?.ifBlank { baseDescription } ?: baseDescription
-        }
-
-        return Transaction(
-            id = id,
-            type = transactionType,
-            amount = displayAmount,
-            description = description,
-            timestamp = parsedTimestamp,
-            balanceAfter = walletTransaction.balanceAfter ?: 0.0,
-            paymentMethod = null,
-            status = walletTransaction.status
-        )
-    }
-
-
 
     private fun showEmptyState() {
         allTransactions.clear()

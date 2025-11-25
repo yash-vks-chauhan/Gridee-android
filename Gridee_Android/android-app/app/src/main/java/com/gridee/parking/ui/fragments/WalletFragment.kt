@@ -14,12 +14,10 @@ import com.gridee.parking.data.model.WalletTransaction
 import com.gridee.parking.databinding.FragmentWalletNewBinding
 import com.gridee.parking.ui.activities.TransactionHistoryActivity
 import com.gridee.parking.ui.adapters.Transaction
-import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.TransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.wallet.WalletTransactionMapper
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
 
@@ -132,15 +130,17 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
                     if (transactions != null && transactions.isNotEmpty()) {
                         userTransactions.clear()
                         try {
-                            userTransactions.addAll(transactions.mapNotNull { transaction ->
-                                // Skip null transactions and handle conversion errors
-                                try {
-                                    convertToUITransaction(transaction)
-                                } catch (e: Exception) {
-                                    showToast("Error converting transaction: ${e.message}")
-                                    null
+                            userTransactions.addAll(
+                                transactions.mapNotNull { transaction ->
+                                    // Skip null transactions and handle conversion errors
+                                    try {
+                                        WalletTransactionMapper.map(transaction)
+                                    } catch (e: Exception) {
+                                        showToast("Error converting transaction: ${e.message}")
+                                        null
+                                    }
                                 }
-                            })
+                            )
                             updateTransactionsList()
                             if (userTransactions.isNotEmpty()) {
                                 showToast("Loaded ${userTransactions.size} transactions")
@@ -207,80 +207,6 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             val recentTransactions = userTransactions.take(5)
             transactionsAdapter.updateTransactions(recentTransactions)
         }
-    }
-
-    private fun convertToUITransaction(walletTransaction: WalletTransaction): Transaction {
-        // Validate required fields
-        val id = walletTransaction.id?.trim()
-        val timestamp = walletTransaction.timestamp?.trim()
-        
-        if (id.isNullOrBlank() || timestamp.isNullOrBlank()) {
-            throw IllegalArgumentException("Transaction missing required fields (id or timestamp)")
-        }
-        
-        // Try multiple date formats
-        val dateFormats = listOf(
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()),
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        )
-        
-        val parsedTimestamp = try {
-            var parsedDate: Date? = null
-            for (format in dateFormats) {
-                try {
-                    parsedDate = format.parse(timestamp)
-                    break
-                } catch (e: Exception) {
-                    // Try next format
-                }
-            }
-            parsedDate ?: Date() // Use current date if parsing fails
-        } catch (e: Exception) {
-            Date() // Fallback to current date
-        }
-
-        // Normalize fields
-        val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
-        val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
-
-        val transactionType = when (typeNorm) {
-            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
-            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
-            "refund" -> TransactionType.REFUND
-            "bonus" -> TransactionType.BONUS
-            else -> TransactionType.TOP_UP
-        }
-
-        val amount = walletTransaction.amount ?: 0.0
-        val displayAmount = when (typeNorm) {
-            "debit", "payment", "penalty_deduction" -> if (amount > 0) -amount else amount
-            "credit", "refund", "bonus", "top_up", "topup", "wallet_topup", "wallet_recharge" -> if (amount < 0) -amount else amount
-            else -> amount
-        }
-
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Bonus"
-        }
-        val description = when (statusNorm) {
-            "failed" -> "$baseDescription Failed"
-            "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> walletTransaction.description?.trim() ?: baseDescription
-        }
-
-        return Transaction(
-            id = id,
-            type = transactionType,
-            amount = displayAmount,
-            description = description,
-            timestamp = parsedTimestamp,
-            balanceAfter = walletTransaction.balanceAfter ?: 0.0,
-            status = walletTransaction.status
-        )
     }
 
     private fun getUserId(): String? {

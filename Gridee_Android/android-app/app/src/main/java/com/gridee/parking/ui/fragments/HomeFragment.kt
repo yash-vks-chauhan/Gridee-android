@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -104,6 +105,28 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
             }
         }
         hasPromptedCategorySheet = savedInstanceState?.getBoolean(KEY_CATEGORY_PROMPTED, false) ?: false
+    }
+
+    override fun onResume() {
+        super.onResume()
+        setStatusBarTransparent()
+        binding.greetingAnimation.playAnimation()
+    }
+
+    private fun setStatusBarTransparent() {
+        activity?.window?.let { window ->
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Revert status bar to default (black) when leaving home
+        activity?.window?.let { window ->
+            window.statusBarColor = ContextCompat.getColor(requireContext(), R.color.status_bar_dark)
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        }
     }
 
     private lateinit var viewModel: MainViewModel
@@ -894,10 +917,7 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
         outState.putBoolean(KEY_CATEGORY_PROMPTED, hasPromptedCategorySheet)
     }
 
-    override fun onResume() {
-        super.onResume()
-        binding.greetingAnimation.playAnimation()
-    }
+
 
     override fun onPause() {
         binding.greetingAnimation.pauseAnimation()

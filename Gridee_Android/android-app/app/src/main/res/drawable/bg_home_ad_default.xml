@@ -6,5 +6,5 @@
         android:topRightRadius="0dp"
         android:bottomLeftRadius="@dimen/home_hero_bottom_radius"
         android:bottomRightRadius="@dimen/home_hero_bottom_radius" />
-    <solid android:color="@color/status_bar_dark" />
+    <solid android:color="#000000" />
 </shape>

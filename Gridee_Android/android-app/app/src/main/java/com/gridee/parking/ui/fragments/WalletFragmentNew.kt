@@ -17,18 +17,16 @@ import com.gridee.parking.databinding.FragmentWalletNewBinding
 import com.gridee.parking.databinding.BottomSheetTopUpSimpleBinding
 import com.gridee.parking.ui.activities.TransactionHistoryActivity
 import com.gridee.parking.ui.adapters.Transaction
-import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.WalletTransactionGrouping
 import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.wallet.WalletTransactionMapper
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.dynamicanimation.animation.SpringAnimation
 import androidx.dynamicanimation.animation.SpringForce
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
 
@@ -153,7 +151,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
                 val backendTransactions = transactionResponse.body().orEmpty()
                 userTransactions.clear()
                 
-                val convertedTransactions = backendTransactions.map { convertToUITransaction(it) }
+                val convertedTransactions = backendTransactions.map { WalletTransactionMapper.map(it) }
                 userTransactions.addAll(convertedTransactions.sortedByDescending { it.timestamp })
                 
                 android.util.Log.d("WalletFragmentNew", "Loaded ${userTransactions.size} transactions from API")
@@ -223,93 +221,6 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         userTransactions.clear()
         updateTransactionsDisplay()
         showToast("No real wallet data available")
-    }
-
-    private fun convertToUITransaction(backendTransaction: WalletTransaction): Transaction {
-        // Use ISO 8601 format with timezone support for better date parsing
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
-        val fallbackFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val istTimeZone = TimeZone.getTimeZone("Asia/Kolkata")
-        
-        // Set timezone to handle UTC correctly
-        dateFormat.timeZone = TimeZone.getTimeZone("UTC")
-        fallbackFormat.timeZone = istTimeZone
-        simpleDateFormat.timeZone = istTimeZone
-        
-        // Parse timestamp or use current date as fallback
-        val timestamp = try {
-            if (backendTransaction.timestamp != null) {
-                // Try multiple date formats
-                try {
-                    dateFormat.parse(backendTransaction.timestamp) ?: Date()
-                } catch (e: Exception) {
-                    try {
-                        fallbackFormat.parse(backendTransaction.timestamp) ?: Date()
-                    } catch (e2: Exception) {
-                        // Try simple date format as last resort
-                        simpleDateFormat.parse(backendTransaction.timestamp) ?: Date()
-                    }
-                }
-            } else {
-                Date()
-            }
-        } catch (e: Exception) {
-            android.util.Log.w("WalletFragmentNew", "Failed to parse timestamp: ${backendTransaction.timestamp}", e)
-            Date()
-        }
-        
-        // Normalize fields
-        val typeNorm = backendTransaction.type?.trim()?.lowercase(Locale.getDefault())
-        val statusNorm = backendTransaction.status?.trim()?.lowercase(Locale.getDefault())
-        val amount = backendTransaction.amount ?: 0.0
-
-        // Map transaction type and handle amount correctly
-        val creditTypes = setOf("credit", "top_up", "topup", "wallet_topup", "wallet_recharge")
-        val debitTypes = setOf("debit", "payment", "penalty_deduction", "charge", "deduction")
-        val rewardTypes = setOf("bonus", "reward_bonus", "reward", "ad_reward")
-
-        val transactionType = when {
-            typeNorm in rewardTypes -> TransactionType.BONUS
-            typeNorm == "refund" -> TransactionType.REFUND
-            typeNorm in debitTypes -> TransactionType.PARKING_PAYMENT
-            typeNorm in creditTypes -> TransactionType.TOP_UP
-            amount < 0 -> TransactionType.PARKING_PAYMENT
-            else -> TransactionType.TOP_UP
-        }
-        
-        // Ensure proper amount handling:
-        // CREDIT transactions should be positive
-        // DEBIT transactions should be negative
-        val displayAmount = when (transactionType) {
-            TransactionType.PARKING_PAYMENT -> if (amount > 0) -amount else amount  // Make sure debits are negative
-            else -> if (amount < 0) -amount else amount  // Make sure credits are positive
-        }
-        
-        android.util.Log.d("WalletFragmentNew", "Converting transaction: type=${backendTransaction.type}, originalAmount=$amount, displayAmount=$displayAmount")
-        
-        // Build a user-friendly description, respecting status
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Reward Added"
-        }
-        val description = when (statusNorm) {
-            "failed" -> "$baseDescription Failed"
-            "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> backendTransaction.description ?: baseDescription
-        }
-
-        return Transaction(
-            id = backendTransaction.id ?: "Unknown",
-            type = transactionType,
-            amount = displayAmount,
-            description = description,
-            timestamp = timestamp,
-            balanceAfter = backendTransaction.balanceAfter ?: 0.0,
-            status = backendTransaction.status
-        )
     }
 
     private fun showTopUpDialog() {
