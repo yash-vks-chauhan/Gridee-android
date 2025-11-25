@@ -152,10 +152,14 @@ public class ParkingSpotService {
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
         ParkingSpot existingSpot = parkingSpotRepository.findById(spotId).orElse(null);
         if (existingSpot != null) {
-            if (spotDetails.getLotId() != null) existingSpot.setLotId(spotDetails.getLotId());
-            if (spotDetails.getZoneName() != null) existingSpot.setZoneName(spotDetails.getZoneName());
-            if (spotDetails.getCapacity() > 0) existingSpot.setCapacity(spotDetails.getCapacity());
-            if (spotDetails.getAvailable() >= 0) existingSpot.setAvailable(spotDetails.getAvailable());
+            if (spotDetails.getLotId() != null)
+                existingSpot.setLotId(spotDetails.getLotId());
+            if (spotDetails.getZoneName() != null)
+                existingSpot.setZoneName(spotDetails.getZoneName());
+            if (spotDetails.getCapacity() > 0)
+                existingSpot.setCapacity(spotDetails.getCapacity());
+            if (spotDetails.getAvailable() >= 0)
+                existingSpot.setAvailable(spotDetails.getAvailable());
             return parkingSpotRepository.save(existingSpot);
         }
         return null;
@@ -163,6 +167,10 @@ public class ParkingSpotService {
 
     public void deleteParkingSpot(String spotId) {
         parkingSpotRepository.deleteById(spotId);
+    }
+
+    public void deleteAllParkingSpots() {
+        parkingSpotRepository.deleteAll();
     }
 
     public ParkingSpot holdSpot(String spotId, String userId) {
@@ -198,7 +206,8 @@ public class ParkingSpotService {
     }
 
     // NEW: Get available spots for a time window
-    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime,List<Bookings> overlappingBookings) {
+    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime,
+            List<Bookings> overlappingBookings) {
         List<ParkingSpot> allSpots = parkingSpotRepository.findByLotId(lotId);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)

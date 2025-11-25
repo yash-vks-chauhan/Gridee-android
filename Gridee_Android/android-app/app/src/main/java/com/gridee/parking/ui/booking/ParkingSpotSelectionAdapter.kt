@@ -58,46 +58,38 @@ class ParkingSpotSelectionAdapter(
             binding.apply {
                 tvSpotName.text = parkingSpot.name ?: parkingSpot.zoneName ?: "Unknown Spot"
                 tvSpotDetails.text = "Spot ID: ${parkingSpot.id}"
-                tvAvailability.text = "${parkingSpot.available}/${parkingSpot.capacity} available"
                 tvStatus.text = parkingSpot.status.uppercase()
                 
                 val isSelected = parkingSpot.id == selectedSpotId
-                println("ParkingSpotAdapter: Binding spot ${parkingSpot.id}, selected: $isSelected (selectedSpotId: $selectedSpotId)")
                 
                 // Set availability colors and selection state
                 if (parkingSpot.available > 0) {
-                    tvAvailability.setTextColor(
-                        ContextCompat.getColor(itemView.context, R.color.primary_green)
-                    )
                     tvStatus.setTextColor(
-                        ContextCompat.getColor(itemView.context, R.color.primary_green)
+                        ContextCompat.getColor(itemView.context, R.color.text_primary)
                     )
+                    tvStatus.background = ContextCompat.getDrawable(itemView.context, R.drawable.bg_pill_grey_light)
                     
                     // Set radio button state
                     val radioButton = binding.ivRadioButton
                     radioButton.alpha = 1.0f // Ensure full opacity for available spots
                     if (isSelected) {
                         radioButton.setImageResource(R.drawable.ic_radio_button_checked)
-                        println("ParkingSpotAdapter: Applied radio checked to ${parkingSpot.id}")
                     } else {
                         radioButton.setImageResource(R.drawable.ic_radio_button_unchecked)
                     }
                     
-                    // Remove background styling - keep cards consistent
+                    // Reset card background
                     cardSpot.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.context, android.R.color.white)
+                        ContextCompat.getColor(itemView.context, R.color.background_grouped)
                     )
-                    cardSpot.cardElevation = 2f
                     
                     root.isEnabled = true
                     root.alpha = 1.0f
                 } else {
-                    tvAvailability.setTextColor(
-                        ContextCompat.getColor(itemView.context, R.color.error)
-                    )
                     tvStatus.setTextColor(
                         ContextCompat.getColor(itemView.context, R.color.error)
                     )
+                    // You might want a red pill background here if you have one, or keep grey
                     
                     // Disable radio button for unavailable spots
                     val radioButton = binding.ivRadioButton
@@ -105,9 +97,8 @@ class ParkingSpotSelectionAdapter(
                     radioButton.alpha = 0.3f
                     
                     cardSpot.setCardBackgroundColor(
-                        ContextCompat.getColor(itemView.context, R.color.light_gray)
+                        ContextCompat.getColor(itemView.context, R.color.background_grouped)
                     )
-                    cardSpot.cardElevation = 1f
                     root.isEnabled = false
                     root.alpha = 0.6f
                 }

@@ -66,10 +66,14 @@ public class TransactionChangeListener {
         if (!alreadyApplied) {
             double updatedBalance = wallet.getBalance();
             // Add to balance for topup/refund, subtract for payment
-            if ("wallet_topup".equalsIgnoreCase(tx.getType()) || "refund".equalsIgnoreCase(tx.getType()))
-                updatedBalance += tx.getAmount();
-            else if ("payment".equalsIgnoreCase(tx.getType()))
-                updatedBalance -= tx.getAmount();
+            String type = tx.getType() != null ? tx.getType().toLowerCase() : "";
+            double amount = tx.getAmount();
+            double absoluteAmount = Math.abs(amount);
+            if ("wallet_topup".equals(type) || "refund".equals(type) || "reward_bonus".equals(type) || "bonus".equals(type)) {
+                updatedBalance += absoluteAmount;
+            } else if ("payment".equals(type) || "penalty_deduction".equals(type)) {
+                updatedBalance -= absoluteAmount;
+            }
 
             wallet.setBalance(updatedBalance);
             wallet.setLastUpdated(new Date());

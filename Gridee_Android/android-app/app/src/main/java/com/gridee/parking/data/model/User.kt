@@ -44,7 +44,8 @@ data class UserRegistration(
     val name: String,
     val email: String,
     val phone: String,
-    val passwordHash: String,
-    val parkingLotName: String,
+    @SerializedName("password")
+    val password: String,
+    val parkingLotName: String? = null,  // Optional parking lot
     val vehicleNumbers: List<String> = emptyList()
 )

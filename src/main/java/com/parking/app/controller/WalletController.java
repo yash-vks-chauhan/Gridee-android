@@ -1,5 +1,6 @@
 package com.parking.app.controller;
 
+import com.parking.app.dto.WalletRewardRequest;
 import com.parking.app.model.Transactions;
 import com.parking.app.model.Wallet;
 import com.parking.app.service.TransactionService;
@@ -42,12 +43,22 @@ public class WalletController {
     @PostMapping("/topup")
     public ResponseEntity<?> topUpWallet(
             @PathVariable String userId,
-            @RequestBody Map<String, Double> request) {
-        Double amount = request.get("amount");
+            @RequestBody Map<String, Object> request) {
+        Object amountObj = request.get("amount");
+        Double amount = null;
+        if (amountObj instanceof Number) {
+            amount = ((Number) amountObj).doubleValue();
+        } else if (amountObj instanceof String) {
+            amount = Double.valueOf((String) amountObj);
+        }
         if (amount == null || amount <= 0) {
             throw new IllegalArgumentException("Amount must be positive.");
         }
-        Wallet wallet = walletService.topUpWallet(userId, amount);
+        Object typeObj = request.get("type");
+        String txType = typeObj != null ? typeObj.toString() : null;
+        Object sourceObj = request.get("source");
+        String source = sourceObj != null ? sourceObj.toString() : null;
+        Wallet wallet = walletService.topUpWallet(userId, amount, txType, source);
         return ResponseEntity.ok(wallet);
     }
 
@@ -64,6 +75,23 @@ public class WalletController {
         if (wallet == null) {
             throw new com.parking.app.exception.NotFoundException("Wallet not found or insufficient balance.");
         }
+        return ResponseEntity.ok(wallet);
+    }
+
+    @PostMapping("/reward")
+    public ResponseEntity<Wallet> grantReward(
+            @PathVariable String userId,
+            @RequestBody WalletRewardRequest request) {
+        double amount = (request.getAmount() != null) ? request.getAmount() : 10.0;
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Reward amount must be positive.");
+        }
+        Wallet wallet = walletService.applyReward(
+                userId,
+                amount,
+                request.getSource(),
+                request.getRewardId()
+        );
         return ResponseEntity.ok(wallet);
     }
 }

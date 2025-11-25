@@ -76,17 +76,17 @@ public class UserService {
         if (!PHONE_PATTERN.matcher(userRequest.getPhone()).matches()) {
             throw new IllegalArgumentException("Invalid phone format.");
         }
-        if (userRequest.getParkingLotName() == null || userRequest.getParkingLotName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Parking lot name is required.");
-        }
         if (userRequest.getPassword() == null || userRequest.getPassword().isEmpty()) {
             throw new IllegalArgumentException("Password is required.");
         }
 
-        // Fetch parking lot by name
-        ParkingLot lot = parkingLotRepository.findByName(userRequest.getParkingLotName());
-        if (lot == null) {
-            throw new IllegalArgumentException("Parking lot not found: " + userRequest.getParkingLotName());
+        // Fetch parking lot by name (optional)
+        ParkingLot lot = null;
+        if (userRequest.getParkingLotName() != null && !userRequest.getParkingLotName().trim().isEmpty()) {
+            lot = parkingLotRepository.findByName(userRequest.getParkingLotName());
+            if (lot == null) {
+                throw new IllegalArgumentException("Parking lot not found: " + userRequest.getParkingLotName());
+            }
         }
 
         if (userRepository.findByEmailAndActive(userRequest.getEmail(), true).isPresent()) {
@@ -103,8 +103,8 @@ public class UserService {
         user.setEmail(userRequest.getEmail());
         user.setPhone(userRequest.getPhone());
         user.setVehicleNumbers(userRequest.getVehicleNumbers());
-        user.setParkingLotId(lot.getId());
-        user.setParkingLotName(lot.getName());
+        user.setParkingLotId(lot != null ? lot.getId() : null);
+        user.setParkingLotName(lot != null ? lot.getName() : null);
         user.setWalletCoins(0);
         user.setFirstUser(true);
         user.setCreatedAt(new java.util.Date());
@@ -201,6 +201,58 @@ public class UserService {
         return userRepository.save(existingUser);
     }
 
+    // Overload for backward compatibility with Users object
+    public Users updateUser(String id, Users userDetails) {
+        Users existingUser = userRepository.findById(id).orElse(null);
+        if (existingUser == null || existingUser.isActive() == false) {
+            return null;
+        }
+
+        // Update only non-null/non-empty fields
+        if (userDetails.getName() != null && !userDetails.getName().trim().isEmpty()) {
+            existingUser.setName(userDetails.getName());
+        }
+        if (userDetails.getParkingLotId() != null && !userDetails.getParkingLotId().trim().isEmpty()) {
+            ParkingLot lot = parkingLotRepository.findById(userDetails.getParkingLotId()).orElse(null);
+            if (lot == null) {
+                throw new IllegalArgumentException("Parking lot not found with id: " + userDetails.getParkingLotId());
+            }
+            existingUser.setParkingLotId(lot.getId());
+            existingUser.setParkingLotName(lot.getName());
+        }
+        if (userDetails.getVehicleNumbers() != null && !userDetails.getVehicleNumbers().isEmpty()) {
+            existingUser.setVehicleNumbers(userDetails.getVehicleNumbers());
+        }
+        if (userDetails.getEmail() != null && !userDetails.getEmail().trim().isEmpty()) {
+            if (!EMAIL_PATTERN.matcher(userDetails.getEmail()).matches()) {
+                throw new IllegalArgumentException("Invalid email format.");
+            }
+            // Check email uniqueness if changed (only active users)
+            if (!userDetails.getEmail().equals(existingUser.getEmail()) &&
+                    userRepository.findByEmailAndActive(userDetails.getEmail(), true).isPresent()) {
+                throw new IllegalArgumentException("Email already registered.");
+            }
+            existingUser.setEmail(userDetails.getEmail());
+        }
+        if (userDetails.getPhone() != null && !userDetails.getPhone().trim().isEmpty()) {
+            if (!PHONE_PATTERN.matcher(userDetails.getPhone()).matches()) {
+                throw new IllegalArgumentException("Invalid phone format.");
+            }
+            // Check phone uniqueness if changed (only active users)
+            if (!userDetails.getPhone().equals(existingUser.getPhone()) &&
+                    userRepository.findByPhoneAndActive(userDetails.getPhone(), true).isPresent()) {
+                throw new IllegalArgumentException("Phone already registered.");
+            }
+            existingUser.setPhone(userDetails.getPhone());
+        }
+        if (userDetails.getPasswordHash() != null && !userDetails.getPasswordHash().isEmpty()) {
+            String hashedPassword = BCrypt.hashpw(userDetails.getPasswordHash(), BCrypt.gensalt());
+            existingUser.setPasswordHash(hashedPassword);
+        }
+        existingUser.setUpdatedAt(Date.from(Instant.now()));
+        return userRepository.save(existingUser);
+    }
+
     public Users addUserVehicles(String userId, List<String> vehicleNumbers) {
         Users existingUser = userRepository.findById(userId).orElse(null);
         if (existingUser == null) return null;
@@ -226,5 +278,66 @@ public class UserService {
         existingUser.setActive(false);
         existingUser.setUpdatedAt(Date.from(Instant.now()));
         userRepository.save(existingUser);
+    }
+
+    // Get user by email (used by UserController)
+    public Users getUserByEmail(String email) {
+        return userRepository.findByEmailAndActive(email, true).orElse(null);
+    }
+
+    // Get user by ID (used by UserController)
+    public Users getUserById(String id) {
+        return userRepository.findById(id).orElse(null);
+    }
+
+    // Create social user (used by UserController for social sign-in)
+    public Users createSocialUser(Users user) {
+        if (user == null) throw new IllegalArgumentException("User data is required.");
+        
+        // Set defaults for social users
+        if (user.getCheckInPin() == null || user.getCheckInPin().isEmpty()) {
+            user.setCheckInPin(generateUniqueCheckInPin());
+        }
+        user.setWalletCoins(0);
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(new Date());
+        }
+        user.setActive(true);
+        
+        return userRepository.save(user);
+    }
+
+    // Create user with parking lot name (used by UserController for backward compatibility)
+    public Users createUser(Users user, String parkingLotName) {
+        if (user == null) throw new IllegalArgumentException("User data is required.");
+
+        // Fetch parking lot by name (optional)
+        ParkingLot lot = null;
+        if (parkingLotName != null && !parkingLotName.trim().isEmpty()) {
+            lot = parkingLotRepository.findByName(parkingLotName);
+            if (lot == null) {
+                throw new IllegalArgumentException("Parking lot not found: " + parkingLotName);
+            }
+        }
+
+        user.setParkingLotId(lot != null ? lot.getId() : null);
+        user.setParkingLotName(lot != null ? lot.getName() : null);
+        
+        // Set defaults
+        if (user.getCheckInPin() == null || user.getCheckInPin().isEmpty()) {
+            user.setCheckInPin(generateUniqueCheckInPin());
+        }
+        user.setWalletCoins(0);
+        if (user.getCreatedAt() == null) {
+            user.setCreatedAt(new Date());
+        }
+        user.setActive(true);
+
+        // Hash password if provided
+        if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty()) {
+            user.setPasswordHash(BCrypt.hashpw(user.getPasswordHash(), BCrypt.gensalt()));
+        }
+
+        return userRepository.save(user);
     }
 }

@@ -19,6 +19,11 @@ class SearchActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySearchBinding
     private var isClosing = false
+    private var allowCloseActions = false
+
+    companion object {
+        const val EXTRA_INITIAL_QUERY = "extra_initial_query"
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -29,6 +34,7 @@ class SearchActivity : AppCompatActivity() {
 
         setupInsets()
         setupInteractions()
+        applyInitialQuery()
         playEntranceAnimations()
         focusInput()
     }
@@ -53,8 +59,9 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun setupInteractions() {
-        binding.btnBack.setOnClickListener { closeWithAnimation() }
-        binding.searchScrim.setOnClickListener { closeWithAnimation() }
+        binding.btnBack.setOnClickListener { handleCloseRequest() }
+        binding.searchScrim.setOnClickListener { handleCloseRequest() }
+        binding.searchScrim.isEnabled = false
 
         binding.btnClear.setOnClickListener {
             binding.etSearch.text?.clear()
@@ -78,19 +85,41 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    private fun applyInitialQuery() {
+        val initialQuery = intent.getStringExtra(EXTRA_INITIAL_QUERY)
+        if (!initialQuery.isNullOrBlank()) {
+            binding.etSearch.setText(initialQuery)
+            binding.etSearch.setSelection(initialQuery.length)
+        }
+    }
+
     private fun playEntranceAnimations() {
+        allowCloseActions = false
+        binding.searchScrim.alpha = 0f
+        binding.searchContentContainer.alpha = 0f
+        val offset = resources.getDimension(R.dimen.margin_medium)
+        binding.searchContentContainer.translationY = offset
+
+        // Smoother, more professional entrance animation
         binding.searchScrim.animate()
             .alpha(1f)
-            .setDuration(220)
-            .setStartDelay(100)
+            .setDuration(250)
+            .setStartDelay(0)
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .withEndAction {
+                binding.searchScrim.isEnabled = true
+            }
             .start()
 
         binding.searchContentContainer.animate()
             .alpha(1f)
             .translationY(0f)
-            .setDuration(320)
-            .setStartDelay(220)
-            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .setDuration(300)
+            .setStartDelay(150)
+            .setInterpolator(android.view.animation.DecelerateInterpolator(1.5f))
+            .withEndAction {
+                allowCloseActions = true
+            }
             .start()
     }
 
@@ -98,7 +127,7 @@ class SearchActivity : AppCompatActivity() {
         binding.etSearch.requestFocus()
         binding.etSearch.postDelayed({
             showKeyboard()
-        }, 250)
+        }, 200)
     }
 
     private fun showKeyboard() {
@@ -112,26 +141,33 @@ class SearchActivity : AppCompatActivity() {
         binding.etSearch.clearFocus()
     }
 
+    private fun handleCloseRequest() {
+        if (!allowCloseActions) return
+        closeWithAnimation()
+    }
+
     private fun closeWithAnimation() {
         if (isClosing) return
         isClosing = true
         hideKeyboard()
 
+        // Smooth exit animation
         binding.searchContentContainer.animate()
             .alpha(0f)
-            .translationY(16f)
-            .setDuration(180)
-            .setInterpolator(android.view.animation.AccelerateDecelerateInterpolator())
-            .withEndAction { finishAfterTransition() }
+            .translationY(12f)
+            .setDuration(200)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
             .start()
 
         binding.searchScrim.animate()
             .alpha(0f)
-            .setDuration(180)
+            .setDuration(200)
+            .setStartDelay(50)
+            .withEndAction { finishAfterTransition() }
             .start()
     }
 
     override fun onBackPressed() {
-        closeWithAnimation()
+        handleCloseRequest()
     }
 }

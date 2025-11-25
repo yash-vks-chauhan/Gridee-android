@@ -81,6 +81,7 @@
     <string name="booking_details">Booking Details</string>
     <string name="booking_directions">Directions</string>
     <string name="booking_share">Share</string>
+    <string name="share">Share</string>
     <string name="extend_booking">Extend Booking</string>
     <string name="current_end_time">Current end time: %s</string>
     <string name="select_new_end_time">Select new end time:</string>
@@ -89,6 +90,22 @@
     <string name="confirm_extend_message">Are you sure you want to extend this booking?&#x0A;&#x0A;Additional charges will be deducted from your wallet.</string>
     <string name="booking_extended_success">Booking extended successfully!</string>
     <string name="insufficient_wallet_balance">Insufficient wallet balance. Please top up.</string>
+    <string name="wallet_add_more_hint">Add ₹%1$s more to confirm this booking.</string>
+    <string name="wallet_sufficient_hint">₹%1$s will be deducted from your wallet.</string>
+    <string name="wallet_ready_hint">Use your wallet for instant confirmations.</string>
+    <string name="wallet_insufficient_error">Insufficient balance. Add ₹%1$s to continue.</string>
+    <string name="wallet_updated_now">Updated just now</string>
+    <string name="wallet_add_money">Add money</string>
+    <string name="gridee_wallet_title">Gridee Wallet</string>
+    <string name="wallet_fetching_balance">Fetching balance…</string>
+    <string name="datetime_picker_start_title">Schedule check-in</string>
+    <string name="datetime_picker_end_title">Schedule check-out</string>
+    <string name="datetime_picker_hint">Pick a date and time that works for you.</string>
+    <string name="datetime_picker_date_label">Date</string>
+    <string name="datetime_picker_time_label">Time</string>
+    <string name="datetime_picker_date_selector_label">Select date</string>
+    <string name="datetime_picker_time_selector_label">Select time</string>
+    <string name="datetime_picker_cta">Apply selection</string>
     <string name="spot_not_available_extended">Parking spot not available for selected time</string>
     <string name="new_time_must_be_later">New end time must be after current end time</string>
     <string name="extend_failed_default">Failed to extend booking</string>
@@ -119,12 +136,19 @@
     <string name="transition_search_bar">home_search_bar</string>
     <string name="search_expanded_hint">Search parking spots, zones or locations</string>
     <string name="search_home_hint">Search for parking spots...</string>
+    <string name="search_expanded_hint_minimal">Search parking spots, zones, or keywords</string>
     <string name="search_recent_header">Recent searches</string>
     <string name="search_popular_header">Popular near you</string>
     <string name="search_clear_recent">Clear history</string>
     <string name="content_description_close_search">Close search</string>
     <string name="content_description_clear_query">Clear search query</string>
     <string name="search_empty_state">Start typing to find parking zones, garages, and offers around you.</string>
+    <string name="search_empty_state_minimal">Type to discover curated parking zones, lots, and offers nearby.</string>
+    <string name="voice_search_prompt">Say a location or parking spot</string>
+    <string name="voice_search_not_supported">Voice search is not available on this device.</string>
+    <string name="voice_search_permission_denied">Microphone permission is required for voice search.</string>
+    <string name="voice_search_no_result">Could not hear anything. Please try again.</string>
+    <string name="voice_search_content_description">Start voice search</string>
     
     <!-- Google Sign In -->
     <!-- TODO: Replace this with your actual Web Client ID from Google Cloud Console -->
@@ -137,4 +161,97 @@
     <string name="app_name_gridee">Gridee</string>
     <string name="card_on_road">Card on road</string>
     <string name="bike_on_road">Bike on road</string>
+
+    <!-- AdMob -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+    <string name="admob_banner_unit_id">ca-app-pub-3940256099942544/6300978111</string>
+    <string name="admob_rewarded_unit_id">ca-app-pub-3940256099942544/5224354917</string>
+    <string name="admob_native_unit_id">ca-app-pub-3940256099942544/2247696110</string>
+
+    <!-- Home hero/ad copy -->
+    <string name="home_header_default_title">Hi there</string>
+    <string name="home_header_greeting">%1$s, %2$s</string>
+    <string name="home_greeting_morning">Good morning</string>
+    <string name="home_greeting_afternoon">Good afternoon</string>
+    <string name="home_greeting_evening">Good evening</string>
+    <string name="home_greeting_welcome_back">Welcome back</string>
+    <string name="home_header_subtitle">Everything you need to park on time.</string>
+    <string name="home_ad_banner_title">Spotlight</string>
+    <string name="home_ad_banner_message">Keep Gridee running smoothly by viewing a quick sponsored update.</string>
+    <string name="home_ad_banner_supporting">…with On-Time Guarantee, every time.</string>
+    <string name="home_ad_banner_disclaimer">Sponsored</string>
+    <string name="home_ad_cta">Upgrade to One BLCK</string>
+    <string name="home_ad_not_ready">Video ad is getting ready. Try again in a second.</string>
+    <string name="home_ad_loading_message">Loading your video…</string>
+    <string name="home_ad_thank_you">Thanks for watching!</string>
+    <string name="home_ad_failed_to_load">Ad unavailable: %1$s</string>
+    <string name="home_ad_placeholder_content_desc">Sponsored banner placeholder</string>
+    <string name="home_ad_loading_title">New partner offer incoming</string>
+    <string name="home_ad_loading_subtitle">We\'ll load a curated sponsor update in a moment.</string>
+    <string name="home_ad_sponsored_badge">Ad</string>
+    <string name="home_ad_call_to_action_default">Learn more</string>
+    <string name="home_coin_sheet_copy">Play video to gain free coins</string>
+    <string name="home_coin_play_video">Play video</string>
+    <string name="home_coin_reward_title">Reward added to your wallet</string>
+    <string name="home_coin_reward_amount">₹%1$d added to your wallet</string>
+    <string name="home_coin_reward_amount_placeholder">₹10 added to your wallet</string>
+    <string name="home_coin_reward_hint">You can find it in your wallet transactions</string>
+    <string name="home_coin_reward_button">See in wallet</string>
+    <string name="home_coin_reward_cd">Reward added icon</string>
+    <string name="home_wallet_reward_success">₹%1$d reward added to your wallet.</string>
+    <string name="home_wallet_reward_failure">Unable to add reward. Please try again.</string>
+    <string name="home_wallet_reward_login">Please log in to claim rewards.</string>
+
+    <!-- Home parking snapshot -->
+    <string name="home_parking_section_title">Parking spots near you</string>
+    <string name="home_parking_category_sheet_title">Choose a parking category</string>
+    <string name="home_parking_category_sheet_subtitle">Pick a campus block to browse its spots.</string>
+    <string name="home_parking_category_button_hint">Category</string>
+    <string name="home_parking_time_sheet_title">Plan your parking timer</string>
+    <string name="home_parking_time_sheet_subtitle">Select check-in and check-out to lock your schedule.</string>
+    <string name="home_parking_time_check_in_label">Check-in</string>
+    <string name="home_parking_time_check_out_label">Check-out</string>
+    <string name="home_parking_time_hint">Need flexibility? You can always modify this later.</string>
+    <string name="home_parking_time_button">Confirm timer</string>
+    <string name="home_parking_time_invalid">Check-out must be at least %1$d minutes after check-in.</string>
+    <string name="home_parking_summary_title">Confirm this setup?</string>
+    <string name="home_parking_summary_message">Make sure the selected category and timer match your upcoming visit.</string>
+    <string name="home_parking_summary_category_label">Category</string>
+    <string name="home_parking_summary_time_label">Timer</string>
+    <string name="home_parking_summary_apply">Apply</string>
+    <string name="home_parking_summary_modify_timer">Modify timer</string>
+    <string name="home_parking_summary_modify_category">Modify category</string>
+    <string name="home_parking_selection_applied">Parking snapshot updated.</string>
+    <string name="home_parking_card_title">Top available spot</string>
+    <string name="home_parking_location_placeholder">Detecting location…</string>
+    <string name="home_parking_status_badge">LIVE</string>
+    <string name="home_parking_updated_label">Updated moments ago</string>
+    <string name="home_parking_count_label">Nearby spaces</string>
+    <string name="home_parking_refresh">Refresh</string>
+    <string name="home_parking_icon_content_desc">Parking spot illustration</string>
+    <string name="home_parking_empty_state">Parking spots appear here once nearby locations report availability.</string>
+    <string name="home_parking_status_available">Available</string>
+    <string name="home_parking_status_full">Full</string>
+    <string name="home_parking_spot_available_count">%d slots open</string>
+    <string name="home_parking_spot_available_single">Slot open now</string>
+    <string name="home_parking_spot_full">Currently occupied</string>
+    <string name="home_parking_sheet_title_default">Parking spot</string>
+    <string name="home_parking_sheet_subtitle_default">Clean snapshot of this spot before booking.</string>
+
+    <string name="parking_category_medical_title">Medical College Parking</string>
+    <string name="parking_category_medical_subtitle">SRM Dental College • SRM College of Nursing Block</string>
+    <string name="parking_category_chemical_title">SRM Chemical Block (Chemistry Lab)</string>
+    <string name="parking_category_chemical_subtitle">BEL Car Parking • BEL Parking</string>
+    <string name="parking_category_engineering_title">Engineering Block</string>
+    <string name="parking_category_engineering_subtitle">TP Avenue • TP Java Parking • TP Vendhar Square • TP Zone A • TP Zone B</string>
+    <string name="parking_category_ub_title">UB</string>
+    <string name="parking_category_ub_subtitle">UB Parking (Meenakshi)</string>
+    <string name="home_confirm_booking_cta">Slide to confirm booking</string>
+    <plurals name="home_parking_spots_count">
+        <item quantity="one">%d open spot</item>
+        <item quantity="other">%d open spots</item>
+    </plurals>
+    <string name="home_footer_tagline">#GoGridee</string>
+    <string name="home_footer_made_for">Made for India 🇮🇳</string>
+    <string name="home_footer_crafted_with">Crafted with ❤️ in Bengaluru</string>
 </resources>

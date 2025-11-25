@@ -1,7 +1,10 @@
 package com.gridee.parking.ui.main
 
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
@@ -19,6 +22,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
     companion object {
         const val EXTRA_TARGET_TAB = "extra_target_tab"
         const val EXTRA_SHOW_PENDING = "extra_show_pending"
+        const val EXTRA_SHOW_COMPLETED = "extra_show_completed"
         const val EXTRA_HIGHLIGHT_BOOKING_ID = "extra_highlight_booking_id"
     }
 
@@ -72,6 +76,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
             currentTabId = initialTab
             bottomNavigation.setActiveTab(currentTabId)
             currentFragment = supportFragmentManager.findFragmentById(R.id.fragment_container)
+            updateContainerAppearance(currentTabId)
         }
 
         handleNavigationIntent(intent, currentTabId)
@@ -142,6 +147,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         
         currentFragment = fragment
         currentTabId = tabId
+        updateContainerAppearance(tabId)
         
         // Delay scroll behavior setup until fragment view is ready
         binding.fragmentContainer.post {
@@ -160,6 +166,23 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
                     // Handle unknown fragment types
                 }
             }
+        }
+    }
+
+    private fun updateContainerAppearance(tabId: Int) {
+        val isHome = tabId == CustomBottomNavigation.TAB_HOME
+        val backgroundColor = ContextCompat.getColor(this, R.color.background_primary)
+        binding.fragmentContainer.background = ColorDrawable(backgroundColor)
+
+        val insetsController = WindowCompat.getInsetsController(window, binding.root)
+        if (isHome) {
+            val statusColor = ContextCompat.getColor(this, R.color.status_bar_dark)
+            window.statusBarColor = statusColor
+            insetsController.isAppearanceLightStatusBars = false
+        } else {
+            val statusColor = ContextCompat.getColor(this, R.color.background_primary)
+            window.statusBarColor = statusColor
+            insetsController.isAppearanceLightStatusBars = true
         }
     }
 
@@ -206,8 +229,9 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         if (targetTab != CustomBottomNavigation.TAB_BOOKINGS) return
 
         val showPending = intent?.getBooleanExtra(EXTRA_SHOW_PENDING, false) ?: false
+        val showCompleted = intent?.getBooleanExtra(EXTRA_SHOW_COMPLETED, false) ?: false
         val highlightBookingId = intent?.getStringExtra(EXTRA_HIGHLIGHT_BOOKING_ID)
-        bookingsFragment.handleExternalNavigation(showPending, highlightBookingId)
+        bookingsFragment.handleExternalNavigation(showPending, showCompleted, highlightBookingId)
     }
 
     // Handle back button to navigate to home or exit

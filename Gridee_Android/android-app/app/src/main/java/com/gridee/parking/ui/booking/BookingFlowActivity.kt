@@ -238,7 +238,9 @@ class BookingFlowActivity : AppCompatActivity() {
             binding.tvParkingAddress.text = addressText
             
             // Display hourly rate in rupees
-            binding.tvHourlyRate.text = "₹${String.format(Locale.getDefault(), "%.2f", 2.5)}/hour"
+            val hourlyRate = spot.bookingRate?.takeIf { it > 0 } ?: DEFAULT_BOOKING_RATE
+            binding.tvHourlyRate.text =
+                "₹${String.format(Locale.getDefault(), "%.2f", hourlyRate)}/hour"
             
             // Update the selected spot display to show the actual selected spot
             val spotName = spot.name ?: spot.zoneName ?: "Any available spot"
@@ -290,18 +292,17 @@ class BookingFlowActivity : AppCompatActivity() {
     }
 
     private fun showSpotSelectionDialog() {
-        val dialogView = layoutInflater.inflate(com.gridee.parking.R.layout.dialog_spot_selection, null)
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialogView = layoutInflater.inflate(com.gridee.parking.R.layout.bottom_sheet_spot_selection, null)
+        dialog.setContentView(dialogView)
         
         val recyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(com.gridee.parking.R.id.rv_parking_spots)
         val progressBar = dialogView.findViewById<android.widget.ProgressBar>(com.gridee.parking.R.id.progress_bar)
         val emptyState = dialogView.findViewById<android.widget.TextView>(com.gridee.parking.R.id.tv_empty_state)
         val cardAnySpot = dialogView.findViewById<androidx.cardview.widget.CardView>(com.gridee.parking.R.id.card_any_spot)
         val ivAnySpotSelected = dialogView.findViewById<android.widget.ImageView>(com.gridee.parking.R.id.iv_any_spot_selected)
-        val btnCancel = dialogView.findViewById<android.widget.Button>(com.gridee.parking.R.id.btn_cancel)
-        val btnSelect = dialogView.findViewById<android.widget.Button>(com.gridee.parking.R.id.btn_select)
+        val btnCancel = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btn_cancel)
+        val btnSelect = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btn_select)
         
         var selectedSpot: ParkingSpot? = null
         
@@ -325,7 +326,6 @@ class BookingFlowActivity : AppCompatActivity() {
         
         // Debug: Check what lot ID we're using
         println("BookingFlowActivity: Loading spots for lot ID: '$selectedLotId'")
-        showToast("Loading spots for lot: $selectedLotId")
         
         // Use the repository directly like the discovery screen does
         lifecycleScope.launch {
@@ -346,24 +346,17 @@ class BookingFlowActivity : AppCompatActivity() {
                     if (spotsResponse.isSuccessful) {
                         val filteredSpots = spotsResponse.body() ?: emptyList()
                         
-                        showToast("Filtered spots for lot '$selectedLotId': ${filteredSpots.size}")
                         println("BookingFlowActivity: Received ${filteredSpots.size} spots for lot $selectedLotId")
                         
                         showProgress(progressBar, recyclerView, emptyState, false)
                         
                         if (filteredSpots.isNotEmpty()) {
-                            showToast("Setting ${filteredSpots.size} spots to adapter")
                             spotAdapter.submitList(filteredSpots)
                             recyclerView.visibility = android.view.View.VISIBLE
                             emptyState.visibility = android.view.View.GONE
                             
                             // Force layout update
                             recyclerView.requestLayout()
-                            
-                            // Debug adapter state
-                            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                showToast("Adapter item count: ${spotAdapter.itemCount}")
-                            }, 500)
                             
                             // Pre-select the current spot if it matches one in the list
                             if (!isAnySpotSelected) {
@@ -434,14 +427,6 @@ class BookingFlowActivity : AppCompatActivity() {
                     binding.tvSelectedSpot.requestLayout()
                     binding.tvSelectedSpot.invalidate()
                     
-                    // Debug: Check what was actually set
-                    println("BookingFlowActivity: Spot text after setting: '${binding.tvSelectedSpot.text}'")
-                    
-                    // Debug: Check text after a delay to see if something overwrites it
-                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                        println("BookingFlowActivity: Spot text after 500ms: '${binding.tvSelectedSpot.text}'")
-                    }, 500)
-                    
                     viewModel.setSelectedSpot(spotName)
                 } ?: run {
                     showToast("No specific spot selected, using Any available spot")
@@ -478,15 +463,14 @@ class BookingFlowActivity : AppCompatActivity() {
     }
     
     private fun showVehicleSelectionDialog() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
         val dialogView = layoutInflater.inflate(com.gridee.parking.R.layout.dialog_vehicle_selection, null)
-        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
+        dialog.setContentView(dialogView)
         
         val recyclerView = dialogView.findViewById<androidx.recyclerview.widget.RecyclerView>(com.gridee.parking.R.id.rv_vehicles)
-        val btnAddVehicle = dialogView.findViewById<androidx.cardview.widget.CardView>(com.gridee.parking.R.id.btn_add_vehicle)
-        val btnCancel = dialogView.findViewById<android.widget.Button>(com.gridee.parking.R.id.btn_cancel)
-        val btnSelect = dialogView.findViewById<android.widget.Button>(com.gridee.parking.R.id.btn_select)
+        val btnAddVehicle = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btn_add_vehicle)
+        val btnDismiss = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btnDismissVehicle)
+        val btnSelect = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btn_select)
         
         val vehicles = viewModel.userVehicles.value ?: emptyList()
         var selectedVehicle: com.gridee.parking.data.model.Vehicle? = null
@@ -530,7 +514,7 @@ class BookingFlowActivity : AppCompatActivity() {
             }
         }
         
-        btnCancel.setOnClickListener {
+        btnDismiss.setOnClickListener {
             dialog.dismiss()
         }
         
@@ -547,22 +531,36 @@ class BookingFlowActivity : AppCompatActivity() {
     }
     
     private fun showAddVehicleDialog(onVehicleAdded: (String) -> Unit) {
-        val input = android.widget.EditText(this)
-        input.hint = "Enter vehicle number (e.g., MH01AB1234)"
-        
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-        builder.setTitle("Add Vehicle")
-        builder.setView(input)
-        builder.setPositiveButton("Add") { _, _ ->
-            val vehicleNumber = input.text.toString().trim().uppercase()
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val dialogView = layoutInflater.inflate(com.gridee.parking.R.layout.bottom_sheet_add_vehicle, null)
+        dialog.setContentView(dialogView)
+
+        val etVehicleNumber = dialogView.findViewById<com.google.android.material.textfield.TextInputEditText>(com.gridee.parking.R.id.etVehicleNumber)
+        val btnAdd = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btnAddVehicle)
+        val btnCancel = dialogView.findViewById<android.view.View>(com.gridee.parking.R.id.btnCancel)
+
+        // Focus input and show keyboard
+        etVehicleNumber.requestFocus()
+        etVehicleNumber.postDelayed({
+            val imm = getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager
+            imm?.showSoftInput(etVehicleNumber, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT)
+        }, 200)
+
+        btnAdd.setOnClickListener {
+            val vehicleNumber = etVehicleNumber.text.toString().trim().uppercase()
             if (vehicleNumber.isNotEmpty()) {
                 onVehicleAdded(vehicleNumber)
+                dialog.dismiss()
             } else {
                 showToast("Please enter a vehicle number")
             }
         }
-        builder.setNegativeButton("Cancel", null)
-        builder.show()
+
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialog.show()
     }
 
     private fun updateStartTimeDisplay(time: Date) {

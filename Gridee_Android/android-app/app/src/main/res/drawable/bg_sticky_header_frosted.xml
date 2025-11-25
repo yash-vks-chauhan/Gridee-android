@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#E6FFFFFF"/> <!-- 90% opacity white for light mode -->
+    <!-- You might want to create a night version in values-night/colors.xml or similar if needed -->
+</shape>

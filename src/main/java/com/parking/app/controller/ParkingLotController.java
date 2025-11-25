@@ -52,7 +52,6 @@ public class ParkingLotController {
         return ResponseEntity.ok(names);
     }
 
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ParkingLot> createParkingLot(@RequestBody ParkingLot parkingLot) {
@@ -75,6 +74,13 @@ public class ParkingLotController {
     public ResponseEntity<Void> deleteParkingLot(@PathVariable String id) {
         parkingLotService.deleteParkingLot(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/admin/delete-all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteAllParkingLots() {
+        parkingLotService.deleteAllParkingLots();
+        return ResponseEntity.ok("All parking lots have been deleted.");
     }
 
 }

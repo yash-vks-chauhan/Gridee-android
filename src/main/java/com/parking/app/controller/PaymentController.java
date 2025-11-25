@@ -65,7 +65,8 @@ public class PaymentController {
             amount = Double.parseDouble(amountObj.toString());
         }
 
-        boolean result = paymentGatewayService.handlePaymentCallback(orderId, paymentId, success, userId, amount);
+        String status = success ? "completed" : "failed";
+        boolean result = paymentGatewayService.handlePaymentCallback(orderId, paymentId, success, userId, amount, status);
         if (result) {
             return ResponseEntity.ok(Map.of("status", "success"));
         } else {

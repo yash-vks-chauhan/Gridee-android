@@ -212,9 +212,16 @@ abstract class BaseActivityWithBottomNav<T : ViewBinding> : AppCompatActivity(),
                 }
             }
             CustomBottomNavigation.TAB_BOOKINGS -> {
-                if (this::class.java.simpleName != "BookingsActivity") {
-                    navigateToActivity(Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
-                }
+                val intent = Intent(this, com.gridee.parking.ui.main.MainContainerActivity::class.java)
+                intent.putExtra(com.gridee.parking.ui.main.MainContainerActivity.EXTRA_TARGET_TAB, CustomBottomNavigation.TAB_BOOKINGS)
+                // Preserve user data if needed
+                val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
+                val userName = sharedPref.getString("user_name", "User")
+                intent.putExtra("USER_NAME", userName)
+                
+                startActivity(intent)
+                overridePendingTransition(0, 0)
+                finish()
             }
             CustomBottomNavigation.TAB_WALLET -> {
                 if (this::class.java.simpleName != "WalletActivity") {

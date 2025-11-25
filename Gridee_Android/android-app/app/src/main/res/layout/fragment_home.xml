@@ -2,169 +2,864 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:ads="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:fitsSystemWindows="true">
+    android:background="@color/background_primary">
 
-    <!-- Main Content ScrollView -->
     <ScrollView
         android:id="@+id/scroll_content"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:clipToPadding="false"
         android:fillViewport="true"
+        android:paddingBottom="32dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="24dp"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="24dp">
-
-        <!-- Header Section -->
-        <TextView
-            android:id="@+id/tv_app_title"
-            android:layout_width="wrap_content"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:fontFamily="sans-serif"
-            android:text="Gridee"
-            android:textColor="@color/text_primary"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:orientation="vertical"
+            android:paddingBottom="32dp">
 
-        <!-- Welcome Text -->
-        <TextView
-            android:id="@+id/tv_welcome"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:text="Welcome back, User!"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_app_title" />
-
-        <!-- Dramatic glass search container -->
-        <FrameLayout
-            android:id="@+id/search_container"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_welcome">
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_search"
+            <FrameLayout
+                android:id="@+id/homeHeroContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="56dp"
-                android:foreground="@drawable/ripple_search_bar"
-                android:clickable="true"
-                android:focusable="true"
-                android:elevation="8dp"
-                android:translationZ="4dp"
-                android:transitionName="@string/transition_search_bar"
-                android:padding="0dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardPreventCornerOverlap="false"
-                app:cardUseCompatPadding="false"
-                app:strokeWidth="0dp">
+                android:background="@drawable/bg_home_ad_default"
+                android:clipToOutline="true"
+                android:paddingTop="20dp"
+                android:paddingBottom="20dp">
 
                 <LinearLayout
-                    android:id="@+id/search_content"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:minHeight="56dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingEnd="16dp"
-                    android:background="@drawable/bg_search_bar_selector">
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:id="@+id/iv_search_icon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:duplicateParentState="true"
-                        android:src="@drawable/ic_search_modern"
-                        android:tint="@color/search_icon_tint_selector"
-                        android:contentDescription="Search icon" />
-
-                    <TextView
-                        android:id="@+id/tv_search_placeholder"
-                        android:layout_width="0dp"
+                    <LinearLayout
+                        android:id="@+id/greeting_container"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="12dp"
-                        android:duplicateParentState="true"
-                        android:text="@string/search_home_hint"
-                        android:textColor="@color/search_hint_text_selector"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.01"
                         android:gravity="center_vertical"
-                        android:minHeight="40dp"
-                        android:includeFontPadding="false" />
+                        android:layout_marginStart="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:orientation="horizontal">
 
-                    <ImageView
-                        android:id="@+id/iv_search_arrow"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:duplicateParentState="true"
-                        android:src="@drawable/ic_arrow_forward"
-                        android:tint="@color/search_icon_tint_selector"
-                        android:alpha="0.7"
-                        android:contentDescription="Open search" />
+                        <TextView
+                            android:id="@+id/tv_app_title"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif"
+                            android:text="@string/home_header_default_title"
+                            android:textColor="@color/white"
+                            android:textSize="28sp"
+                            android:textStyle="bold" />
+
+                        <com.airbnb.lottie.LottieAnimationView
+                            android:id="@+id/greeting_animation"
+                            android:layout_width="72dp"
+                            android:layout_height="72dp"
+                            android:layout_marginStart="8dp"
+                            android:background="@drawable/ripple_coin_button"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:padding="4dp"
+                            android:contentDescription="@null"
+                            android:importantForAccessibility="no"
+                            app:lottie_autoPlay="true"
+                            app:lottie_enableMergePathsForKitKatAndAbove="true"
+                            app:lottie_loop="true"
+                            app:lottie_renderMode="automatic"
+                            app:lottie_speed="1.6"
+                            app:lottie_rawRes="@raw/home_coin_greeting" />
+
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:id="@+id/search_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_marginEnd="24dp">
+
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_search"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="@drawable/ripple_home_search"
+                            android:minHeight="56dp"
+                            android:padding="0dp"
+                            android:transitionName="@string/transition_search_bar"
+                            app:cardBackgroundColor="@android:color/transparent"
+                            app:cardCornerRadius="@dimen/home_search_corner_radius"
+                            app:cardElevation="0dp"
+                            app:cardPreventCornerOverlap="false"
+                            app:cardUseCompatPadding="false"
+                            app:strokeWidth="0dp">
+
+                            <LinearLayout
+                                android:id="@+id/search_content"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_search_bar_selector_ios17"
+                                android:gravity="center_vertical"
+                                android:minHeight="56dp"
+                                android:orientation="horizontal"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp"
+                                android:paddingStart="20dp"
+                                android:paddingEnd="16dp">
+
+                                <ImageView
+                                    android:id="@+id/iv_search_icon"
+                                    android:layout_width="24dp"
+                                    android:layout_height="24dp"
+                                    android:contentDescription="@string/search_home_hint"
+                                    android:duplicateParentState="true"
+                                    android:src="@drawable/ic_search_modern"
+                                    android:tint="@color/search_icon_tint_selector" />
+
+                                <TextView
+                                    android:id="@+id/tv_search_placeholder"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="16dp"
+                                    android:layout_marginEnd="8dp"
+                                    android:layout_weight="1"
+                                    android:duplicateParentState="true"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:gravity="center_vertical"
+                                    android:includeFontPadding="false"
+                                    android:letterSpacing="0.01"
+                                    android:minHeight="40dp"
+                                    android:text="@string/search_home_hint"
+                                    android:textColor="@color/search_hint_text_selector"
+                                    android:textSize="16sp" />
+
+                                <View
+                                    android:layout_width="1dp"
+                                    android:layout_height="24dp"
+                                    android:layout_gravity="center_vertical"
+                                    android:layout_marginEnd="12dp"
+                                    android:background="@color/divider_search" />
+
+                                <ImageView
+                                    android:id="@+id/iv_search_mic"
+                                    android:layout_width="20dp"
+                                    android:layout_height="20dp"
+                                    android:alpha="0.75"
+                                    android:contentDescription="@string/voice_search_content_description"
+                                    android:duplicateParentState="true"
+                                    android:src="@drawable/ic_mic"
+                                    android:tint="@color/search_icon_tint_selector" />
+
+                            </LinearLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </FrameLayout>
+
+                    <FrameLayout
+                        android:id="@+id/adContentContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="24dp"
+                        android:layout_marginTop="24dp"
+                        android:layout_marginEnd="24dp"
+                        android:clipChildren="false"
+                        android:clipToPadding="false"
+                        android:foreground="?attr/selectableItemBackgroundBorderless">
+
+                        <LinearLayout
+                            android:id="@+id/ivAdPlaceholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_home_native_ad"
+                            android:contentDescription="@string/home_ad_placeholder_content_desc"
+                            android:gravity="center_vertical"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/home_ad_loading_title"
+                                android:textColor="@color/home_ad_chip_text"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="@string/home_ad_loading_subtitle"
+                                android:textColor="@color/home_ad_chip_text"
+                                android:textSize="13sp" />
+
+                            <ProgressBar
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:indeterminate="true"
+                                android:indeterminateTint="@color/home_ad_chip_text"
+                                android:indeterminateTintMode="src_in" />
+
+                        </LinearLayout>
+
+                        <com.google.android.gms.ads.nativead.NativeAdView
+                            android:id="@+id/homeNativeAdView"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center"
+                            android:background="@drawable/bg_home_native_ad"
+                            android:clipChildren="false"
+                            android:clipToPadding="false"
+                            android:elevation="0dp"
+                            android:padding="16dp"
+                            android:visibility="gone">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="vertical">
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <ImageView
+                                        android:id="@+id/ad_icon"
+                                        android:layout_width="40dp"
+                                        android:layout_height="40dp"
+                                        android:alpha="0.95"
+                                        android:background="@drawable/circle_background_grey"
+                                        android:padding="6dp"
+                                        android:scaleType="centerInside"
+                                        android:visibility="gone" />
+
+                                    <LinearLayout
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="12dp"
+                                        android:layout_weight="1"
+                                        android:orientation="vertical">
+
+                                        <TextView
+                                            android:id="@+id/ad_headline"
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:fontFamily="sans-serif-medium"
+                                            android:textColor="@color/white"
+                                            android:textSize="16sp"
+                                            android:textStyle="bold"
+                                            tools:text="Unlock new offers near you" />
+
+                                        <LinearLayout
+                                            android:layout_width="match_parent"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginTop="2dp"
+                                            android:gravity="center_vertical"
+                                            android:orientation="horizontal">
+
+                                            <TextView
+                                                android:id="@+id/ad_advertiser"
+                                                android:layout_width="wrap_content"
+                                                android:layout_height="wrap_content"
+                                                android:fontFamily="sans-serif"
+                                                android:textColor="@color/home_ad_chip_text"
+                                                android:textSize="12sp"
+                                                tools:text="GridPay Partner" />
+
+                                        </LinearLayout>
+
+                                    </LinearLayout>
+
+                                    <com.google.android.gms.ads.nativead.AdChoicesView
+                                        android:id="@+id/ad_choices_container"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginEnd="8dp"
+                                        android:visibility="gone" />
+
+                                    <TextView
+                                        android:id="@+id/ad_call_to_action"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:background="@drawable/bg_home_ad_cta"
+                                        android:paddingStart="16dp"
+                                        android:paddingEnd="16dp"
+                                        android:paddingTop="8dp"
+                                        android:paddingBottom="8dp"
+                                        android:text="@string/home_ad_call_to_action_default"
+                                        android:textAllCaps="false"
+                                        android:textColor="@color/home_ad_cta_text"
+                                        android:textSize="13sp"
+                                        android:textStyle="bold"
+                                        android:visibility="gone" />
+
+                                </LinearLayout>
+
+                                <LinearLayout
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal">
+
+                                    <TextView
+                                        android:id="@+id/ad_body"
+                                        android:layout_width="0dp"
+                                        android:layout_height="wrap_content"
+                                        android:layout_weight="1"
+                                        android:layout_marginEnd="12dp"
+                                        android:ellipsize="end"
+                                        android:fontFamily="sans-serif"
+                                        android:lineSpacingExtra="2dp"
+                                        android:maxLines="3"
+                                        android:textColor="@color/home_ad_chip_text"
+                                        android:textSize="14sp"
+                                        tools:text="Top-rated parking passes tailored for your daily commute." />
+
+                                    <com.google.android.gms.ads.nativead.MediaView
+                                        android:id="@+id/ad_media"
+                                        android:layout_width="116dp"
+                                        android:layout_height="86dp"
+                                        android:layout_marginStart="16dp"
+                                        android:background="@drawable/bg_home_native_media_placeholder"
+                                        android:clipToOutline="true" />
+
+                                </LinearLayout>
+
+                            </LinearLayout>
+
+                        </com.google.android.gms.ads.nativead.NativeAdView>
+
+                    </FrameLayout>
 
                 </LinearLayout>
 
-            </com.google.android.material.card.MaterialCardView>
+            </FrameLayout>
 
-        </FrameLayout>
+            <LinearLayout
+                android:id="@+id/parkingSpotSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:orientation="vertical">
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvParkingSectionTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/home_parking_section_title"
+                            android:textColor="@color/text_primary"
+                            android:textSize="20sp" />
+
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnParkingCategory"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:layout_marginEnd="8dp"
+                        android:insetLeft="0dp"
+                        android:insetRight="0dp"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="20dp"
+                        android:text="@string/home_parking_category_button_hint"
+                        android:textAllCaps="false"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp"
+                        app:backgroundTint="@color/background_secondary"
+                        app:cornerRadius="100dp"
+                        app:icon="@drawable/ic_filter_lines"
+                        app:iconGravity="textStart"
+                        app:iconPadding="8dp"
+                        app:iconTint="@color/text_primary"
+                        app:rippleColor="@color/light_blue"
+                        app:strokeColor="@color/divider_color"
+                        app:strokeWidth="1dp" />
+
+                    <ImageButton
+                        android:id="@+id/btnParkingRefresh"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="@string/home_parking_refresh"
+                        android:padding="8dp"
+                        android:scaleType="centerInside"
+                        android:src="@drawable/ic_refresh"
+                        app:tint="@color/text_secondary" />
+
+                </LinearLayout>
+
+                <FrameLayout
+                    android:id="@+id/parkingCarouselContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvParkingSpots"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:overScrollMode="never"
+                        android:paddingStart="24dp"
+                        android:paddingEnd="24dp"
+                        tools:listitem="@layout/item_home_parking_spot" />
+
+                    <TextView
+                        android:id="@+id/tvParkingEmptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:padding="24dp"
+                        android:text="@string/home_parking_empty_state"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        android:visibility="gone" />
+
+                    <ProgressBar
+                        android:id="@+id/parkingLoadingIndicator"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:indeterminate="true"
+                        android:indeterminateTint="@color/text_secondary"
+                        android:indeterminateTintMode="src_in"
+                        android:visibility="gone" />
+
+                </FrameLayout>
+
+            </LinearLayout>
+
+            <!-- Quick Actions Grid Section -->
+            <LinearLayout
+                android:id="@+id/quickActionsSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvQuickActionsTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginEnd="24dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="Everything In Minutes"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="16dp"
+                    android:orientation="horizontal"
+                    android:baselineAligned="false">
+
+                    <!-- Left Column -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <!-- Item 1: Find Parking (Medium Height) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_action_find_parking"
+                            android:layout_width="match_parent"
+                            android:layout_height="150dp"
+                            android:layout_margin="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            app:cardBackgroundColor="@color/white"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="0dp">
+
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tv_find_parking_subtitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Find nearby"
+                                    android:fontFamily="sans-serif"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/text_secondary"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent" />
+
+                                <TextView
+                                    android:id="@+id/tv_find_parking_title"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Parking"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textSize="20sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold"
+                                    android:layout_marginTop="2dp"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_find_parking_subtitle" />
+
+                                <ImageView
+                                    android:layout_width="80dp"
+                                    android:layout_height="80dp"
+                                    android:src="@drawable/img_3d_find_parking"
+                                    android:scaleType="centerCrop"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    android:layout_marginEnd="-8dp"
+                                    android:layout_marginBottom="-8dp"/>
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Item 2: Vehicles (Large Height) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_action_vehicles"
+                            android:layout_width="match_parent"
+                            android:layout_height="190dp"
+                            android:layout_margin="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            app:cardBackgroundColor="@color/white"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="0dp">
+
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tv_vehicles_subtitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Your everyday"
+                                    android:fontFamily="sans-serif"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/text_secondary"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent" />
+
+                                <TextView
+                                    android:id="@+id/tv_vehicles_title"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Vehicles"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textSize="20sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold"
+                                    android:layout_marginTop="2dp"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_vehicles_subtitle" />
+
+                                <TextView
+                                    android:id="@+id/tv_vehicles_count"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textColor="@color/primary_color"
+                                    android:textSize="13sp"
+                                    android:visibility="gone"
+                                    tools:text="2 vehicles"
+                                    tools:visibility="visible"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_vehicles_title" />
+
+                                <ImageView
+                                    android:layout_width="120dp"
+                                    android:layout_height="100dp"
+                                    android:src="@drawable/img_3d_vehicle"
+                                    android:scaleType="centerInside"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    android:layout_marginBottom="8dp"/>
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                    <!-- Right Column -->
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <!-- Item 3: Wallet (Extra Large Height) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_action_wallet"
+                            android:layout_width="match_parent"
+                            android:layout_height="230dp"
+                            android:layout_margin="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            app:cardBackgroundColor="@color/white"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="0dp">
+
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tv_wallet_subtitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Manage your"
+                                    android:fontFamily="sans-serif"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/text_secondary"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent" />
+
+                                <TextView
+                                    android:id="@+id/tv_wallet_title"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Wallet"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textSize="20sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold"
+                                    android:layout_marginTop="2dp"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    app:layout_constraintTop_toBottomOf="@id/tv_wallet_subtitle" />
+
+                                <ImageView
+                                    android:layout_width="140dp"
+                                    android:layout_height="120dp"
+                                    android:src="@drawable/img_3d_wallet"
+                                    android:scaleType="centerInside"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    android:layout_marginBottom="16dp"/>
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <!-- Item 4: History (Small Height) -->
+                        <com.google.android.material.card.MaterialCardView
+                            android:id="@+id/card_action_history"
+                            android:layout_width="match_parent"
+                            android:layout_height="110dp"
+                            android:layout_margin="8dp"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            app:cardBackgroundColor="@color/white"
+                            app:cardCornerRadius="24dp"
+                            app:cardElevation="0dp"
+                            app:strokeWidth="0dp">
+
+                            <androidx.constraintlayout.widget.ConstraintLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:padding="16dp">
+
+                                <TextView
+                                    android:id="@+id/tv_history_title"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="History"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:textSize="18sp"
+                                    android:textColor="@color/text_primary"
+                                    android:textStyle="bold"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintStart_toStartOf="parent"
+                                    android:layout_marginBottom="4dp" />
+
+                                <TextView
+                                    android:id="@+id/tv_history_subtitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="All Services"
+                                    android:fontFamily="sans-serif"
+                                    android:textSize="13sp"
+                                    android:textColor="@color/text_secondary"
+                                    app:layout_constraintBottom_toTopOf="@id/tv_history_title"
+                                    app:layout_constraintStart_toStartOf="parent" />
+
+                                <ImageView
+                                    android:layout_width="48dp"
+                                    android:layout_height="48dp"
+                                    android:src="@drawable/img_3d_booking_history"
+                                    android:scaleType="centerInside"
+                                    app:layout_constraintBottom_toBottomOf="parent"
+                                    app:layout_constraintEnd_toEndOf="parent"
+                                    app:layout_constraintTop_toTopOf="parent" />
+
+                            </androidx.constraintlayout.widget.ConstraintLayout>
+
+                        </com.google.android.material.card.MaterialCardView>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+
+
+        </LinearLayout>
 
     </ScrollView>
 
-    <!-- Floating Action Button -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/fab_book_parking_container"
-        android:layout_width="wrap_content"
+    <!-- Sticky Search Header (Initially Hidden) -->
+    <FrameLayout
+        android:id="@+id/sticky_search_container"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:padding="1dp"
-        android:clickable="false"
-        android:focusable="false"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:shapeAppearance="@style/ShapeAppearance.Gridee.Circle"
-        app:strokeColor="@color/fab_border"
-        app:strokeWidth="1dp">
+        android:visibility="invisible"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_book_parking"
-            android:layout_width="wrap_content"
+        <!-- Frosted/Blur Background -->
+        <View
+            android:id="@+id/sticky_search_background"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_sticky_header_frosted"
+            android:alpha="0" />
+
+        <!-- Sticky Search Bar Clone -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/sticky_card_search"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:backgroundTint="@color/white"
-            android:src="@drawable/ic_add"
-            app:tint="@color/text_primary"
-            app:rippleColor="@color/quick_add_ripple"
-            app:useCompatPadding="false"
-            tools:ignore="ContentDescription" />
+            android:layout_marginStart="24dp"
+            android:layout_marginEnd="24dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="@drawable/ripple_home_search"
+            android:minHeight="56dp"
+            android:padding="0dp"
+            app:cardBackgroundColor="@android:color/transparent"
+            app:cardCornerRadius="@dimen/home_search_corner_radius"
+            app:cardElevation="0dp"
+            app:cardPreventCornerOverlap="false"
+            app:cardUseCompatPadding="false"
+            app:strokeWidth="0dp">
 
-    </com.google.android.material.card.MaterialCardView>
+            <LinearLayout
+                android:id="@+id/sticky_search_content"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_search_bar_selector_ios17"
+                android:gravity="center_vertical"
+                android:minHeight="56dp"
+                android:orientation="horizontal"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="16dp">
+
+                <ImageView
+                    android:id="@+id/sticky_iv_search_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@string/search_home_hint"
+                    android:duplicateParentState="true"
+                    android:src="@drawable/ic_search_modern"
+                    android:tint="@color/search_icon_tint_selector" />
+
+                <TextView
+                    android:id="@+id/sticky_tv_search_placeholder"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:duplicateParentState="true"
+                    android:fontFamily="sans-serif-medium"
+                    android:gravity="center_vertical"
+                    android:includeFontPadding="false"
+                    android:letterSpacing="0.01"
+                    android:minHeight="40dp"
+                    android:text="@string/search_home_hint"
+                    android:textColor="@color/search_hint_text_selector"
+                    android:textSize="16sp" />
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp"
+                    android:background="@color/divider_search" />
+
+                <ImageView
+                    android:id="@+id/sticky_iv_search_mic"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:alpha="0.75"
+                    android:contentDescription="@string/voice_search_content_description"
+                    android:duplicateParentState="true"
+                    android:src="@drawable/ic_mic"
+                    android:tint="@color/search_icon_tint_selector" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
+    </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

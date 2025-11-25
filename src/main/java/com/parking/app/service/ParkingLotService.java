@@ -40,9 +40,12 @@ public class ParkingLotService {
     public ParkingLot updateParkingLot(String id, ParkingLot lotDetails) {
         ParkingLot existing = parkingLotRepository.findById(id).orElse(null);
         if (existing != null) {
-            if (lotDetails.getName() != null) existing.setName(lotDetails.getName());
-            if (lotDetails.getLocation() != null) existing.setLocation(lotDetails.getLocation());
-            if (lotDetails.getTotalSpots() > 0) existing.setTotalSpots(lotDetails.getTotalSpots());
+            if (lotDetails.getName() != null)
+                existing.setName(lotDetails.getName());
+            if (lotDetails.getLocation() != null)
+                existing.setLocation(lotDetails.getLocation());
+            if (lotDetails.getTotalSpots() > 0)
+                existing.setTotalSpots(lotDetails.getTotalSpots());
             existing.setAvailableSpots(lotDetails.getAvailableSpots());
             return parkingLotRepository.save(existing);
         }
@@ -51,6 +54,10 @@ public class ParkingLotService {
 
     public void deleteParkingLot(String id) {
         parkingLotRepository.deleteById(id);
+    }
+
+    public void deleteAllParkingLots() {
+        parkingLotRepository.deleteAll();
     }
 
     // Parking lot availability updates can be optional or used for overall summary

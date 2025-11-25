@@ -116,32 +116,6 @@ fun MainAppContent() {
                     )
                 }
             }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    // Navigate to parking booking
-                    try {
-                        val intent = Intent(context, Class.forName("com.gridee.parking.ui.booking.ParkingLotSelectionActivity"))
-                        context.startActivity(intent)
-                    } catch (e: Exception) {
-                        // Fallback navigation
-                        try {
-                            val fallbackIntent = Intent(context, Class.forName("com.gridee.parking.ui.discovery.ParkingDiscoveryActivity"))
-                            context.startActivity(fallbackIntent)
-                        } catch (fallbackException: Exception) {
-                            // Handle error
-                        }
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Book Parking"
-                )
-            }
         }
     ) { paddingValues ->
         // Main content with proper padding
@@ -333,7 +307,8 @@ private fun handleTabNavigation(context: android.content.Context, tabIndex: Int)
         0 -> { /* Already on Home */ }
         1 -> {
             try {
-                val intent = Intent(context, Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
+                val intent = Intent(context, com.gridee.parking.ui.main.MainContainerActivity::class.java)
+                intent.putExtra(com.gridee.parking.ui.main.MainContainerActivity.EXTRA_TARGET_TAB, com.gridee.parking.ui.components.CustomBottomNavigation.TAB_BOOKINGS)
                 context.startActivity(intent)
             } catch (e: Exception) {
                 // Handle error

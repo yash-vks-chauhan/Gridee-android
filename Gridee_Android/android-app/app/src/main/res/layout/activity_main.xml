@@ -131,21 +131,6 @@
 
     </ScrollView>
 
-    <!-- Floating Action Button -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_book_parking"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:backgroundTint="#000000"
-        android:src="@drawable/ic_add"
-        android:contentDescription="Book Parking"
-        app:tint="#FFFFFF"
-        app:elevation="16dp"
-        app:fabSize="normal"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
-        app:layout_constraintEnd_toEndOf="parent" />
-
     <!-- Bottom Navigation - positioned to extend to screen bottom -->
     <com.gridee.parking.ui.components.CustomBottomNavigation
         android:id="@+id/bottom_navigation"

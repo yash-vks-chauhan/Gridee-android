@@ -7,5 +7,9 @@ data class ParkingSpot(
     val zoneName: String? = null,  // Keep for backwards compatibility
     val capacity: Int = 0,
     val available: Int = 0,
-    val status: String
+    val status: String,
+    val bookingRate: Double? = null,
+    val checkInPenaltyRate: Double? = null,
+    val checkOutPenaltyRate: Double? = null,
+    val description: String? = null
 )

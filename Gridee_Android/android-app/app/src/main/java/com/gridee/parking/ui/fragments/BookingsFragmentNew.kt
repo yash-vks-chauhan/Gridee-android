@@ -80,7 +80,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     private val parkingLotCache = mutableMapOf<String, String>() // lotId -> name
     private val parkingSpotCache = mutableMapOf<String, String>() // spotId -> name
     private var isCacheLoaded = false
-    private data class NavigationRequest(val showPending: Boolean, val highlightBookingId: String?)
+    private data class NavigationRequest(val showPending: Boolean, val showCompleted: Boolean, val highlightBookingId: String?)
     private var pendingNavigationRequest: NavigationRequest? = null
     private var pendingHighlightBookingId: String? = null
 
@@ -180,8 +180,13 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         
         populateSpotFilterChips(sheetBinding)
 
-        val dialog = BottomSheetDialog(requireContext())
+        val dialog = BottomSheetDialog(requireContext(), R.style.BottomSheetDialogTheme)
         dialog.setContentView(sheetBinding.root)
+
+        dialog.setOnShowListener {
+            val bottomSheet = dialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundResource(android.R.color.transparent)
+        }
 
         fun handleSelection(option: BookingSortOption) {
             applySortOption(option)
@@ -324,8 +329,8 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, value, resources.displayMetrics)
     }
 
-    fun handleExternalNavigation(showPending: Boolean, highlightBookingId: String?) {
-        pendingNavigationRequest = NavigationRequest(showPending, highlightBookingId)
+    fun handleExternalNavigation(showPending: Boolean, showCompleted: Boolean, highlightBookingId: String?) {
+        pendingNavigationRequest = NavigationRequest(showPending, showCompleted, highlightBookingId)
         applyPendingNavigationIfReady()
     }
 
@@ -1213,7 +1218,11 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
 
         pendingNavigationRequest = null
 
-        val targetStatus = if (request.showPending) BookingStatus.PENDING else BookingStatus.ACTIVE
+        val targetStatus = when {
+            request.showCompleted -> BookingStatus.COMPLETED
+            request.showPending -> BookingStatus.PENDING
+            else -> BookingStatus.ACTIVE
+        }
         pendingHighlightBookingId = request.highlightBookingId
 
         handleSegmentSelection(targetStatus, userTriggered = false)

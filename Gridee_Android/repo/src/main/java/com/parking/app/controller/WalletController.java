@@ -35,12 +35,20 @@ public class WalletController {
     @PostMapping("/topup")
     public ResponseEntity<?> topUpWallet(
             @PathVariable String userId,
-            @RequestBody Map<String, Double> request) {
-        Double amount = request.get("amount");
+            @RequestBody Map<String, Object> request) {
+        Object amountObj = request.get("amount");
+        Double amount = null;
+        if (amountObj instanceof Number) {
+            amount = ((Number) amountObj).doubleValue();
+        } else if (amountObj instanceof String) {
+            amount = Double.valueOf((String) amountObj);
+        }
         if (amount == null || amount <= 0) {
             return ResponseEntity.badRequest().body("Amount must be positive.");
         }
-        Wallet wallet = walletService.topUpWallet(userId, amount);
+        String type = request.get("type") != null ? request.get("type").toString() : null;
+        String source = request.get("source") != null ? request.get("source").toString() : null;
+        Wallet wallet = walletService.topUpWallet(userId, amount, type, source);
         return ResponseEntity.ok(wallet);
     }
 

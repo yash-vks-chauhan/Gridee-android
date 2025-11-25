@@ -361,7 +361,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Date Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:id="@+id/date_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -369,11 +369,8 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:background="@drawable/bg_coin_sheet_rounded"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -415,7 +412,7 @@
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
     <!-- Amount Filter Modal Close Button -->
     <com.google.android.material.card.MaterialCardView
@@ -452,7 +449,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Amount Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:id="@+id/amount_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -460,11 +457,8 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:background="@drawable/bg_coin_sheet_rounded"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -506,7 +500,7 @@
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
     <!-- Payment Filter Modal Close Button -->
     <com.google.android.material.card.MaterialCardView
@@ -543,7 +537,7 @@
     </com.google.android.material.card.MaterialCardView>
 
     <!-- Payment Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:id="@+id/payment_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -551,11 +545,8 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:background="@drawable/bg_coin_sheet_rounded"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -597,6 +588,6 @@
 
         </LinearLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

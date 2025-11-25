@@ -11,10 +11,16 @@
     <!-- Card spacing -->
     <dimen name="card_margin">12dp</dimen>
     <dimen name="card_corner_radius">12dp</dimen>
+    <dimen name="home_hero_bottom_radius">44dp</dimen>
+    <dimen name="home_search_corner_radius">20dp</dimen>
+    <dimen name="home_ad_placeholder_height">150dp</dimen>
     
     <!-- Button dimensions -->
     <dimen name="button_height">48dp</dimen>
     <dimen name="button_corner_radius">8dp</dimen>
+
+    <!-- Coin reward sheet motion -->
+    <dimen name="coin_sheet_slide_offset">48dp</dimen>
 
     <!-- Segmented control sizing -->
     <dimen name="segmented_control_height">56dp</dimen>
@@ -35,4 +41,8 @@
     <dimen name="close_button_top_margin">16dp</dimen>
     <dimen name="close_button_bottom_margin">16dp</dimen>
     <dimen name="close_icon_size">22dp</dimen>
+
+    <!-- Home parking carousel -->
+    <dimen name="home_parking_spot_spacing">8dp</dimen>
+    <dimen name="parking_category_card_stroke">2dp</dimen>
 </resources>

@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityBookingConfirmationBinding
@@ -24,6 +25,7 @@ class BookingConfirmationActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         viewModel = ViewModelProvider(this)[BookingConfirmationViewModel::class.java]
+        applyStatusBarStyling()
 
         getBookingDataFromIntent()
         setupUI()
@@ -65,6 +67,11 @@ class BookingConfirmationActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.tvTitle.text = "Booking Confirmed"
+    }
+
+    private fun applyStatusBarStyling() {
+        window.statusBarColor = ContextCompat.getColor(this, R.color.background_primary)
+        WindowCompat.getInsetsController(window, window.decorView)?.isAppearanceLightStatusBars = true
     }
 
     private fun setupClickListeners() {

@@ -60,38 +60,7 @@ class MainActivity : BaseActivityWithBottomNav<ActivityMainBinding>() {
             val intent = Intent(this, com.gridee.parking.ui.discovery.ParkingDiscoveryActivity::class.java)
             startActivity(intent)
         }
-        
-        // Verify FAB exists and set up click listener
-        val fab = binding.fabBookParking
-        println("MainActivity: FAB found: ${fab != null}")
-        println("MainActivity: FAB isClickable: ${fab.isClickable}")
-        println("MainActivity: FAB isEnabled: ${fab.isEnabled}")
-        println("MainActivity: FAB visibility: ${fab.visibility}")
-        
-        // FAB click listener - parking lot selection
-        binding.fabBookParking.setOnClickListener {
-            println("MainActivity: FAB clicked - navigating to ParkingLotSelectionActivity")
-            try {
-                // Navigate to parking lot selection first
-                val intent = Intent(this, com.gridee.parking.ui.booking.ParkingLotSelectionActivity::class.java)
-                println("MainActivity: Intent created, starting activity")
-                startActivity(intent)
-                println("MainActivity: Activity started successfully")
-            } catch (e: Exception) {
-                println("MainActivity: Error starting ParkingLotSelectionActivity: ${e.message}")
-                e.printStackTrace()
-                // Fallback to ParkingDiscoveryActivity if ParkingLotSelectionActivity fails
-                try {
-                    val fallbackIntent = Intent(this, com.gridee.parking.ui.discovery.ParkingDiscoveryActivity::class.java)
-                    startActivity(fallbackIntent)
-                    println("MainActivity: Fallback to ParkingDiscoveryActivity successful")
-                } catch (fallbackException: Exception) {
-                    println("MainActivity: Fallback also failed: ${fallbackException.message}")
-                    showToast("Unable to open parking selection")
-                }
-            }
-        }
-        
+
         println("MainActivity: All click listeners set up successfully")
     }
 

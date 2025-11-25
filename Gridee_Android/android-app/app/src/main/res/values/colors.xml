@@ -15,7 +15,26 @@
     <color name="text_primary">#191C19</color>
     <color name="text_secondary">#666666</color>
     <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
     <color name="error">#BA1A1A</color>
+
+    <!-- Home hero/ad palette -->
+    <color name="home_ad_primary">#B4692D</color>
+    <color name="home_ad_secondary">#6A3610</color>
+    <color name="home_ad_surface">#1AFFFFFF</color>
+    <color name="home_ad_stroke">#33FFFFFF</color>
+    <color name="home_ad_chip_bg">#33FFFFFF</color>
+    <color name="home_ad_chip_text">#F6F2FF</color>
+    <color name="home_ad_cta_bg">#FFE3C2</color>
+    <color name="home_ad_cta_text">#191C19</color>
+    <color name="coin_ripple_highlight">#66808080</color>
+    
+    <!-- Minimal hero gradient palette -->
+    <color name="home_hero_dark_start">#050505</color>
+    <color name="home_hero_dark_mid">#121419</color>
+    <color name="home_hero_dark_end">#F4F4F6</color>
+    <color name="home_hero_subtitle">#E6E9F0</color>
+    <color name="home_hero_accent_default">#8E8E93</color>
     
     <!-- Bottom Navigation Colors -->
     <color name="primary_blue">#1976D2</color>
@@ -41,6 +60,7 @@
     <color name="divider_color">#E0E0E0</color>
     <color name="darker_gray">#666666</color>
     <color name="divider">#E0E0E0</color>
+    <color name="status_bar_dark">#000000</color>
     
     <!-- Common alias -->
     <color name="primary_color">@color/primary_blue</color>
@@ -98,7 +118,7 @@
     <color name="booking_sheet_action_surface">#F3F4F6</color>
     <color name="booking_sheet_action_border">#E1E4EA</color>
     <color name="quick_add_outline">#D7D9DF</color>
-    <color name="quick_add_ripple">#1A000000</color>
+    <color name="quick_add_ripple">#1A7E7E7E</color>
     <color name="fab_border">#1A191C19</color>
 
     <!-- Missing Colors -->
@@ -152,6 +172,11 @@
     <color name="search_input_text">#1A1A1A</color>
     <color name="search_ripple_color">#1A000000</color>
     <color name="search_scrim">#B3000000</color>
+    <color name="divider_search">#E0E0E0</color>
+    <color name="primary_blue_alpha_30">#4C1976D2</color>
+    <color name="search_chip_bg">#F5F5F5</color>
+    <color name="segment_ripple_subtle">#1A000000</color>
+    <color name="search_scrim_minimal">#80000000</color>
     
     <!-- Glass Morphism Colors -->
     <color name="glass_surface">#F8FFFFFF</color>

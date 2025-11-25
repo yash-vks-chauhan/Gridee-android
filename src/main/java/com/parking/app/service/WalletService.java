@@ -43,17 +43,46 @@ public class WalletService {
 
     // Top up wallet and create a transaction (let listener update wallet)
     public Wallet topUpWallet(String userId, double amount) {
+        return topUpWallet(userId, amount, null, null);
+    }
+
+    public Wallet topUpWallet(String userId, double amount, String customType, String source) {
         getOrCreateWallet(userId);
         // Create a finalized transaction; TransactionChangeListener will update balance + refs exactly once
         Transactions tx = new Transactions();
         tx.setReferenceId(UUID.randomUUID().toString());
         tx.setUserId(userId);
         tx.setAmount(amount);
-        tx.setType("wallet_topup");
+        String normalizedType = (customType == null || customType.isBlank()) ? "wallet_topup" : customType;
+        tx.setType(normalizedType);
         tx.setStatus("completed");
         tx.setTimestamp(new Date());
+        if (source != null && !source.isBlank()) {
+            tx.setMethod(source);
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("source", source);
+            tx.setMetadata(metadata);
+        }
         transactionService.recordTransaction(tx);
         // Return latest wallet snapshot
+        return walletRepository.findByUserId(userId).orElseGet(() -> getOrCreateWallet(userId));
+    }
+
+    public Wallet applyReward(String userId, double amount, String source, String rewardId) {
+        getOrCreateWallet(userId);
+        Transactions tx = new Transactions();
+        String reference = (rewardId != null && !rewardId.isBlank()) ? rewardId : UUID.randomUUID().toString();
+        tx.setReferenceId(reference);
+        tx.setUserId(userId);
+        tx.setAmount(Math.abs(amount));
+        tx.setType("reward_bonus");
+        tx.setStatus("completed");
+        tx.setMethod("reward_video");
+        tx.setCurrency("INR");
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("source", (source == null || source.isBlank()) ? "ad_watch" : source);
+        tx.setMetadata(metadata);
+        transactionService.recordTransaction(tx);
         return walletRepository.findByUserId(userId).orElseGet(() -> getOrCreateWallet(userId));
     }
 
@@ -142,5 +171,28 @@ public class WalletService {
         wallet.setBalance(newBalance);
         wallet.setLastUpdated(new Date());
         return walletRepository.save(wallet);
+    }
+
+    // Deduct amount from wallet (used by BookingWalletService)
+    public Wallet deductFromWallet(String userId, double amount) {
+        Wallet wallet = getOrCreateWallet(userId);
+        if (wallet.getBalance() >= amount) {
+            wallet.setBalance(wallet.getBalance() - amount);
+            wallet.setLastUpdated(new Date());
+            return walletRepository.save(wallet);
+        }
+        throw new RuntimeException("Insufficient wallet balance");
+    }
+
+    // Record wallet transaction (used by BookingWalletService)
+    public void recordWalletTransaction(String userId, double amount, String description) {
+        Transactions tx = new Transactions();
+        tx.setReferenceId(UUID.randomUUID().toString());
+        tx.setUserId(userId);
+        tx.setAmount(amount);
+        tx.setType(description);
+        tx.setStatus("completed");
+        tx.setTimestamp(new Date());
+        transactionService.recordTransaction(tx);
     }
 }

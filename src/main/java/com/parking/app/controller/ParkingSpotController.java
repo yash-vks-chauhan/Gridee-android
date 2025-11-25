@@ -59,7 +59,8 @@ public class ParkingSpotController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ParkingSpot> updateParkingSpot(@PathVariable String id, @RequestBody ParkingSpot spotDetails) {
+    public ResponseEntity<ParkingSpot> updateParkingSpot(@PathVariable String id,
+            @RequestBody ParkingSpot spotDetails) {
         ParkingSpot updated = parkingSpotService.updateParkingSpot(id, spotDetails);
         if (updated == null) {
             throw new com.parking.app.exception.NotFoundException("Parking spot not found with id: " + id);
@@ -74,7 +75,7 @@ public class ParkingSpotController {
         return ResponseEntity.noContent().build();
     }
 
-    //TODO: user related api should go in booking controller
+    // TODO: user related api should go in booking controller
     // Reserve a spot (hold & decrement available count)
     @PostMapping("/{id}/hold")
     public ResponseEntity<ParkingSpot> holdSpot(@PathVariable String id, @RequestParam String userId) {
@@ -101,7 +102,8 @@ public class ParkingSpotController {
             @RequestParam ZonedDateTime startTime,
             @RequestParam ZonedDateTime endTime) {
         List<Bookings> overlappingBookings = bookingService.findByLotIdAndTimeWindow(lotId, startTime, endTime);
-        List<ParkingSpot> availableSpots = parkingSpotService.getAvailableSpots(lotId, startTime, endTime,overlappingBookings);
+        List<ParkingSpot> availableSpots = parkingSpotService.getAvailableSpots(lotId, startTime, endTime,
+                overlappingBookings);
         return ResponseEntity.ok(availableSpots);
     }
 
@@ -118,5 +120,12 @@ public class ParkingSpotController {
     public ResponseEntity<String> resetAllSpots() {
         parkingSpotService.resetAllSpotsCapacity();
         return ResponseEntity.ok("All parking spots have been reset to max capacity.");
+    }
+
+    @DeleteMapping("/admin/delete-all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> deleteAllParkingSpots() {
+        parkingSpotService.deleteAllParkingSpots();
+        return ResponseEntity.ok("All parking spots have been deleted successfully.");
     }
 }

@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import java.util.*
 import java.text.SimpleDateFormat
 import kotlin.math.ceil
+import kotlin.math.max
 
 data class BookingDetails(
     val id: String,
@@ -97,11 +98,41 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     }
     
     fun setStartTime(time: Date) {
+        val previousStart = _startTime.value
+        val previousEnd = _endTime.value
         _startTime.value = time
+
+        val preservedDurationMillis = when {
+            previousStart != null && previousEnd != null -> {
+                max(previousEnd.time - previousStart.time, MIN_BOOKING_DURATION_MILLIS)
+            }
+            else -> DEFAULT_BOOKING_DURATION_MILLIS
+        }
+
+        if (previousEnd == null) {
+            _endTime.value = Date(time.time + preservedDurationMillis)
+            return
+        }
+
+        val newDuration = previousEnd.time - time.time
+        if (newDuration < MIN_BOOKING_DURATION_MILLIS) {
+            _endTime.value = Date(time.time + preservedDurationMillis)
+        }
     }
     
     fun setEndTime(time: Date) {
-        _endTime.value = time
+        val start = _startTime.value
+        if (start == null) {
+            _endTime.value = time
+            return
+        }
+
+        val duration = time.time - start.time
+        if (duration < MIN_BOOKING_DURATION_MILLIS) {
+            _endTime.value = Date(start.time + max(duration, MIN_BOOKING_DURATION_MILLIS))
+        } else {
+            _endTime.value = time
+        }
     }
     
     fun setSelectedSpot(spot: String?) {
@@ -110,6 +141,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     
     fun setParkingSpot(spot: ParkingSpot) {
         _parkingSpot.value = spot
+        calculatePricing()
     }
     
     fun loadParkingSpotById(spotId: String, onResult: (ParkingSpot?) -> Unit) {
@@ -164,6 +196,15 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
         _vehicleNumber.value = vehicle.number
     }
     
+    fun updateUserVehicles(vehicles: List<Vehicle>) {
+        _userVehicles.value = vehicles
+        
+        // Auto-select first vehicle if available and none selected
+        if (vehicles.isNotEmpty() && _selectedVehicle.value == null) {
+            setSelectedVehicle(vehicles.first())
+        }
+    }
+
     fun loadUserVehicles() {
         // Get user ID from SharedPreferences
         val sharedPref = getApplication<Application>().getSharedPreferences("gridee_prefs", Context.MODE_PRIVATE)
@@ -283,13 +324,13 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
         val spot = _parkingSpot.value
         
         if (start != null && end != null && spot != null) {
-            val durationMillis = end.time - start.time
-            val durationHours = durationMillis / (1000.0 * 60 * 60)
+            val rawDurationMillis = end.time - start.time
+            val durationMillis = max(rawDurationMillis, MIN_BOOKING_DURATION_MILLIS)
+            val durationHours = durationMillis / HOUR_IN_MILLIS.toDouble()
             
             // Round up to nearest hour for pricing
             val billingHours = ceil(durationHours)
-            // Fixed price: ₹2.5 per hour
-            val pricePerHour = 2.5
+            val pricePerHour = spot.bookingRate?.takeIf { it > 0 } ?: DEFAULT_BOOKING_RATE
             val price = billingHours * pricePerHour
             
             _totalPrice.value = price
@@ -298,8 +339,9 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     }
     
     private fun formatDuration(durationMillis: Long): String {
-        val hours = (durationMillis / (1000 * 60 * 60)).toInt()
-        val minutes = ((durationMillis % (1000 * 60 * 60)) / (1000 * 60)).toInt()
+        val clampedDuration = max(durationMillis, 0L)
+        val hours = (clampedDuration / HOUR_IN_MILLIS).toInt()
+        val minutes = ((clampedDuration % HOUR_IN_MILLIS) / (1000 * 60)).toInt()
         
         return when {
             hours == 0 -> "${minutes}m"
@@ -324,7 +366,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
                 startTime = start,
                 endTime = end,
                 duration = durationStr,
-                pricePerHour = 2.5, // Default price since it's not in API
+                pricePerHour = spot.bookingRate?.takeIf { it > 0 } ?: DEFAULT_BOOKING_RATE,
                 totalPrice = price,
                 selectedSpot = selectedSpotStr,
                 status = BookingStatus.PENDING,
@@ -403,3 +445,8 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 }
+
+private const val HOUR_IN_MILLIS = 60 * 60 * 1000L
+private const val MIN_BOOKING_DURATION_MILLIS = 30 * 60 * 1000L
+private const val DEFAULT_BOOKING_DURATION_MILLIS = 2 * HOUR_IN_MILLIS
+const val DEFAULT_BOOKING_RATE = 2.5

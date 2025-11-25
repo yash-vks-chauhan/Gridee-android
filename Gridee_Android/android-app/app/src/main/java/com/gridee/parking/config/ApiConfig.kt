@@ -7,13 +7,14 @@ package com.gridee.parking.config
 object ApiConfig {
     // Backend Server Configuration
     // Note: Base URL must NOT include "/api" because paths in ApiService already start with "api/..."
-    const val BASE_URL = "https://10.216.5.164:8443/"  // Current Mac IP (HTTPS required)
+    const val BASE_URL = "http://10.3.179.67:8080/"  // Updated to current Mac IP on port 8080
     
     // Alternative backend URLs (uncomment to use)
     // const val BASE_URL = "http://10.0.2.2:8080/"  // For Android emulator
     // const val BASE_URL = "http://192.168.42.227:8080/"  // Phone hotspot network
     // const val BASE_URL = "http://192.168.146.227:8080/"  // Previous network
     // const val BASE_URL = "http://192.168.1.103:8080/"  // For regular WiFi network
+    // const val BASE_URL = "https://10.3.179.67:8443/"  // HTTPS version (if SSL is configured)
     
     // Authentication is handled via JWT tokens (no basic auth required)
     val REQUIRES_AUTH = false

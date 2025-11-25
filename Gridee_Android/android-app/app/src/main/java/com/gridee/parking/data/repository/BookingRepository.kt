@@ -13,13 +13,19 @@ import kotlinx.coroutines.withContext
 import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.Locale
+import java.util.TimeZone
+import com.google.gson.Gson
+import com.gridee.parking.data.model.ErrorResponse
 
 class BookingRepository(
     private val context: Context = GrideeApplication.instance.applicationContext
 ) {
     
     private val apiService = ApiClient.apiService
-    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault())
+    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).apply {
+        timeZone = TimeZone.getTimeZone("UTC")
+    }
     
     suspend fun getUserBookings(): Result<List<Booking>> = withContext(Dispatchers.IO) {
         try {
@@ -87,8 +93,8 @@ class BookingRepository(
                 return@withContext Result.failure(Exception("User not logged in"))
             }
             
-            val checkInTimeStr = dateFormatter.format(checkInTime)
-            val checkOutTimeStr = dateFormatter.format(checkOutTime)
+            val checkInTimeStr = formatDate(checkInTime)
+            val checkOutTimeStr = formatDate(checkOutTime)
             
             println("BookingRepository: Creating booking with userId: $userId")
             println("BookingRepository: spotId: $spotId, lotId: $lotId")
@@ -147,8 +153,9 @@ class BookingRepository(
                         println("BookingRepository: Failed to create wallet: ${e.message}")
                     }
                 }
-                
-                Result.failure(Exception("Failed to create booking: ${response.message()} - $errorBody"))
+                val parsedMessage = parseErrorMessage(errorBody)?.takeIf { it.isNotBlank() }
+                val displayMessage = parsedMessage ?: "${response.message()} (${response.code()})"
+                Result.failure(Exception("Failed to create booking: $displayMessage"))
             }
         } catch (e: Exception) {
             println("BookingRepository: Exception occurred: ${e.message}")
@@ -478,6 +485,22 @@ class BookingRepository(
                 null
             }
         } catch (e: Exception) {
+            null
+        }
+    }
+    
+    private fun formatDate(date: Date): String = synchronized(dateFormatter) {
+        dateFormatter.format(date)
+    }
+    
+    private fun parseErrorMessage(errorBody: String?): String? {
+        if (errorBody.isNullOrBlank()) return null
+        return try {
+            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+            errorResponse.validationErrors?.values?.firstOrNull()
+                ?: errorResponse.message
+                ?: errorResponse.error
+        } catch (_: Exception) {
             null
         }
     }

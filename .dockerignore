@@ -1,0 +1,67 @@
+# Ignore build artifacts
+build/
+target/
+*.jar
+*.war
+*.class
+out/
+
+# Ignore Gradle files (except wrapper properties)
+.gradle/
+.gradle-cache/
+
+# Ignore IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.DS_Store
+*.swp
+*~
+
+# Ignore Git
+.git/
+.gitignore
+.gitattributes
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore test files
+**/test-results/
+**/reports/
+src/test/
+
+# Ignore documentation and guides
+*.md
+README.md
+docs/
+DOCKER_GUIDE.md
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Ignore Docker files themselves
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Ignore API testing files
+gridee-backend API/
+
+# Ignore scripts
+scripts/
+
+# Ignore other cloud/deployment configs
+*.yml
+*.yaml
+open-api.json

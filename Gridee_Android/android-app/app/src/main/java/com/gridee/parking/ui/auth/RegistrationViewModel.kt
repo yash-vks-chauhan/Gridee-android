@@ -58,8 +58,8 @@ class RegistrationViewModel : ViewModel() {
                     email = email.trim().lowercase(),
                     phone = phone.trim(),
                     // Send plain password; backend will BCrypt-hash it
-                    passwordHash = password,
-                    parkingLotName = normalizedParkingLot,
+                    password = password,
+                    parkingLotName = normalizedParkingLot.ifBlank { null },  // Send null if empty
                     vehicleNumbers = emptyList()
                 )
                 
@@ -82,7 +82,7 @@ class RegistrationViewModel : ViewModel() {
                             name = auth.name,
                             email = email.trim(),
                             phone = phone.trim(),
-                            parkingLotName = normalizedParkingLot
+                            parkingLotName = normalizedParkingLot.ifBlank { null }
                         )
                         _registrationState.value = RegistrationState.Success(registeredUser)
                     } ?: run {
@@ -129,9 +129,7 @@ class RegistrationViewModel : ViewModel() {
             errors["password"] = "Password must be at least 6 characters"
         }
 
-        if (parkingLotName.isBlank()) {
-            errors["parkingLot"] = "Parking lot selection is required"
-        }
+        // Parking lot is now optional - no validation error
         
         return errors
     }

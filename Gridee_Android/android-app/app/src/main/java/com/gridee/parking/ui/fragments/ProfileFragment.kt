@@ -35,7 +35,7 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
     }
 
     override fun setupUI() {
-        viewModel = ViewModelProvider(this)[ProfileViewModel::class.java]
+        viewModel = ViewModelProvider(requireActivity())[ProfileViewModel::class.java]
         
         // Setup collapsing toolbar with smooth parallax
         setupCollapsingToolbar()
@@ -115,7 +115,7 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                 
                 // Populate vehicles in accordion if it's already expanded
                 if (isVehiclesExpanded) {
-                    populateVehicles(it.vehicleNumbers)
+                    populateVehicles(it.vehicleNumbers, animate = false)
                 }
             }
         }
@@ -354,9 +354,12 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         }
     }
 
-    private fun populateVehicles(vehicles: List<String>) {
+    private fun populateVehicles(vehicles: List<String>, animate: Boolean = false) {
         val container = binding.vehiclesContainer
         container.removeAllViews()
+        
+        val initialAlpha = if (animate) 0f else 1f
+        val initialTranslationY = if (animate) 50f else 0f
         
         if (vehicles.isEmpty()) {
             // Show empty state
@@ -373,6 +376,11 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             emptyView.setOnClickListener {
                 showAddVehicleDialog()
             }
+            
+            // Prepare for animation
+            emptyView.alpha = initialAlpha
+            emptyView.translationY = initialTranslationY
+            
             container.addView(emptyView)
             return
         }
@@ -421,6 +429,10 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                 showVehicleOptionsDialog(vehicleNumber, it)
             }
             
+            // Prepare for animation
+            vehicleView.alpha = initialAlpha
+            vehicleView.translationY = initialTranslationY
+            
             container.addView(vehicleView)
         }
         
@@ -444,6 +456,10 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             showAddVehicleDialog()
         }
         
+        // Prepare for animation
+        addVehicleView.alpha = initialAlpha
+        addVehicleView.translationY = initialTranslationY
+        
         container.addView(addVehicleView)
     }
     
@@ -452,23 +468,33 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         
         val expandedLayout = binding.layoutVehiclesExpanded
         val arrowIcon = binding.ivVehiclesExpand
+        val container = binding.vehiclesContainer
         
         if (isVehiclesExpanded) {
-            // Populate vehicles with real data
+            // Populate vehicles with real data and prepare for animation
             val vehicles = viewModel.userProfile.value?.vehicleNumbers ?: emptyList()
-            populateVehicles(vehicles)
+            populateVehicles(vehicles, animate = true)
             
-            // Expand animation
+            // Prepare for expansion
+            expandedLayout.alpha = 0f
             expandedLayout.visibility = View.VISIBLE
             
             // Measure the expanded height
+            // Calculate available width: Screen width - Card margins (16dp * 2)
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val cardMargin = (32 * displayMetrics.density).toInt()
+            val availableWidth = screenWidth - cardMargin
+            
+            val widthSpec = View.MeasureSpec.makeMeasureSpec(availableWidth, View.MeasureSpec.EXACTLY)
+            
             expandedLayout.measure(
-                View.MeasureSpec.makeMeasureSpec(expandedLayout.width, View.MeasureSpec.EXACTLY),
+                widthSpec,
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
             )
             val targetHeight = expandedLayout.measuredHeight
             
-            // Height animation with spring physics
+            // Height animation
             val heightAnimation = ValueAnimator.ofInt(0, targetHeight)
             heightAnimation.addUpdateListener { animation ->
                 val value = animation.animatedValue as Int
@@ -477,32 +503,27 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                 expandedLayout.layoutParams = layoutParams
             }
             heightAnimation.duration = 400
-            heightAnimation.interpolator = DecelerateInterpolator()
+            heightAnimation.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
             heightAnimation.start()
             
-            // Alpha animation with blur effect simulation
-            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_LOW
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
-                start()
-            }
+            // Alpha animation for the container (dividers etc)
+            expandedLayout.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
             
-            // Scale animation for professional effect
-            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
+            // Staggered reveal animation for children
+            for (i in 0 until container.childCount) {
+                val child = container.getChildAt(i)
+                child.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(100L + (i * 50L)) // Stagger delay
+                    .setDuration(400)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
-            
-            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
-            
-            // Set initial scale for spring animation
-            expandedLayout.scaleX = 0.95f
-            expandedLayout.scaleY = 0.95f
             
             // Rotate arrow icon
             arrowIcon.animate()
@@ -528,28 +549,26 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                     expandedLayout.visibility = View.GONE
                 }
             }
-            heightAnimation.duration = 350
-            heightAnimation.interpolator = DecelerateInterpolator()
+            heightAnimation.duration = 300
+            heightAnimation.interpolator = androidx.interpolator.view.animation.FastOutSlowInInterpolator()
             heightAnimation.start()
             
-            // Alpha animation with opacity
-            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 0f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
-                start()
-            }
+            // Fade out container
+            expandedLayout.animate()
+                .alpha(0f)
+                .setDuration(200)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
             
-            // Scale animation for smooth collapse
-            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 0.95f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
-            
-            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 0.95f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
+            // Fade out children quickly
+            for (i in 0 until container.childCount) {
+                val child = container.getChildAt(i)
+                child.animate()
+                    .alpha(0f)
+                    .translationY(20f)
+                    .setDuration(200)
+                    .setStartDelay(0)
+                    .start()
             }
             
             // Rotate arrow icon back

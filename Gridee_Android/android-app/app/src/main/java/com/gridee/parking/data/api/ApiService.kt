@@ -18,6 +18,7 @@ import com.gridee.parking.data.model.TopUpResponse
 import com.gridee.parking.data.model.QrValidationResult
 import com.gridee.parking.data.model.CheckInRequest
 import com.gridee.parking.data.model.CreateBookingRequest
+import com.gridee.parking.data.model.RewardClaimRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -35,7 +36,7 @@ interface ApiService {
     
     // ========== User Management Endpoints ==========
     
-    @POST("api/users/register")
+    @POST("api/auth/register")
     suspend fun registerUser(@Body user: UserRegistration): Response<AuthResponse>
     
     @POST("api/users/login")
@@ -106,6 +107,12 @@ interface ApiService {
         @Path("userId") userId: String,
         @Body request: TopUpRequest
     ): Response<TopUpResponse>
+
+    @POST("api/users/{userId}/wallet/reward")
+    suspend fun claimWalletReward(
+        @Path("userId") userId: String,
+        @Body request: RewardClaimRequest
+    ): Response<WalletDetails>
 
     // Payments (Razorpay)
     @POST("api/payments/initiate")

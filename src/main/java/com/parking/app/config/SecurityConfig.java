@@ -33,7 +33,7 @@ public class SecurityConfig {
                     .anyRequest().authenticated()
             )
             .httpBasic(Customizer.withDefaults())
-            .addFilterBefore(rateLimitingFilter, JwtAuthenticationFilter.class)
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

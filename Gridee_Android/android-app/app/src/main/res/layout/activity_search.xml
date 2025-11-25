@@ -8,6 +8,7 @@
     android:background="@android:color/transparent"
     android:fitsSystemWindows="false">
 
+    <!-- Minimal scrim overlay -->
     <View
         android:id="@+id/search_scrim"
         android:layout_width="0dp"
@@ -15,29 +16,25 @@
         android:alpha="0"
         android:clickable="true"
         android:focusable="true"
-        android:background="@color/search_scrim"
+        android:background="@color/search_scrim_minimal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Clean search card container -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/searchCard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="56dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginTop="24dp"
-        android:foreground="@drawable/ripple_search_bar"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginTop="20dp"
         android:clickable="true"
         android:focusable="true"
-        android:padding="0dp"
-        android:elevation="8dp"
-        android:translationZ="4dp"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:cardUseCompatPadding="false"
-        app:cardPreventCornerOverlap="false"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="4dp"
         app:strokeWidth="0dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -46,52 +43,55 @@
         <LinearLayout
             android:id="@+id/searchInputContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:minHeight="56dp"
+            android:layout_height="wrap_content"
+            android:minHeight="52dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:background="@drawable/bg_search_bar_focused"
-            android:paddingStart="16dp"
-            android:paddingEnd="12dp">
+            android:background="@color/white"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp">
 
+            <!-- Back button - minimal design -->
             <ImageButton
                 android:id="@+id/btnBack"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
-                android:background="@drawable/circle_light_gray_background"
-                android:foreground="?attr/selectableItemBackgroundBorderless"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:padding="6dp"
                 android:src="@drawable/ic_arrow_back"
-                android:tint="@color/search_icon_tint_selector"
-                android:contentDescription="@string/content_description_close_search"
-                android:clickable="true"
-                android:focusable="true" />
+                android:tint="@color/text_primary"
+                android:contentDescription="@string/content_description_close_search" />
 
+            <!-- Search input - clean typography -->
             <EditText
                 android:id="@+id/etSearch"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
                 android:background="@android:color/transparent"
-                android:fontFamily="sans-serif-medium"
-                android:hint="@string/search_expanded_hint"
+                android:fontFamily="sans-serif"
+                android:hint="@string/search_expanded_hint_minimal"
                 android:imeOptions="actionSearch"
                 android:includeFontPadding="false"
                 android:inputType="text"
                 android:maxLines="1"
-                android:textColor="@color/search_input_text"
-                android:textColorHint="@color/search_hint_text"
-                android:textSize="18sp" />
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_secondary"
+                android:textSize="16sp" />
 
+            <!-- Clear button - subtle -->
             <ImageButton
                 android:id="@+id/btnClear"
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:padding="6dp"
+                android:padding="8dp"
                 android:src="@drawable/ic_close"
-                android:tint="@color/search_icon_tint_selector"
+                android:tint="@color/text_secondary"
                 android:contentDescription="@string/content_description_clear_query"
                 android:visibility="gone" />
 
@@ -99,15 +99,17 @@
 
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Clean content area -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/searchContentScroll"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingTop="24dp"
-        android:paddingBottom="32dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="24dp"
+        android:scrollbars="none"
         app:layout_constraintTop_toBottomOf="@id/searchCard"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -119,119 +121,174 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:alpha="0"
-            android:translationY="24dp">
+            android:translationY="16dp">
 
-            <TextView
-                android:id="@+id/tvRecentHeading"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/search_recent_header"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/recentChipGroup"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:chipSpacing="12dp"
-                app:singleLine="true">
-
-                <com.google.android.material.chip.Chip
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    tools:text="Downtown Plaza"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    app:chipBackgroundColor="@color/booking_sheet_chip_bg"
-                    app:chipStrokeWidth="0dp"
-                    app:rippleColor="@color/search_ripple_color" />
-
-                <com.google.android.material.chip.Chip
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    tools:text="Airport T2 Garage"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    app:chipBackgroundColor="@color/booking_sheet_chip_bg"
-                    app:chipStrokeWidth="0dp"
-                    app:rippleColor="@color/search_ripple_color" />
-
-                <com.google.android.material.chip.Chip
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text=""
-                    tools:text="Westend Mall"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    app:chipBackgroundColor="@color/booking_sheet_chip_bg"
-                    app:chipStrokeWidth="0dp"
-                    app:rippleColor="@color/search_ripple_color" />
-
-            </com.google.android.material.chip.ChipGroup>
-
-            <TextView
-                android:id="@+id/tvPopularHeading"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="@string/search_popular_header"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
+            <!-- Recent searches section -->
             <LinearLayout
-                android:id="@+id/popularList"
+                android:id="@+id/recentSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="visible">
 
                 <TextView
+                    android:id="@+id/tvRecentHeading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_recent_header"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02"
+                    android:fontFamily="sans-serif-medium" />
+
+                <!-- Recent searches chips - minimal styling -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/recentChipGroup"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingVertical="12dp"
-                    android:text="Indiranagar High Street"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp" />
+                    android:layout_marginTop="12dp"
+                    app:chipSpacing="8dp"
+                    app:chipSpacingHorizontal="8dp">
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider" />
+                    <com.google.android.material.chip.Chip
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        tools:text="Downtown Plaza"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/search_chip_bg"
+                        app:chipCornerRadius="10dp"
+                        app:chipStrokeWidth="0dp"
+                        app:chipMinHeight="36dp"
+                        app:rippleColor="@color/search_ripple_color" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingVertical="12dp"
-                    android:text="Tech Park Central"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp" />
+                    <com.google.android.material.chip.Chip
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        tools:text="Airport T2"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/search_chip_bg"
+                        app:chipCornerRadius="10dp"
+                        app:chipStrokeWidth="0dp"
+                        app:chipMinHeight="36dp"
+                        app:rippleColor="@color/search_ripple_color" />
 
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="@color/divider" />
+                    <com.google.android.material.chip.Chip
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        tools:text="Westend Mall"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_primary"
+                        app:chipBackgroundColor="@color/search_chip_bg"
+                        app:chipCornerRadius="10dp"
+                        app:chipStrokeWidth="0dp"
+                        app:chipMinHeight="36dp"
+                        app:rippleColor="@color/search_ripple_color" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingVertical="12dp"
-                    android:text="City Metro Hub"
-                    android:textColor="@color/text_primary"
-                    android:textSize="15sp" />
+                </com.google.android.material.chip.ChipGroup>
 
             </LinearLayout>
 
+            <!-- Popular locations section -->
+            <LinearLayout
+                android:id="@+id/popularSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="28dp"
+                android:visibility="visible">
+
+                <TextView
+                    android:id="@+id/tvPopularHeading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_popular_header"
+                    android:textColor="@color/text_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02"
+                    android:fontFamily="sans-serif-medium" />
+
+                <!-- Minimal list items -->
+                <LinearLayout
+                    android:id="@+id/popularList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:divider="@drawable/search_divider"
+                    android:showDividers="middle">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="14dp"
+                        android:text="Indiranagar High Street"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="14dp"
+                        android:text="Tech Park Central"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="14dp"
+                        android:text="City Metro Hub"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingVertical="14dp"
+                        android:text="MG Road Junction"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Empty state - minimal and centered -->
             <TextView
                 android:id="@+id/tvEmptyState"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="@string/search_empty_state"
+                android:layout_marginTop="48dp"
+                android:text="@string/search_empty_state_minimal"
                 android:textColor="@color/text_secondary"
                 android:textSize="14sp"
-                android:lineSpacingExtra="4dp" />
+                android:lineHeight="22dp"
+                android:gravity="center"
+                android:visibility="gone"
+                android:fontFamily="sans-serif" />
 
         </LinearLayout>
 

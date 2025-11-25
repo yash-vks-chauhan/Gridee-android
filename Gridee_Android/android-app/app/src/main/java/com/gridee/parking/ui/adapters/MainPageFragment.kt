@@ -51,7 +51,8 @@ class MainPageFragment : Fragment() {
         binding.btnPrimaryAction.text = "View All Bookings"
         binding.btnPrimaryAction.setOnClickListener {
             try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
+                val intent = Intent(requireContext(), com.gridee.parking.ui.main.MainContainerActivity::class.java)
+                intent.putExtra(com.gridee.parking.ui.main.MainContainerActivity.EXTRA_TARGET_TAB, com.gridee.parking.ui.components.CustomBottomNavigation.TAB_BOOKINGS)
                 startActivity(intent)
             } catch (e: Exception) {
                 showToast("Bookings feature coming soon!")
@@ -61,7 +62,7 @@ class MainPageFragment : Fragment() {
         binding.btnSecondaryAction.text = "Book New Parking"
         binding.btnSecondaryAction.setOnClickListener {
             try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.booking.ParkingLotSelectionActivity"))
+                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.discovery.ParkingDiscoveryActivity"))
                 startActivity(intent)
             } catch (e: Exception) {
                 showToast("Booking feature coming soon!")
@@ -130,7 +131,7 @@ class MainPageFragment : Fragment() {
         binding.btnSecondaryAction.text = "Quick Book"
         binding.btnSecondaryAction.setOnClickListener {
             try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.booking.ParkingLotSelectionActivity"))
+                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.discovery.ParkingDiscoveryActivity"))
                 startActivity(intent)
             } catch (e: Exception) {
                 showToast("Quick book coming soon!")

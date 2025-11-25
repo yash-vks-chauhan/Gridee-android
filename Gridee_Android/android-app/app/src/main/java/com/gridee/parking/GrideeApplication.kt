@@ -13,6 +13,7 @@ class GrideeApplication : Application() {
         super.onCreate()
         instance = this
         try {
+            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
             Checkout.preload(applicationContext)
         } catch (_: Exception) {
         }

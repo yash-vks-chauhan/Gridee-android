@@ -1,6 +1,7 @@
 package com.parking.app.controller;
 
 import com.parking.app.config.JwtUtil;
+import com.parking.app.constants.Role;
 import com.parking.app.model.Users;
 import com.parking.app.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,12 +28,12 @@ public class UserController {
         try {
             String parkingLotName = user.getParkingLotName();
             Users createdUser = userService.createUser(user, parkingLotName);
-            String token = jwtUtil.generateToken(createdUser.getId(), createdUser.getRole().name());
+            String token = jwtUtil.generateToken(createdUser.getId(), createdUser.getRole());
             Map<String, Object> response = Map.of(
                     "token", token,
                     "id", createdUser.getId(),
                     "name", createdUser.getName(),
-                    "role", createdUser.getRole().name()
+                    "role", createdUser.getRole()
             );
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
@@ -64,7 +65,7 @@ public class UserController {
                 user = new Users();
                 user.setName(name);
                 user.setEmail(email.trim().toLowerCase());
-                user.setRole(Users.Role.USER);
+                user.setRole(Role.USER.name());
                 user.setWalletCoins(0);
                 user.setFirstUser(true);
                 user.setCreatedAt(new java.util.Date());
@@ -91,14 +92,14 @@ public class UserController {
             }
             
             // Generate JWT token
-            String token = jwtUtil.generateToken(user.getId(), user.getRole().name());
+            String token = jwtUtil.generateToken(user.getId(), user.getRole());
             
             // Return response with token (same format as registration)
             java.util.Map<String, Object> response = new java.util.HashMap<>();
             response.put("token", token);
             response.put("id", user.getId());
             response.put("name", user.getName());
-            response.put("role", user.getRole().name());
+            response.put("role", user.getRole());
             
             return ResponseEntity.ok(response);
             
