@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,11 +36,11 @@ public class ParkingLotController {
 
     @GetMapping("/search/by-name")
     public ResponseEntity<ParkingLot> getParkingLotByName(@RequestParam String name) {
-        ParkingLot lot = parkingLotService.getParkingLotByName(name);
-        if (lot == null) {
+        Optional<ParkingLot> lot = parkingLotService.getParkingLotByName(name);
+        if (lot.isEmpty()) {
             throw new com.parking.app.exception.NotFoundException("Parking lot not found with name: " + name);
         }
-        return ResponseEntity.ok(lot);
+        return ResponseEntity.ok(lot.get());
     }
     // In ParkingLotController.java
 

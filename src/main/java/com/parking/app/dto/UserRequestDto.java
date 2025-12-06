@@ -36,8 +36,6 @@ public class UserRequestDto {
 
     private List<String> vehicleNumbers;
 
-    private String parkingLotId;
-
     private String parkingLotName;
 }
 

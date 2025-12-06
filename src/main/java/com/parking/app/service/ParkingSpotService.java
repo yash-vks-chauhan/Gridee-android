@@ -84,7 +84,7 @@ public class ParkingSpotService {
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
         ParkingSpot existingSpot = parkingSpotRepository.findById(spotId).orElse(null);
         if (existingSpot != null) {
-            if (spotDetails.getLotId() != null) existingSpot.setLotId(spotDetails.getLotId());
+            if (spotDetails.getLotName() != null) existingSpot.setLotName(spotDetails.getLotName());
             if (spotDetails.getZoneName() != null) existingSpot.setZoneName(spotDetails.getZoneName());
             if (spotDetails.getCapacity() > MIN_AVAILABLE_SPOTS) existingSpot.setCapacity(spotDetails.getCapacity());
             if (spotDetails.getAvailable() >= MIN_AVAILABLE_SPOTS) existingSpot.setAvailable(spotDetails.getAvailable());
@@ -118,15 +118,12 @@ public class ParkingSpotService {
                 .collect(Collectors.toList());
     }
 
-    public List<ParkingSpot> getParkingSpotsByLotId(String lotId) {
-        List<ParkingSpot> spots = parkingSpotRepository.findByLotId(lotId);
-        return spots.stream()
-                .map(this::ensureProperZoneName)
-                .collect(Collectors.toList());
+    public List<ParkingSpot> getSpotsByLotId(String lotId) {
+        return parkingSpotRepository.findByLotName(lotId);
     }
 
     public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime, List<Bookings> overlappingBookings) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotId(lotId);
+        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotName(lotId);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)
                 .collect(Collectors.toSet());
@@ -136,6 +133,32 @@ public class ParkingSpotService {
     }
 
     // ===== Availability Management =====
+
+    /**
+     * Atomically reserves a spot for booking - prevents race conditions
+     * This method is thread-safe and ensures no overbooking even with concurrent requests
+     *
+     * @param spotId The spot to reserve
+     * @return true if reservation successful, false if no spots available
+     */
+//    @Transactional
+    public boolean atomicReserveSpotForBooking(String spotId) {
+        Query spotQuery = new Query(
+                Criteria.where(FIELD_ID).is(spotId)
+                        .and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS)
+        );
+        Update decUpdate = new Update().inc(FIELD_AVAILABLE, DECREMENT_VALUE);
+
+        // findAndModify is atomic in MongoDB - either succeeds or fails, no race condition
+        ParkingSpot updatedSpot = mongoOperations.findAndModify(
+                spotQuery,
+                decUpdate,
+                FindAndModifyOptions.options().returnNew(false), // Return old document to verify
+                ParkingSpot.class
+        );
+
+        return updatedSpot != null && updatedSpot.getAvailable() > MIN_AVAILABLE_SPOTS;
+    }
 
     public void decrementSpotAvailability(String spotId) {
         Query spotQuery = new Query(Criteria.where(FIELD_ID).is(spotId).and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS));
@@ -277,4 +300,3 @@ public class ParkingSpotService {
         System.out.println(LOG_CAPACITY_RESET);
     }
 }
-

@@ -18,7 +18,7 @@ import java.util.Map;
  * Main BookingService - acts as a facade to delegate to specialized booking services
  */
 @Service
-@Transactional
+//@Transactional
 public class BookingService {
 
     private final BookingLifecycleService lifecycleService;
@@ -45,10 +45,10 @@ public class BookingService {
     }
 
     // ===== Booking Lifecycle Operations =====
-    public Bookings createBooking(String spotId, String userId, String lotId,
+    public Bookings createBooking(String spotId, String userId,
                                   ZonedDateTime checkInTime, ZonedDateTime checkOutTime,
                                   String vehicleNumber) {
-        return lifecycleService.createBooking(spotId, userId, lotId, checkInTime, checkOutTime, vehicleNumber);
+        return lifecycleService.createBooking(spotId, userId, checkInTime, checkOutTime, vehicleNumber);
     }
 
     public Bookings checkIn(String bookingId, CheckInMode mode, String qrCode, String vehicleNumber, String pin, String checkInOperatorId) {

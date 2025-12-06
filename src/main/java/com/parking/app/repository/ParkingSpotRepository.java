@@ -9,10 +9,6 @@ import java.util.List;
 @Repository
 public interface ParkingSpotRepository extends MongoRepository<ParkingSpot, String> {
 
-    List<ParkingSpot> findByLotId(String lotId);
-
-    // Returned list of spots in lot with available slots > 0 (use in service)
-    List<ParkingSpot> findByLotIdAndAvailableGreaterThan(String lotId, int availableThreshold);
-
+    List<ParkingSpot> findByLotName(String lotName);
 
 }
