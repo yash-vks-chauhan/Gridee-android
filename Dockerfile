@@ -14,7 +14,7 @@ RUN gradle clean bootJar --no-daemon
 RUN mkdir -p /app/logs
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8443
 
 # Run the application
 CMD ["java", "-jar", "build/libs/gridee-backend-0.0.1-SNAPSHOT.jar"]
