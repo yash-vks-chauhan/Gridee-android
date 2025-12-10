@@ -110,14 +110,8 @@ layout: default
     <p>Governed by the laws of India.</p>
   </footer>
 
-  <!-- Back to Top Button -->
-  <button class="back-to-top" aria-label="Back to Top">↑</button>
-
-</div>
-
 <script>
-  // Back to Top & Sticky Header Logic
-  const backToTopBtn = document.querySelector('.back-to-top');
+  // Sticky Header Logic
   const stickyHeader = document.querySelector('.sticky-header');
   const heroTitle = document.querySelector('h1');
   
@@ -125,23 +119,12 @@ layout: default
     const scrollPos = window.scrollY;
     const heroBottom = heroTitle.offsetTop + heroTitle.offsetHeight;
 
-    // Back to Top
-    if (scrollPos > 300) {
-      backToTopBtn.classList.add('visible');
-    } else {
-      backToTopBtn.classList.remove('visible');
-    }
-
     // Sticky Header (Dynamic Island)
     if (scrollPos > heroBottom) {
       stickyHeader.classList.add('visible');
     } else {
       stickyHeader.classList.remove('visible');
     }
-  });
-  
-  backToTopBtn.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // Smart Email Copy Logic
