@@ -12,6 +12,7 @@
     --shadow-hover: 0 8px 32px rgba(0, 0, 0, 0.08);
     --font-stack: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     --max-width: 800px;
+    --ease-spring: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 /* Dark Mode Support */
@@ -148,12 +149,19 @@ strong {
 a {
     color: var(--text-primary);
     text-decoration: none;
-    border-bottom: 1px solid var(--divider);
-    transition: border-color 0.2s ease;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    transition: all 0.2s var(--ease-spring);
 }
 
 a:hover {
     border-bottom-color: var(--text-primary);
+    border-bottom-width: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    a {
+        border-bottom-color: rgba(255, 255, 255, 0.2);
+    }
 }
 
 /* Layout Containers */
@@ -243,7 +251,7 @@ a:hover {
     padding: 48px;
     margin-bottom: 32px;
     box-shadow: var(--shadow-soft);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-spring);
     animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
@@ -268,8 +276,19 @@ a:hover {
 }
 
 .content-card:hover {
-    transform: scale(1.005);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.content-card:active {
+    transform: scale(0.98);
+    transition-duration: 0.1s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .content-card:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
 }
 
 /* Feature Grid (At a Glance) */
@@ -294,9 +313,20 @@ a:hover {
 }
 
 .feature-item:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
     border-bottom: none;
+}
+
+.feature-item:active {
+    transform: scale(0.96);
+    transition-duration: 0.1s;
+}
+
+@media (prefers-color-scheme: dark) {
+    .feature-item:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
 }
 
 .feature-icon {
@@ -318,11 +348,11 @@ a:hover {
     }
 
     25% {
-        transform: rotate(-10deg);
+        transform: rotate(-5deg);
     }
 
     75% {
-        transform: rotate(10deg);
+        transform: rotate(5deg);
     }
 }
 
@@ -344,7 +374,7 @@ a:hover {
     }
 
     100% {
-        transform: rotate(90deg);
+        transform: rotate(45deg);
     }
 }
 
