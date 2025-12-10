@@ -5,6 +5,12 @@ layout: default
 
 <div class="page-wrapper">
 
+  <!-- Dynamic Island Sticky Header -->
+  <div class="sticky-header">
+    <span class="sticky-title">Gridee Privacy</span>
+    <span class="sticky-action" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">Top ↑</span>
+  </div>
+
   <div class="hero-header">
     <h1>Privacy Policy</h1>
     <div class="last-updated">Last Updated: December 11, 2025</div>
@@ -13,17 +19,17 @@ layout: default
   <!-- At a Glance Section -->
   <div class="feature-grid">
     <a href="#protection" class="feature-item">
-      <span class="feature-icon">🔒</span>
+      <span class="feature-icon icon-lock">🔒</span>
       <span class="feature-title">Secure</span>
       <p class="feature-desc">Bank-grade encryption for all data</p>
     </a>
     <a href="#collection" class="feature-item">
-      <span class="feature-icon">👁️</span>
+      <span class="feature-icon icon-eye">👁️</span>
       <span class="feature-title">Transparent</span>
       <p class="feature-desc">No hidden tracking or data selling</p>
     </a>
     <a href="#rights" class="feature-item">
-      <span class="feature-icon">⚙️</span>
+      <span class="feature-icon icon-gear">⚙️</span>
       <span class="feature-title">Control</span>
       <p class="feature-desc">You own your data completely</p>
     </a>
@@ -93,7 +99,10 @@ layout: default
   <div class="contact-section">
     <h2>Questions?</h2>
     <p>If you have any concerns about your privacy, we are here to help.</p>
-    <a href="mailto:gridee.business@gmail.com" class="email-link">gridee.business@gmail.com</a>
+    <div class="email-container">
+      <button class="email-link" id="emailBtn">gridee.business@gmail.com</button>
+      <div class="copy-tooltip">Copied!</div>
+    </div>
   </div>
 
   <footer class="site-footer">
@@ -107,18 +116,45 @@ layout: default
 </div>
 
 <script>
-  // Back to Top Logic
+  // Back to Top & Sticky Header Logic
   const backToTopBtn = document.querySelector('.back-to-top');
+  const stickyHeader = document.querySelector('.sticky-header');
+  const heroTitle = document.querySelector('h1');
   
   window.addEventListener('scroll', () => {
-    if (window.scrollY > 300) {
+    const scrollPos = window.scrollY;
+    const heroBottom = heroTitle.offsetTop + heroTitle.offsetHeight;
+
+    // Back to Top
+    if (scrollPos > 300) {
       backToTopBtn.classList.add('visible');
     } else {
       backToTopBtn.classList.remove('visible');
+    }
+
+    // Sticky Header (Dynamic Island)
+    if (scrollPos > heroBottom) {
+      stickyHeader.classList.add('visible');
+    } else {
+      stickyHeader.classList.remove('visible');
     }
   });
   
   backToTopBtn.addEventListener('click', () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // Smart Email Copy Logic
+  const emailBtn = document.getElementById('emailBtn');
+  const tooltip = document.querySelector('.copy-tooltip');
+
+  emailBtn.addEventListener('click', () => {
+    const email = emailBtn.textContent;
+    navigator.clipboard.writeText(email).then(() => {
+      tooltip.classList.add('visible');
+      setTimeout(() => {
+        tooltip.classList.remove('visible');
+      }, 2000);
+    });
   });
 </script>

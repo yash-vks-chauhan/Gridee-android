@@ -52,6 +52,8 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    -webkit-tap-highlight-color: transparent;
+    /* Remove grey tap box on mobile */
 }
 
 /* Custom Scrollbar */
@@ -70,7 +72,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Selection */
@@ -94,7 +96,8 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
-    padding-bottom: 80px;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    /* iPhone Safe Area */
 }
 
 /* Typography */
@@ -107,14 +110,16 @@ h4 {
 }
 
 h1 {
-    font-size: 48px;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    /* Fluid Typography */
     font-weight: 700;
     margin-bottom: 16px;
     text-align: center;
 }
 
 h2 {
-    font-size: 28px;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    /* Fluid Typography */
     font-weight: 600;
     margin-bottom: 24px;
     margin-top: 0;
@@ -163,6 +168,57 @@ a:hover {
     padding: 120px 0 60px;
     text-align: center;
     animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/* Sticky Header (Dynamic Island Style) */
+.sticky-header {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-150%);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 12px 24px;
+    border-radius: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    max-width: 90%;
+    width: max-content;
+}
+
+.sticky-header.visible {
+    transform: translateX(-50%) translateY(0);
+}
+
+.sticky-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sticky-action {
+    font-size: 12px;
+    color: var(--text-primary);
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.sticky-action:hover {
+    opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+    .sticky-header {
+        background: rgba(44, 44, 46, 0.8);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
 }
 
 .last-updated {
@@ -250,6 +306,64 @@ a:hover {
     color: var(--text-primary);
     filter: grayscale(100%);
     opacity: 0.8;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Icon Animations */
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    25% {
+        transform: rotate(-10deg);
+    }
+
+    75% {
+        transform: rotate(10deg);
+    }
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        transform: scaleY(1);
+    }
+
+    50% {
+        transform: scaleY(0.1);
+    }
+}
+
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(90deg);
+    }
+}
+
+.feature-item:hover .icon-lock {
+    animation: shake 0.4s ease-in-out;
+    filter: grayscale(0%);
+    opacity: 1;
+}
+
+.feature-item:hover .icon-eye {
+    animation: blink 0.4s ease-in-out;
+    filter: grayscale(0%);
+    opacity: 1;
+}
+
+.feature-item:hover .icon-gear {
+    animation: rotate 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: grayscale(0%);
+    opacity: 1;
 }
 
 .feature-title {
@@ -297,12 +411,57 @@ li::before {
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-.email-link {
+.email-container {
+    position: relative;
     display: inline-block;
     margin-top: 16px;
+}
+
+.email-link {
     font-size: 20px;
     font-weight: 600;
     border-bottom: 2px solid transparent;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: inherit;
+    color: var(--text-primary);
+    padding: 0;
+}
+
+.copy-tooltip {
+    position: absolute;
+    top: -40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--text-primary);
+    color: var(--bg-card);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.copy-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+.copy-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid var(--text-primary);
 }
 
 /* Footer */
