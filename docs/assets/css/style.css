@@ -330,6 +330,33 @@ li::before {
     }
 }
 
+@keyframes focusSnap {
+    0% {
+        transform: scale(0.98);
+        filter: blur(4px);
+        border-color: transparent;
+    }
+
+    50% {
+        transform: scale(1.02);
+        filter: blur(0);
+        border-color: var(--text-primary);
+    }
+
+    100% {
+        transform: scale(1);
+        filter: blur(0);
+        border-color: transparent;
+    }
+}
+
+/* Target Focus Effect */
+.content-card:target {
+    animation: focusSnap 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border: 1px solid transparent;
+    /* Prepare for border animation */
+}
+
 /* Print Styles */
 @media print {
     body {
