@@ -101,4 +101,24 @@ layout: default
     <p>Governed by the laws of India.</p>
   </footer>
 
+  <!-- Back to Top Button -->
+  <button class="back-to-top" aria-label="Back to Top">↑</button>
+
 </div>
+
+<script>
+  // Back to Top Logic
+  const backToTopBtn = document.querySelector('.back-to-top');
+  
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 300) {
+      backToTopBtn.classList.add('visible');
+    } else {
+      backToTopBtn.classList.remove('visible');
+    }
+  });
+  
+  backToTopBtn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+</script>
