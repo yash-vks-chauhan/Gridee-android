@@ -12,21 +12,21 @@ layout: default
 
   <!-- At a Glance Section -->
   <div class="feature-grid">
-    <div class="feature-item">
+    <a href="#protection" class="feature-item">
       <span class="feature-icon">🔒</span>
       <span class="feature-title">Secure</span>
       <p class="feature-desc">Bank-grade encryption for all data</p>
-    </div>
-    <div class="feature-item">
+    </a>
+    <a href="#collection" class="feature-item">
       <span class="feature-icon">👁️</span>
       <span class="feature-title">Transparent</span>
       <p class="feature-desc">No hidden tracking or data selling</p>
-    </div>
-    <div class="feature-item">
+    </a>
+    <a href="#rights" class="feature-item">
       <span class="feature-icon">⚙️</span>
       <span class="feature-title">Control</span>
       <p class="feature-desc">You own your data completely</p>
-    </div>
+    </a>
   </div>
 
   <div class="content-card">
@@ -35,7 +35,7 @@ layout: default
     <p><strong>Our Promise:</strong> We believe in complete transparency. We will never sell your personal data, and we only collect what's necessary to provide you with a seamless parking experience.</p>
   </div>
 
-  <div class="content-card">
+  <div class="content-card" id="collection">
     <h2>Information We Collect</h2>
     <p>We only collect information that helps us deliver a better parking experience to you.</p>
 
@@ -68,7 +68,7 @@ layout: default
     <p><strong>We DO NOT:</strong> Sell your data, send spam, or share data with advertisers.</p>
   </div>
 
-  <div class="content-card">
+  <div class="content-card" id="protection">
     <h2>Data Retention & Protection</h2>
     <p>We retain your data only as long as your account is active or as required by law. You can request deletion at any time.</p>
     <p><strong>Security Measures:</strong></p>
@@ -79,7 +79,7 @@ layout: default
     </ul>
   </div>
 
-  <div class="content-card">
+  <div class="content-card" id="rights">
     <h2>Your Rights</h2>
     <p>You have full control over your personal information:</p>
     <ul>

@@ -231,6 +231,16 @@ a:hover {
     border-radius: var(--radius-m);
     text-align: center;
     box-shadow: var(--shadow-soft);
+    display: block;
+    text-decoration: none;
+    border-bottom: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-bottom: none;
 }
 
 .feature-icon {
