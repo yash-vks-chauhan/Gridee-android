@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Soft shadow -->
+    <item android:top="2dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="28dp" />
+            <gradient
+                android:startColor="#14000000"
+                android:centerColor="#05000000"
+                android:endColor="#00000000"
+                android:angle="270" />
+        </shape>
+    </item>
+
+    <!-- Pill surface -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/segment_slider_fill" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+
+</layer-list>
