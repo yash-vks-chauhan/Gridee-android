@@ -27,25 +27,24 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
 
     override fun setupUI() {
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
-        setupUserWelcome()
+
         setupClickListeners()
     }
 
-    private fun setupUserWelcome() {
-        // Get user name from SharedPreferences
-        val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        val userName = arguments?.getString("USER_NAME") 
-            ?: sharedPref.getString("user_name", "User") 
-            ?: "User"
-        
-        binding.tvWelcome.text = "Welcome back, $userName!"
-    }
 
     private fun setupClickListeners() {
         setupFabListener()
     }
     
     private fun setupFabListener() {
+        // Hero Animation Click Listener
+        binding.heroAnimation.setOnClickListener {
+            val bottomSheet = com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+                lottieFileName = "premium_crown.json"
+            )
+            bottomSheet.show(parentFragmentManager, com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.TAG)
+        }
+
         // FAB click listener - parking lot selection
         binding.fabBookParking.setOnClickListener {
             try {

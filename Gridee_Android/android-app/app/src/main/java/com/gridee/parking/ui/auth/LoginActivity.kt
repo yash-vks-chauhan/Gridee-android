@@ -87,8 +87,7 @@ class LoginActivity : AppCompatActivity() {
         
         // Google Sign In
         binding.btnSignInWithGoogle.setOnClickListener {
-            val signInIntent = googleSignInManager.getSignInIntent()
-            googleSignInLauncher.launch(signInIntent)
+            googleSignInManager.launchSignIn(googleSignInLauncher)
         }
         
         // JWT Test Button - Development Only

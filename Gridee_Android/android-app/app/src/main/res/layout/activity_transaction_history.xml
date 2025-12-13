@@ -326,42 +326,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Date Filter Modal Close Button -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/date_modal_close_button"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone"
-        android:translationY="1000dp"
-        android:alpha="0"
-        android:clickable="true"
-        android:focusable="true"
-        android:stateListAnimator="@null"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
-        app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="26dp"
-        app:cardElevation="4dp"
-        app:cardUseCompatPadding="false"
-        app:strokeColor="@color/text_primary"
-        app:strokeWidth="0.5dp"
-        app:rippleColor="@color/quick_add_ripple"
-        app:layout_constraintBottom_toTopOf="@id/date_filter_modal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_close"
-            android:contentDescription="Close modal"
-            app:tint="@color/text_primary" />
-
-    </com.google.android.material.card.MaterialCardView>
 
     <!-- Date Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Date Filter Modal -->
+    <LinearLayout
         android:id="@+id/date_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -369,90 +338,75 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bottom_sheet_universal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="32dp"
-            android:paddingHorizontal="24dp">
+            android:paddingBottom="32dp">
 
             <!-- Modal Handle -->
             <View
-                android:layout_width="40dp"
+                android:id="@+id/handle_date"
+                android:layout_width="32dp"
                 android:layout_height="4dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/modal_handle_shape"
-                android:alpha="0.3" />
+                android:layout_marginTop="8dp"
+                android:background="@drawable/handle_pill_minimal"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Close Button -->
+            <ImageView
+                android:id="@+id/btn_close_date"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_close_circle"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                app:tint="#8E8E93"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <!-- Modal Title -->
             <TextView
+                android:id="@+id/title_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="24dp"
                 android:text="Select Date Range"
                 android:textColor="@color/text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-black" />
+                android:fontFamily="sans-serif-black"
+                app:layout_constraintTop_toBottomOf="@id/handle_date"
+                app:layout_constraintStart_toStartOf="parent" />
 
             <!-- Placeholder Content Area -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:background="@color/background_primary"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="24dp"
+                app:layout_constraintTop_toBottomOf="@id/title_date" />
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-    <!-- Amount Filter Modal Close Button -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/amount_modal_close_button"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone"
-        android:translationY="1000dp"
-        android:alpha="0"
-        android:clickable="true"
-        android:focusable="true"
-        android:stateListAnimator="@null"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
-        app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="26dp"
-        app:cardElevation="4dp"
-        app:cardUseCompatPadding="false"
-        app:strokeColor="@color/text_primary"
-        app:strokeWidth="0.5dp"
-        app:rippleColor="@color/quick_add_ripple"
-        app:layout_constraintBottom_toTopOf="@id/amount_filter_modal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_close"
-            android:contentDescription="Close modal"
-            app:tint="@color/text_primary" />
-
-    </com.google.android.material.card.MaterialCardView>
 
     <!-- Amount Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Amount Filter Modal -->
+    <LinearLayout
         android:id="@+id/amount_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -460,90 +414,75 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bottom_sheet_universal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="32dp"
-            android:paddingHorizontal="24dp">
+            android:paddingBottom="32dp">
 
             <!-- Modal Handle -->
             <View
-                android:layout_width="40dp"
+                android:id="@+id/handle_amount"
+                android:layout_width="32dp"
                 android:layout_height="4dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/modal_handle_shape"
-                android:alpha="0.3" />
+                android:layout_marginTop="8dp"
+                android:background="@drawable/handle_pill_minimal"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Close Button -->
+            <ImageView
+                android:id="@+id/btn_close_amount"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_close_circle"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                app:tint="#8E8E93"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <!-- Modal Title -->
             <TextView
+                android:id="@+id/title_amount"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="24dp"
                 android:text="Filter by Amount"
                 android:textColor="@color/text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-black" />
+                android:fontFamily="sans-serif-black"
+                app:layout_constraintTop_toBottomOf="@id/handle_amount"
+                app:layout_constraintStart_toStartOf="parent" />
 
             <!-- Placeholder Content Area -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:background="@color/background_primary"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="24dp"
+                app:layout_constraintTop_toBottomOf="@id/title_amount" />
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
-    <!-- Payment Filter Modal Close Button -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/payment_modal_close_button"
-        android:layout_width="52dp"
-        android:layout_height="52dp"
-        android:layout_marginBottom="16dp"
-        android:visibility="gone"
-        android:translationY="1000dp"
-        android:alpha="0"
-        android:clickable="true"
-        android:focusable="true"
-        android:stateListAnimator="@null"
-        android:foreground="?attr/selectableItemBackgroundBorderless"
-        app:cardBackgroundColor="@color/white"
-        app:cardCornerRadius="26dp"
-        app:cardElevation="4dp"
-        app:cardUseCompatPadding="false"
-        app:strokeColor="@color/text_primary"
-        app:strokeWidth="0.5dp"
-        app:rippleColor="@color/quick_add_ripple"
-        app:layout_constraintBottom_toTopOf="@id/payment_filter_modal"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:layout_gravity="center"
-            android:src="@drawable/ic_close"
-            android:contentDescription="Close modal"
-            app:tint="@color/text_primary" />
-
-    </com.google.android.material.card.MaterialCardView>
 
     <!-- Payment Filter Modal -->
-    <com.google.android.material.card.MaterialCardView
+    <!-- Payment Filter Modal -->
+    <LinearLayout
         android:id="@+id/payment_filter_modal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -551,52 +490,68 @@
         android:visibility="gone"
         android:translationY="1000dp"
         android:alpha="0"
-        app:cardBackgroundColor="@android:color/white"
-        app:cardCornerRadius="20dp"
-        app:cardElevation="12dp"
-        app:cardUseCompatPadding="false"
-        app:strokeWidth="0dp"
+        android:orientation="vertical"
+        android:background="@drawable/bg_bottom_sheet_universal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="32dp"
-            android:paddingHorizontal="24dp">
+            android:paddingBottom="32dp">
 
             <!-- Modal Handle -->
             <View
-                android:layout_width="40dp"
+                android:id="@+id/handle_payment"
+                android:layout_width="32dp"
                 android:layout_height="4dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="20dp"
-                android:background="@drawable/modal_handle_shape"
-                android:alpha="0.3" />
+                android:layout_marginTop="8dp"
+                android:background="@drawable/handle_pill_minimal"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
+
+            <!-- Close Button -->
+            <ImageView
+                android:id="@+id/btn_close_payment"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="12dp"
+                android:background="@drawable/bg_close_circle"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                app:tint="#8E8E93"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintEnd_toEndOf="parent" />
 
             <!-- Modal Title -->
             <TextView
+                android:id="@+id/title_payment"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="24dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="24dp"
                 android:text="Payment Method"
                 android:textColor="@color/text_primary"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:fontFamily="sans-serif-black" />
+                android:fontFamily="sans-serif-black"
+                app:layout_constraintTop_toBottomOf="@id/handle_payment"
+                app:layout_constraintStart_toStartOf="parent" />
 
             <!-- Placeholder Content Area -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="300dp"
                 android:background="@color/background_primary"
-                android:layout_marginBottom="20dp" />
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="24dp"
+                app:layout_constraintTop_toBottomOf="@id/title_payment" />
 
-        </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

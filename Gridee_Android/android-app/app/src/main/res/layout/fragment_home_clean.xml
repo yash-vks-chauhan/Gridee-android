@@ -25,33 +25,6 @@
             android:paddingHorizontal="24dp"
             android:paddingBottom="24dp">
 
-            <!-- Header Section -->
-            <TextView
-                android:id="@+id/tv_app_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:fontFamily="sans-serif"
-                android:text="Gridee"
-                android:textColor="@color/text_primary"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <!-- Welcome Text -->
-            <TextView
-                android:id="@+id/tv_welcome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="sans-serif"
-                android:text="Welcome back, User!"
-                android:textColor="@color/text_secondary"
-                android:textSize="16sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_app_title" />
-
             <!-- Modern Search Bar with Glass Morphism -->
             <FrameLayout
                 android:id="@+id/search_container"
@@ -60,7 +33,7 @@
                 android:layout_marginTop="32dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_welcome">
+                app:layout_constraintTop_toTopOf="parent">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/card_search"
@@ -142,7 +115,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
-        android:backgroundTint="@color/primary_blue"
+        android:backgroundTint="@color/brand_primary"
         android:src="@drawable/ic_add"
         android:tint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"

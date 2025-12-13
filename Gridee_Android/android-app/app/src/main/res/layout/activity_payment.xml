@@ -115,7 +115,7 @@
                 android:focusable="true"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:rippleColor="@color/primary_blue_light"
+                app:rippleColor="@color/brand_surface"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -129,7 +129,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_credit_card"
-                        app:tint="@color/primary_blue" />
+                        app:tint="@color/brand_primary" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -176,7 +176,7 @@
                 android:focusable="true"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:rippleColor="@color/primary_blue_light"
+                app:rippleColor="@color/brand_surface"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -190,7 +190,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_wallet"
-                        app:tint="@color/primary_blue" />
+                        app:tint="@color/brand_primary" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -237,7 +237,7 @@
                 android:focusable="true"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:rippleColor="@color/primary_blue_light"
+                app:rippleColor="@color/brand_surface"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -251,7 +251,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_upi"
-                        app:tint="@color/primary_blue" />
+                        app:tint="@color/brand_primary" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -298,7 +298,7 @@
                 android:focusable="true"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
-                app:rippleColor="@color/primary_blue_light"
+                app:rippleColor="@color/brand_surface"
                 app:strokeWidth="0dp">
 
                 <LinearLayout
@@ -312,7 +312,7 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_bank"
-                        app:tint="@color/primary_blue" />
+                        app:tint="@color/brand_primary" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -381,7 +381,7 @@
             android:textAllCaps="false"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:backgroundTint="@color/primary_blue"
+            app:backgroundTint="@color/brand_primary"
             app:cornerRadius="12dp" />
 
         <TextView

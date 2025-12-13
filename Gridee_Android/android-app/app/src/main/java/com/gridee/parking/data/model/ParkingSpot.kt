@@ -2,7 +2,9 @@ package com.gridee.parking.data.model
 
 data class ParkingSpot(
     val id: String,
-    val lotId: String,
+    val lotId: String = "",
+    val lotName: String? = null, // Legacy backend sometimes returns lotName instead of lotId
+    val spotCode: String? = null, // Friendly spot identifier from backend (spotId)
     val name: String? = null,  // The actual spot name like "TP Avenue", "Medical College"
     val zoneName: String? = null,  // Keep for backwards compatibility
     val capacity: Int = 0,

@@ -3,15 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/background_secondary"
+    android:background="@drawable/bg_bottom_sheet_universal"
     android:orientation="vertical"
-    android:paddingTop="12dp">
+    android:paddingTop="0dp">
 
+    <!-- Drag Handle -->
     <View
-        android:layout_width="40dp"
+        android:id="@+id/drag_handle"
+        android:layout_width="32dp"
         android:layout_height="4dp"
+        android:layout_marginTop="8dp"
         android:layout_gravity="center_horizontal"
-        android:background="@drawable/modal_handle_shape" />
+        android:background="@drawable/handle_pill_minimal" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -64,16 +67,17 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <ImageButton
+                    <ImageView
                         android:id="@+id/btn_close"
-                        android:layout_width="40dp"
-                        android:layout_height="40dp"
-                        android:background="@drawable/close_button_outline"
-                        android:foreground="?android:attr/selectableItemBackgroundBorderless"
-                        android:padding="10dp"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/bg_close_circle"
+                        android:padding="9dp"
                         android:contentDescription="Close"
                         android:src="@drawable/ic_close"
-                        app:tint="@color/text_primary" />
+                        android:clickable="true"
+                        android:focusable="true"
+                        app:tint="#5C5C5C" />
                 </LinearLayout>
 
                 <com.google.android.material.card.MaterialCardView

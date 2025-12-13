@@ -164,9 +164,7 @@ fun MainContent(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        item {
-            WelcomeSection()
-        }
+
         
         item {
             RecentBookingsSection()
@@ -179,33 +177,7 @@ fun MainContent(
     }
 }
 
-@Composable
-fun WelcomeSection() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp)
-        ) {
-            Text(
-                text = "Welcome back!",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Find and book parking spots in your area",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-            )
-        }
-    }
-}
+
 
 @Composable
 fun RecentBookingsSection() {

@@ -4,8 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
-    android:fitsSystemWindows="true">
+    android:background="@color/background_primary"
+    android:fitsSystemWindows="false">
 
     <!-- Main Content ScrollView -->
     <ScrollView
@@ -13,126 +13,39 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="24dp"
-        android:paddingHorizontal="24dp"
-        android:paddingBottom="24dp">
-
-        <!-- Header Section -->
-        <TextView
-            android:id="@+id/tv_app_title"
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:fontFamily="sans-serif"
-            android:text="Gridee"
-            android:textColor="@color/text_primary"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            android:fitsSystemWindows="false">
 
-        <!-- Welcome Text -->
-        <TextView
-            android:id="@+id/tv_welcome"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:fontFamily="sans-serif"
-            android:text="Welcome back, User!"
-            android:textColor="@color/text_secondary"
-            android:textSize="16sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_app_title" />
+            <View
+                android:id="@+id/hero_background"
+                android:layout_width="0dp"
+                android:layout_height="340dp"
+                android:background="@drawable/bg_home_hero"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- Dramatic glass search container -->
-        <FrameLayout
-            android:id="@+id/search_container"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_welcome">
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/hero_animation"
+                android:layout_width="150dp"
+                android:layout_height="150dp"
+                android:layout_marginTop="40dp"
+                android:layout_marginEnd="8dp"
+                app:lottie_fileName="hero_animation.json"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/card_search"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="56dp"
-                android:foreground="@drawable/ripple_search_bar"
-                android:clickable="true"
-                android:focusable="true"
-                android:elevation="8dp"
-                android:translationZ="4dp"
-                android:transitionName="@string/transition_search_bar"
-                android:padding="0dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardPreventCornerOverlap="false"
-                app:cardUseCompatPadding="false"
-                app:strokeWidth="0dp">
-
-                <LinearLayout
-                    android:id="@+id/search_content"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:minHeight="56dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingEnd="16dp"
-                    android:background="@drawable/bg_search_bar_selector">
-
-                    <ImageView
-                        android:id="@+id/iv_search_icon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:duplicateParentState="true"
-                        android:src="@drawable/ic_search_modern"
-                        android:tint="@color/search_icon_tint_selector"
-                        android:contentDescription="Search icon" />
-
-                    <TextView
-                        android:id="@+id/tv_search_placeholder"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginEnd="12dp"
-                        android:duplicateParentState="true"
-                        android:text="@string/search_home_hint"
-                        android:textColor="@color/search_hint_text_selector"
-                        android:textSize="16sp"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.01"
-                        android:gravity="center_vertical"
-                        android:minHeight="40dp"
-                        android:includeFontPadding="false" />
-
-                    <ImageView
-                        android:id="@+id/iv_search_arrow"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:duplicateParentState="true"
-                        android:src="@drawable/ic_arrow_forward"
-                        android:tint="@color/search_icon_tint_selector"
-                        android:alpha="0.7"
-                        android:contentDescription="Open search" />
-
-                </LinearLayout>
-
-            </com.google.android.material.card.MaterialCardView>
-
-        </FrameLayout>
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </ScrollView>
 

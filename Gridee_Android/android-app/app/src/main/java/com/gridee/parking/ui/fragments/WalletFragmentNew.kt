@@ -262,11 +262,14 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         val statusNorm = backendTransaction.status?.trim()?.lowercase(Locale.getDefault())
 
         // Map transaction type and handle amount correctly
-        val transactionType = when (typeNorm) {
-            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
-            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
-            "refund" -> TransactionType.REFUND
-            "bonus" -> TransactionType.BONUS
+        val isRewardByText = backendTransaction.description?.contains("reward", ignoreCase = true) == true
+        val isRewardByAmount = (backendTransaction.amount ?: 0.0) > 0 &&
+            kotlin.math.abs((backendTransaction.amount ?: 0.0) - REWARD_AMOUNT_RUPEES) < 0.01
+        val transactionType = when {
+            isRewardByText || isRewardByAmount || typeNorm == "bonus" -> TransactionType.BONUS
+            typeNorm in listOf("credit", "top_up", "topup", "wallet_topup", "wallet_recharge") -> TransactionType.TOP_UP
+            typeNorm in listOf("debit", "payment", "penalty_deduction") -> TransactionType.PARKING_PAYMENT
+            typeNorm == "refund" -> TransactionType.REFUND
             else -> TransactionType.TOP_UP
         }
         
@@ -283,16 +286,18 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
         android.util.Log.d("WalletFragmentNew", "Converting transaction: type=${backendTransaction.type}, originalAmount=$amount, displayAmount=$displayAmount")
         
         // Build a user-friendly description, respecting status
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Bonus"
+        val isReward = transactionType == TransactionType.BONUS || isRewardByText || isRewardByAmount
+        val baseDescription = when {
+            isReward -> "Reward Added"
+            transactionType == TransactionType.TOP_UP -> "Wallet Top-up"
+            transactionType == TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            transactionType == TransactionType.REFUND -> "Refund"
+            else -> "Wallet Top-up"
         }
         val description = when (statusNorm) {
             "failed" -> "$baseDescription Failed"
             "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> backendTransaction.description ?: baseDescription
+            else -> if (isReward) baseDescription else backendTransaction.description ?: baseDescription
         }
 
         return Transaction(
@@ -502,5 +507,6 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
     }
     private companion object {
         private const val MAX_RECENT_TRANSACTIONS = 5
+        private const val REWARD_AMOUNT_RUPEES = 20.0
     }
 }

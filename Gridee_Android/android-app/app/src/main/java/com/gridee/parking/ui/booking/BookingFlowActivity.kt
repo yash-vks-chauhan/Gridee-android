@@ -200,6 +200,7 @@ class BookingFlowActivity : AppCompatActivity() {
                     parkingSpot = ParkingSpot(
                         id = spotId,
                         lotId = selectedLotId,
+                        spotCode = spotId,
                         name = "Selected Spot",
                         zoneName = "Unknown Spot",
                         capacity = 0,
@@ -214,6 +215,7 @@ class BookingFlowActivity : AppCompatActivity() {
             parkingSpot = ParkingSpot(
                 id = if (spotId.isNotEmpty()) spotId else "unknown",
                 lotId = selectedLotId,
+                spotCode = spotId,
                 name = null,
                 zoneName = null,
                 capacity = 0,
@@ -241,7 +243,7 @@ class BookingFlowActivity : AppCompatActivity() {
             binding.tvHourlyRate.text = "₹${String.format(Locale.getDefault(), "%.2f", 2.5)}/hour"
             
             // Update the selected spot display to show the actual selected spot
-            val spotName = spot.name ?: spot.zoneName ?: "Any available spot"
+            val spotName = spot.name ?: spot.zoneName ?: spot.spotCode ?: "Any available spot"
             binding.tvSelectedSpot.text = spotName
             viewModel.setSelectedSpot(spotName)
             
@@ -314,7 +316,7 @@ class BookingFlowActivity : AppCompatActivity() {
             selectedSpot = spot
             isAnySpotSelected = false
             updateSpotSelection(ivAnySpotSelected, false)
-            showToast("Selected spot: ${spot.name ?: spot.zoneName}")
+            showToast("Selected spot: ${spot.name ?: spot.zoneName ?: spot.spotCode ?: spot.id}")
         }
         
         recyclerView.layoutManager = androidx.recyclerview.widget.LinearLayoutManager(this)

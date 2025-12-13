@@ -139,7 +139,7 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     }
 
     private fun setupPullToRefresh() {
-        binding.swipeRefresh.setColorSchemeResources(R.color.primary_blue)
+        binding.swipeRefresh.setColorSchemeResources(R.color.brand_primary)
         binding.swipeRefresh.setOnRefreshListener {
             loadUserBookings()
         }

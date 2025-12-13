@@ -55,11 +55,7 @@ class MainActivity : BaseActivityWithBottomNav<ActivityMainBinding>() {
     private fun setupClickListeners() {
         println("MainActivity: Setting up click listeners")
         
-        binding.cardSearch.setOnClickListener {
-            // Navigate to Find Parking screen
-            val intent = Intent(this, com.gridee.parking.ui.discovery.ParkingDiscoveryActivity::class.java)
-            startActivity(intent)
-        }
+
         
         // Verify FAB exists and set up click listener
         val fab = binding.fabBookParking

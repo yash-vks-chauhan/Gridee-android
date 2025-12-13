@@ -15,12 +15,24 @@
     <color name="text_primary">#191C19</color>
     <color name="text_secondary">#666666</color>
     <color name="white">#FFFFFF</color>
+    <color name="home_hero_background">#D32F2F</color>
+    <color name="home_hero_surface">#C62828</color>
+    <color name="home_hero_subtext">#B3FFFFFF</color>
+    <color name="home_hero_card_border">#26FFFFFF</color>
+    <color name="segment_ripple_subtle">#33FFFFFF</color>
+    
+    <!-- Minimal Hero Colors -->
+    <color name="hero_minimal_start">#000000</color> <!-- Pure Black -->
+    <color name="hero_minimal_end">#000000</color>   <!-- Pure Black -->
+    <color name="hero_border">#1AFFFFFF</color>      <!-- 10% White Rim Light -->
+    
     <color name="error">#BA1A1A</color>
     
-    <!-- Bottom Navigation Colors -->
-    <color name="primary_blue">#1976D2</color>
-    <color name="primary_blue_light">#E3F2FD</color>
-    <color name="light_blue">#E3F2FD</color>
+    <!-- Brand Colors (Monochrome) -->
+    <color name="brand_primary">#000000</color>
+    <color name="brand_surface">#F5F5F5</color>
+    <color name="brand_dark">#000000</color>
+    
     <color name="inactive_gray">#999999</color>
     <color name="light_gray">#CCCCCC</color>
     <color name="gray_500">#9CA3AF</color>
@@ -43,9 +55,9 @@
     <color name="divider">#E0E0E0</color>
     
     <!-- Common alias -->
-    <color name="primary_color">@color/primary_blue</color>
-    <color name="primary">@color/primary_blue</color>
-    <color name="primary_dark">#1565C0</color>
+    <color name="primary_color">@color/brand_primary</color>
+    <color name="primary">@color/brand_primary</color>
+    <color name="primary_dark">#000000</color>
     <color name="accent">#FF9800</color>
     <color name="charcoal_black">#2D3748</color>
     <!-- Status Colors -->
@@ -63,7 +75,7 @@
     <color name="glass_shadow">#26000000</color>
     <color name="glass_highlight">#1FFFFFFF</color>
     <color name="glass_specular">#33FFFFFF</color>
-    <color name="glass_focus_ring">#3388CCFF</color>
+    <color name="glass_focus_ring">#33000000</color>
 
     <!-- Bulky Glass Segmented Control Colors -->
     <color name="bulky_glass_container_fill">#F0F2F6</color>
@@ -74,7 +86,7 @@
     <color name="bulky_glass_highlight">#44FFFFFF</color>
     <color name="bulky_glass_text_selected">#1E232E</color>
     <color name="bulky_glass_text_unselected">#6E7484</color>
-    <color name="bulky_glass_focus_ring">#3388CCFF</color>
+    <color name="bulky_glass_focus_ring">#33000000</color>
     <color name="bulky_glass_pressed">#5AFFFFFF</color>
 
     <!-- Booking status badge colors -->
@@ -104,10 +116,10 @@
     <!-- Missing Colors -->
     <color name="segment_badge">#4CAF50</color>
     <color name="border_light">#E0E0E0</color>
-    <color name="ultra_icon_color">#2196F3</color>
+    <color name="ultra_icon_color">#000000</color>
     <color name="gray_200">#EEEEEE</color>
     <color name="gray_50">#FAFAFA</color>
-    <color name="segment_active_text">#2196F3</color>
+    <color name="segment_active_text">#000000</color>
     <color name="gold_dark">#B8860B</color>
     <color name="gold_light">#FFD700</color>
     <color name="gold">#DAA520</color>
@@ -115,22 +127,21 @@
     <color name="segment_glow">#40FFFFFF</color>
     <color name="segment_indicator_shadow">#26000000</color>
     <color name="ultra_status_indicator">#4CAF50</color>
-    <color name="blue">#2196F3</color>
+    <color name="brand_accent">#000000</color>
     <color name="orange">#FF9800</color>
     <color name="ultra_border">#E0E0E0</color>
     <color name="ultra_card_background">#F8F9FA</color>
-    <color name="ultra_price_background">#E3F2FD</color>
+    <color name="ultra_price_background">#F5F5F5</color>
     <color name="ultra_status_background">#E8F5E8</color>
-    <color name="dark_blue">#1976D2</color>
     
     <!-- Modal Colors -->
     <color name="modal_overlay_color">#80000000</color>
     
     <!-- Material Design 3 Color Tokens -->
-    <color name="md3_primary">#1976D2</color>
+    <color name="md3_primary">#000000</color>
     <color name="md3_on_primary">#FFFFFF</color>
-    <color name="md3_primary_container">#D6E3FF</color>
-    <color name="md3_on_primary_container">#001C3B</color>
+    <color name="md3_primary_container">#F5F5F5</color>
+    <color name="md3_on_primary_container">#000000</color>
     
     <color name="md3_surface">#FEFBFF</color>
     <color name="md3_surface_variant">#E0E2EC</color>
@@ -179,9 +190,9 @@
     <color name="filter_button_ripple">#22000000</color>
 
     <!-- Scanner palette -->
-    <color name="scanner_primary">#1E88E5</color>
-    <color name="scanner_primary_90">#E61E88E5</color>
-    <color name="scanner_primary_80">#CC1E88E5</color>
+    <color name="scanner_primary">#000000</color>
+    <color name="scanner_primary_90">#E6000000</color>
+    <color name="scanner_primary_80">#CC000000</color>
     <color name="scanner_success_green">#4CAF50</color>
     <color name="scanner_error_red">#F44336</color>
     <color name="scanner_warning_orange">#FFC107</color>
@@ -192,14 +203,14 @@
     <color name="scanner_status_chip_base">#26FFFFFF</color>
     <color name="scanner_status_chip_border">#33FFFFFF</color>
     <color name="scanner_frame_border">#33FFFFFF</color>
-    <color name="scanner_corner_idle">#E61E88E5</color>
+    <color name="scanner_corner_idle">#E6000000</color>
     <color name="scanner_corner_success">#4CAF50</color>
     <color name="scanner_corner_error">#F44336</color>
     <color name="scanner_corner_warning">#FFC107</color>
-    <color name="scanner_line_core">#CC1E88E5</color>
-    <color name="scanner_line_glow">#331E88E5</color>
+    <color name="scanner_line_core">#CC000000</color>
+    <color name="scanner_line_glow">#33000000</color>
 
-    <color name="scanner_status_scanning_bg">#331E88E5</color>
+    <color name="scanner_status_scanning_bg">#33000000</color>
     <color name="scanner_status_scanning_text">@color/scanner_text_primary</color>
     <color name="scanner_status_scanning_tint">@color/scanner_primary</color>
 
@@ -238,6 +249,6 @@
     <color name="status_minimal_active_text">@color/booking_status_active_text</color>
     <color name="icon_secondary">#6B7280</color>
     <color name="text_tertiary">#9CA3AF</color>
-    <color name="price_primary">@color/primary_blue</color>
+    <color name="price_primary">@color/brand_primary</color>
 
 </resources>

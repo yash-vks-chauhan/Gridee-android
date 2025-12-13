@@ -35,6 +35,7 @@ public class SecurityConfig {
                                 "/api/parking-lots/list/by-names",
                                 "/api/auth/register",
                                 "/api/auth/login",
+                                "/api/users/social-signin",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/actuator/health",

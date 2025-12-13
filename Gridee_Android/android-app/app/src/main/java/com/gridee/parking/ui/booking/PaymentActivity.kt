@@ -117,7 +117,7 @@ class PaymentActivity : AppCompatActivity() {
         )
 
         // Highlight selected method
-        val selectedColor = androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.primary_blue_light)
+        val selectedColor = androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.brand_surface)
         when (selectedMethod) {
             PaymentMethod.CREDIT_CARD -> binding.cardCreditCard.setCardBackgroundColor(selectedColor)
             PaymentMethod.DIGITAL_WALLET -> binding.cardDigitalWallet.setCardBackgroundColor(selectedColor)

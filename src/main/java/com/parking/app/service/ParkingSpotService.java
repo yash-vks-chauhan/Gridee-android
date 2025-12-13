@@ -1,7 +1,9 @@
 package com.parking.app.service;
 
 import com.parking.app.model.Bookings;
+import com.parking.app.model.ParkingLot;
 import com.parking.app.model.ParkingSpot;
+import com.parking.app.repository.ParkingLotRepository;
 import com.parking.app.repository.ParkingSpotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -12,8 +14,11 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -71,11 +76,17 @@ public class ParkingSpotService {
     @Autowired
     private MongoOperations mongoOperations;
 
+    @Autowired
+    private ParkingLotRepository parkingLotRepository;
+
     // ===== CRUD Operations =====
 
     public ParkingSpot createParkingSpot(ParkingSpot spot) {
         if (spot.getAvailable() == MIN_AVAILABLE_SPOTS) {
             spot.setAvailable(spot.getCapacity());
+        }
+        if (spot.getLotId() == null || spot.getLotId().isEmpty()) {
+            spot.setLotId(spot.getLotName());
         }
         setProperZoneName(spot);
         return parkingSpotRepository.save(spot);
@@ -84,10 +95,14 @@ public class ParkingSpotService {
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
         ParkingSpot existingSpot = parkingSpotRepository.findById(spotId).orElse(null);
         if (existingSpot != null) {
+            if (spotDetails.getLotId() != null) existingSpot.setLotId(spotDetails.getLotId());
             if (spotDetails.getLotName() != null) existingSpot.setLotName(spotDetails.getLotName());
             if (spotDetails.getZoneName() != null) existingSpot.setZoneName(spotDetails.getZoneName());
             if (spotDetails.getCapacity() > MIN_AVAILABLE_SPOTS) existingSpot.setCapacity(spotDetails.getCapacity());
             if (spotDetails.getAvailable() >= MIN_AVAILABLE_SPOTS) existingSpot.setAvailable(spotDetails.getAvailable());
+            if (existingSpot.getLotId() == null || existingSpot.getLotId().isEmpty()) {
+                existingSpot.setLotId(existingSpot.getLotName());
+            }
             return parkingSpotRepository.save(existingSpot);
         }
         return null;
@@ -119,11 +134,11 @@ public class ParkingSpotService {
     }
 
     public List<ParkingSpot> getSpotsByLotId(String lotId) {
-        return parkingSpotRepository.findByLotName(lotId);
+        return findSpotsByLotReference(lotId);
     }
 
     public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime, List<Bookings> overlappingBookings) {
-        List<ParkingSpot> allSpots = parkingSpotRepository.findByLotName(lotId);
+        List<ParkingSpot> allSpots = findSpotsByLotReference(lotId);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)
                 .collect(Collectors.toSet());
@@ -298,5 +313,34 @@ public class ParkingSpotService {
             parkingSpotRepository.save(spot);
         }
         System.out.println(LOG_CAPACITY_RESET);
+    }
+
+    // Fetch spots regardless of whether lotId or lotName was stored; dedupe by spot id.
+    private List<ParkingSpot> findSpotsByLotReference(String lotIdOrName) {
+        Map<String, ParkingSpot> uniqueSpots = new LinkedHashMap<>();
+
+        // Resolve lot name from lotId if available (legacy data stored lotName only)
+        String resolvedLotName = null;
+        try {
+            if (parkingLotRepository != null) {
+                Optional<ParkingLot> lot = parkingLotRepository.findById(lotIdOrName);
+                if (lot.isPresent()) {
+                    resolvedLotName = lot.get().getName();
+                }
+            }
+        } catch (Exception ignored) {}
+
+        parkingSpotRepository.findByLotId(lotIdOrName)
+                .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
+
+        parkingSpotRepository.findByLotName(lotIdOrName)
+                .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
+
+        if (resolvedLotName != null && !resolvedLotName.equals(lotIdOrName)) {
+            parkingSpotRepository.findByLotName(resolvedLotName)
+                    .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
+        }
+
+        return new ArrayList<>(uniqueSpots.values());
     }
 }

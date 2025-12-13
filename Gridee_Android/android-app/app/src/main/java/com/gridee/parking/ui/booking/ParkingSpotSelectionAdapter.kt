@@ -56,8 +56,13 @@ class ParkingSpotSelectionAdapter(
 
         fun bind(parkingSpot: ParkingSpot) {
             binding.apply {
-                tvSpotName.text = parkingSpot.name ?: parkingSpot.zoneName ?: "Unknown Spot"
-                tvSpotDetails.text = "Spot ID: ${parkingSpot.id}"
+                val displayName = parkingSpot.name
+                    ?: parkingSpot.zoneName
+                    ?: parkingSpot.spotCode
+                    ?: parkingSpot.id
+                    ?: "Unknown Spot"
+                tvSpotName.text = displayName
+                tvSpotDetails.text = "Spot ID: ${parkingSpot.spotCode ?: parkingSpot.id}"
                 tvAvailability.text = "${parkingSpot.available}/${parkingSpot.capacity} available"
                 tvStatus.text = parkingSpot.status.uppercase()
                 

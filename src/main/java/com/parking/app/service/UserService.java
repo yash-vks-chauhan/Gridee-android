@@ -1,6 +1,8 @@
 package com.parking.app.service;
 
 import com.parking.app.config.JwtUtil;
+import com.parking.app.constants.Role;
+import com.parking.app.dto.UpdateUserRequestDto;
 import com.parking.app.dto.UserRequestDto;
 import com.parking.app.model.ParkingLot;
 import com.parking.app.model.Users;
@@ -145,7 +147,7 @@ public class UserService {
         return userRepository.findById(userId);
     }
 
-    public Users updateUser(String id, UserRequestDto userDetails) {
+    public Users updateUser(String id, UpdateUserRequestDto userDetails) {
         Users existingUser = userRepository.findById(id).orElse(null);
         if (existingUser == null || existingUser.isActive() == false) {
             return null;
@@ -165,7 +167,12 @@ public class UserService {
         }
 
         if(!CollectionUtils.isEmpty(userDetails.getVehicleNumbers())){
-            existingUser.getVehicleNumbers();
+            List<String> sanitized = userDetails.getVehicleNumbers().stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .distinct()
+                    .toList();
+            existingUser.setVehicleNumbers(sanitized);
         }
 
         if (userDetails.getEmail() != null && !userDetails.getEmail().trim().isEmpty()) {
@@ -218,6 +225,79 @@ public class UserService {
         }
         existingUser.setVehicleNumbers(currentVehicles);
         return userRepository.save(existingUser);
+    }
+
+    /**
+     * Create or return an existing user for social sign-in (e.g., Google).
+     * Only requires a verified email; other fields are optional.
+     */
+    public Users upsertSocialUser(String email, String name) {
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalArgumentException("Email is required for social sign-in");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+
+        Users existing = userRepository.findByEmailAndActive(normalizedEmail, true).orElse(null);
+        if (existing != null) {
+            // Normalize optional fields to avoid nulls in responses
+            if (existing.getPhone() == null) {
+                existing.setPhone("");
+            }
+            if (existing.getVehicleNumbers() == null) {
+                existing.setVehicleNumbers(new java.util.ArrayList<>());
+            }
+            if (!StringUtils.hasText(existing.getRole())) {
+                existing.setRole(Role.USER.name());
+            }
+            if (existing.getCheckInPin() == null) {
+                existing.setCheckInPin(generateUniqueCheckInPin());
+            }
+            userRepository.save(existing);
+            return existing;
+        }
+
+        Users user = new Users();
+        user.setEmail(normalizedEmail);
+        user.setName(StringUtils.hasText(name) ? name.trim() : normalizedEmail);
+        user.setVehicleNumbers(new java.util.ArrayList<>());
+        user.setPhone("");
+        user.setWalletCoins(0);
+        user.setFirstUser(true);
+        user.setActive(true);
+        user.setRole(Role.USER.name());
+        user.setCheckInPin(generateUniqueCheckInPin());
+        user.setCreatedAt(new Date());
+        user.setUpdatedAt(new Date());
+        return userRepository.save(user);
+    }
+
+    /**
+     * Return an existing active user by email (no auto-creation).
+     * Normalizes optional fields to avoid nulls in responses.
+     */
+    public Users getActiveUserByEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new IllegalArgumentException("Email is required for social sign-in");
+        }
+        String normalizedEmail = email.trim().toLowerCase();
+
+        return userRepository.findByEmailAndActive(normalizedEmail, true)
+                .map(user -> {
+                    if (user.getPhone() == null) {
+                        user.setPhone("");
+                    }
+                    if (user.getVehicleNumbers() == null) {
+                        user.setVehicleNumbers(new java.util.ArrayList<>());
+                    }
+                    if (!StringUtils.hasText(user.getRole())) {
+                        user.setRole(Role.USER.name());
+                    }
+                    if (user.getCheckInPin() == null) {
+                        user.setCheckInPin(generateUniqueCheckInPin());
+                    }
+                    return userRepository.save(user);
+                })
+                .orElse(null);
     }
 
     public void deleteUser(String id) {

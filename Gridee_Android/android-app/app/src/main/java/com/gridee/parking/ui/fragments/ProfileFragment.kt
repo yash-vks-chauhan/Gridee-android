@@ -198,10 +198,12 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
         binding.btnPrivacyPolicy.setOnClickListener {
             try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.profile.PrivacySettingsActivity"))
+                // Open privacy policy in default browser
+                val privacyPolicyUrl = "https://yash-vks-chauhan.github.io/Gridee-android/#content"
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(privacyPolicyUrl))
                 startActivity(intent)
             } catch (e: Exception) {
-                showToast("Privacy Policy - Coming Soon!")
+                showToast("Unable to open Privacy Policy. Please try again.")
             }
         }
 

@@ -49,6 +49,9 @@ public class PaymentGatewayService {
     @Autowired
     private TransactionService transactionService;
 
+    @Autowired
+    private WalletService walletService;
+
     @Value("${razorpay.key:}")
     private String razorpayKey;
 
@@ -106,7 +109,7 @@ public class PaymentGatewayService {
     }
 
     private boolean processSuccessfulPayment(String orderId, String paymentId, String userId, double amount) {
-        Optional<Wallet> walletOpt = walletRepository.findByUserId(userId);
+        Optional<Wallet> walletOpt = walletService.findByUserId(userId);
         if (walletOpt.isPresent()) {
             Wallet wallet = walletOpt.get();
             wallet.setBalance(wallet.getBalance() + amount);

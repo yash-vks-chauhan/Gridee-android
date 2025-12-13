@@ -91,7 +91,7 @@
                 tools:text="View Spots →"
                 android:textSize="14sp"
                 android:textStyle="bold"
-                android:textColor="@color/primary_blue"
+                android:textColor="@color/brand_primary"
                 android:fontFamily="sans-serif-medium" />
 
         </LinearLayout>

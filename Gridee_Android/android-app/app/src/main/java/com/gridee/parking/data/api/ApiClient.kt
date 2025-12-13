@@ -2,6 +2,8 @@ package com.gridee.parking.data.api
 
 import com.gridee.parking.config.ApiConfig
 import com.gridee.parking.GrideeApplication
+import com.gridee.parking.data.model.ParkingSpot
+import com.gridee.parking.data.model.ParkingSpotDeserializer
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -75,6 +77,8 @@ object ApiClient {
     // Use a lenient Gson to tolerate slightly malformed JSON from backend
     private val gson = GsonBuilder()
         .setLenient()
+        // Tolerate legacy spot payloads (boolean available, missing status, lotName-only)
+        .registerTypeAdapter(ParkingSpot::class.java, ParkingSpotDeserializer())
         .create()
 
     private val retrofit = Retrofit.Builder()

@@ -34,7 +34,7 @@ class ParkingSpotSelectionActivity : AppCompatActivity() {
         setupObservers()
         
         // Load parking spots for this specific lot
-        viewModel.loadParkingSpotsForLot(lotId)
+        viewModel.loadParkingSpotsForLot(lotId, lotName)
     }
 
     private fun setupUI() {

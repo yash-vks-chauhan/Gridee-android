@@ -3,9 +3,9 @@
     android:interpolator="@android:anim/accelerate_interpolator">
 
     <translate
-        android:duration="220"
-        android:fromYDelta="0dp"
-        android:toYDelta="48dp" />
+        android:duration="350"
+        android:fromYDelta="0%"
+        android:toYDelta="100%" />
 
     <alpha
         android:duration="200"

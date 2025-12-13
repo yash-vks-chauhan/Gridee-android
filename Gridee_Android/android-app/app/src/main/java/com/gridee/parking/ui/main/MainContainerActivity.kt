@@ -1,10 +1,12 @@
 package com.gridee.parking.ui.main
 
 import android.os.Bundle
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
+import androidx.core.view.WindowInsetsControllerCompat
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityMainContainerBinding
 import com.gridee.parking.ui.base.BaseActivityWithBottomNav
@@ -24,6 +26,7 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
 
     private var currentFragment: Fragment? = null
     private var currentTabId = CustomBottomNavigation.TAB_HOME
+    private var statusBarInsetTop = 0
 
     // Fragment instances (create once, reuse for better performance)
     private val homeFragment by lazy { HomeFragment() }
@@ -45,9 +48,10 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
                 // Handle system window insets for proper edge-to-edge
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { _, insets ->
             val systemBarsInsets = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            statusBarInsetTop = systemBarsInsets.top
             
-            // Apply top padding to fragment container to avoid status bar overlap
-            binding.fragmentContainer.updatePadding(top = systemBarsInsets.top)
+            // Update padding based on active fragment
+            updateContainerPaddingForFragment(currentFragment)
             
             // Don't add bottom padding to bottom navigation to keep original size
             // The bottom nav will handle its own positioning
@@ -142,6 +146,8 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
         
         currentFragment = fragment
         currentTabId = tabId
+        updateStatusBarForFragment(fragment)
+        updateContainerPaddingForFragment(fragment)
         
         // Delay scroll behavior setup until fragment view is ready
         binding.fragmentContainer.post {
@@ -161,6 +167,22 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
                 }
             }
         }
+    }
+
+    private fun updateStatusBarForFragment(fragment: Fragment) {
+        val window = window ?: return
+        if (fragment is HomeFragment) {
+            window.statusBarColor = android.graphics.Color.TRANSPARENT
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        } else {
+            window.statusBarColor = ContextCompat.getColor(this, R.color.background_primary)
+            WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = true
+        }
+    }
+
+    private fun updateContainerPaddingForFragment(fragment: Fragment?) {
+        val topPadding = if (fragment is HomeFragment) 0 else statusBarInsetTop
+        binding.fragmentContainer.updatePadding(top = topPadding)
     }
 
     private fun setupScrollBehaviorForCurrentFragment() {

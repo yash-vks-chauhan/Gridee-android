@@ -164,7 +164,7 @@ class BookingConfirmationActivity : AppCompatActivity() {
         ) {
             ContextCompat.getColor(this, R.color.success_green)
         } else {
-            ContextCompat.getColor(this, R.color.primary_blue)
+            ContextCompat.getColor(this, R.color.brand_primary)
         }
         binding.tvPaymentStatus.setTextColor(statusColor)
         

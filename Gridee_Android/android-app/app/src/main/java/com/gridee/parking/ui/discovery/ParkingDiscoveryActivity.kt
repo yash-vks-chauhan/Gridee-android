@@ -99,7 +99,7 @@ class ParkingDiscoveryActivity : BaseActivityWithBottomNav<ActivityParkingDiscov
     private fun updateViewToggle() {
         if (isMapView) {
             binding.btnMapView.setBackgroundColor(
-                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.primary_blue)
+                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.brand_primary)
             )
             binding.btnMapView.setTextColor(
                 androidx.core.content.ContextCompat.getColor(this, android.R.color.white)
@@ -108,11 +108,11 @@ class ParkingDiscoveryActivity : BaseActivityWithBottomNav<ActivityParkingDiscov
                 androidx.core.content.ContextCompat.getColor(this, android.R.color.transparent)
             )
             binding.btnListView.setTextColor(
-                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.primary_blue)
+                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.brand_primary)
             )
         } else {
             binding.btnListView.setBackgroundColor(
-                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.primary_blue)
+                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.brand_primary)
             )
             binding.btnListView.setTextColor(
                 androidx.core.content.ContextCompat.getColor(this, android.R.color.white)
@@ -121,7 +121,7 @@ class ParkingDiscoveryActivity : BaseActivityWithBottomNav<ActivityParkingDiscov
                 androidx.core.content.ContextCompat.getColor(this, android.R.color.transparent)
             )
             binding.btnMapView.setTextColor(
-                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.primary_blue)
+                androidx.core.content.ContextCompat.getColor(this, com.gridee.parking.R.color.brand_primary)
             )
         }
     }

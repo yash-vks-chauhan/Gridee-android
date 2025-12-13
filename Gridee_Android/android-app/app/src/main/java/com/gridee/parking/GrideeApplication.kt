@@ -2,6 +2,7 @@ package com.gridee.parking
 
 import android.app.Application
 import com.razorpay.Checkout
+import com.google.android.gms.ads.MobileAds
 
 class GrideeApplication : Application() {
     companion object {
@@ -14,6 +15,8 @@ class GrideeApplication : Application() {
         instance = this
         try {
             Checkout.preload(applicationContext)
+            // Initialize Google Mobile Ads SDK (AdMob)
+            MobileAds.initialize(this) { }
         } catch (_: Exception) {
         }
     }

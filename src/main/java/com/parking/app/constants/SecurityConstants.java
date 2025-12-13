@@ -18,6 +18,7 @@ public final class SecurityConstants {
     public static final String[] PUBLIC_ENDPOINTS = {
         "/api/auth/login",
         "/api/auth/register",
+        "/api/users/social-signin",
         "/api/parking-lots/list/by-names",
         "/error",
         "/actuator/health",
@@ -30,4 +31,3 @@ public final class SecurityConstants {
     public static final String ERROR_USER_NOT_FOUND = "User not found for token";
     public static final String ERROR_TOKEN_EXTRACTION_FAILED = "Failed to extract token claims";
 }
-

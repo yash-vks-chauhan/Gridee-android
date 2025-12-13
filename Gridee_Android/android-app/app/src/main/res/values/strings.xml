@@ -125,10 +125,9 @@
     <string name="content_description_close_search">Close search</string>
     <string name="content_description_clear_query">Clear search query</string>
     <string name="search_empty_state">Start typing to find parking zones, garages, and offers around you.</string>
-    
+
     <!-- Google Sign In -->
-    <!-- TODO: Replace this with your actual Web Client ID from Google Cloud Console -->
-    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID.apps.googleusercontent.com</string>
+    <string name="default_web_client_id">961075110838-610clma0pt3hk1ml56rcht1r90mtver8.apps.googleusercontent.com</string>
     
     <!-- Razorpay Test Key (client-side public key). Replace in production. -->
     <string name="razorpay_key_id">rzp_test_RS3SKqbTQFAamy</string>

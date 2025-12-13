@@ -47,22 +47,25 @@ public class WalletService {
 
     // Grouped: Wallet retrieval methods
     public Wallet getOrCreateWallet(String userId) {
-        return walletRepository.findByUserId(userId).orElseGet(() -> {
-            Wallet wallet = new Wallet();
-            wallet.setUserId(userId);
-            wallet.setBalance(0);
-            wallet.setLastUpdated(new Date());
-            wallet.setTransactions(new ArrayList<>());
-            return walletRepository.save(wallet);
-        });
+        Wallet existing = resolveWallet(userId);
+        if (existing != null) {
+            return existing;
+        }
+
+        Wallet wallet = new Wallet();
+        wallet.setUserId(userId);
+        wallet.setBalance(0);
+        wallet.setLastUpdated(new Date());
+        wallet.setTransactions(new ArrayList<>());
+        return walletRepository.save(wallet);
     }
 
     public Optional<Wallet> getWalletByUserId(String userId) {
-        return walletRepository.findByUserId(userId);
+        return Optional.ofNullable(resolveWallet(userId));
     }
 
     public java.util.Optional<Wallet> findByUserId(String userId) {
-        return walletRepository.findByUserId(userId);
+        return Optional.ofNullable(resolveWallet(userId));
     }
 
     // Grouped: Wallet transaction methods
@@ -114,10 +117,56 @@ public class WalletService {
 
     // Grouped: Refund method
     public void refundWalletAndRecordTransaction(Bookings booking) {
-        Wallet wallet = walletRepository.findByUserId(booking.getUserId())
+        Wallet wallet = Optional.ofNullable(resolveWallet(booking.getUserId()))
                 .orElseThrow(() -> new NotFoundException("Wallet not found"));
         wallet.setBalance(wallet.getBalance() + booking.getAmount());
         wallet.setLastUpdated(new Date());
         walletRepository.save(wallet);
+    }
+
+    /**
+     * Resolve wallet for a user, consolidating duplicates if they exist.
+     * This protects against IncorrectResultSizeDataAccessException when multiple wallet documents share the same userId.
+     */
+    private Wallet resolveWallet(String userId) {
+        List<Wallet> wallets = walletRepository.findAllByUserId(userId);
+        if (wallets == null || wallets.isEmpty()) {
+            return null;
+        }
+        if (wallets.size() == 1) {
+            return wallets.get(0);
+        }
+
+        // Consolidate duplicates: sum balances and merge transaction refs, keep the most recently updated wallet
+        wallets.sort((a, b) -> {
+            Date aDate = a.getLastUpdated() != null ? a.getLastUpdated() : a.getCreatedAt();
+            Date bDate = b.getLastUpdated() != null ? b.getLastUpdated() : b.getCreatedAt();
+            if (aDate == null && bDate == null) return 0;
+            if (aDate == null) return -1;
+            if (bDate == null) return 1;
+            return bDate.compareTo(aDate);
+        });
+
+        Wallet primary = wallets.get(0);
+        double totalBalance = 0;
+        List<Wallet.TransactionRef> mergedTxns = new ArrayList<>();
+
+        for (Wallet w : wallets) {
+            totalBalance += w.getBalance();
+            if (w.getTransactions() != null) {
+                mergedTxns.addAll(w.getTransactions());
+            }
+        }
+
+        primary.setBalance(totalBalance);
+        primary.setTransactions(mergedTxns);
+        primary.setLastUpdated(new Date());
+
+        // Delete duplicates, keep primary
+        for (int i = 1; i < wallets.size(); i++) {
+            walletRepository.delete(wallets.get(i));
+        }
+
+        return walletRepository.save(primary);
     }
 }

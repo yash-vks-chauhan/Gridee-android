@@ -55,7 +55,7 @@
                 android:layout_marginBottom="16dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
-                app:cardBackgroundColor="@color/primary_blue">
+                app:cardBackgroundColor="@color/brand_primary">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -86,7 +86,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="40dp"
                         android:text="Add Money"
-                        android:textColor="@color/primary_blue"
+                        android:textColor="@color/brand_primary"
                         android:backgroundTint="@color/white"
                         android:layout_marginTop="16dp"
                         android:minWidth="120dp"
@@ -119,7 +119,7 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="₹50"
-                    android:textColor="@color/primary_blue"
+                    android:textColor="@color/brand_primary"
                     android:backgroundTint="@color/background_light"
                     android:layout_marginEnd="8dp"
                     app:cornerRadius="8dp"
@@ -131,7 +131,7 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="₹100"
-                    android:textColor="@color/primary_blue"
+                    android:textColor="@color/brand_primary"
                     android:backgroundTint="@color/background_light"
                     android:layout_marginHorizontal="4dp"
                     app:cornerRadius="8dp"
@@ -143,7 +143,7 @@
                     android:layout_height="48dp"
                     android:layout_weight="1"
                     android:text="₹200"
-                    android:textColor="@color/primary_blue"
+                    android:textColor="@color/brand_primary"
                     android:backgroundTint="@color/background_light"
                     android:layout_marginStart="8dp"
                     app:cornerRadius="8dp"
@@ -173,7 +173,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="View All"
-                    android:textColor="@color/primary_blue"
+                    android:textColor="@color/brand_primary"
                     android:textSize="14sp"
                     android:background="?attr/selectableItemBackground"
                     android:padding="8dp" />

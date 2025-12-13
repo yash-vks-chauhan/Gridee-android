@@ -1,6 +1,7 @@
 package com.parking.app.controller;
 
 import com.parking.app.dto.UserRequestDto;
+import com.parking.app.dto.UpdateUserRequestDto;
 import com.parking.app.dto.UserResponseDto;
 import com.parking.app.exception.NotFoundException;
 import com.parking.app.model.Users;
@@ -42,14 +43,14 @@ public class UserController {
         return ResponseEntity.ok(userDto);
     }
 
-    // Update user by ID - accepts DTO and returns DTO
+    // Update user by ID - accepts DTO and returns updated user
     @PutMapping("/{id}")
-    public ResponseEntity<String> updateUser(@PathVariable String id, @Valid @RequestBody UserRequestDto userRequest) {
+    public ResponseEntity<Users> updateUser(@PathVariable String id, @RequestBody UpdateUserRequestDto userRequest) {
         Users updatedUser = userService.updateUser(id, userRequest);
         if (updatedUser == null) {
             throw new NotFoundException("User not found with id: " + id);
         }
-        return ResponseEntity.ok("Updated Successfully");
+        return ResponseEntity.ok(updatedUser);
     }
 
     // Delete user by ID

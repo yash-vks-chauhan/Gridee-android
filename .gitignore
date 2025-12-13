@@ -36,3 +36,10 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Gradle Cache ###
+.gradle-j17/
+*.zip
+
+### Android ###
+local.properties

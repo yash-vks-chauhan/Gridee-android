@@ -357,11 +357,14 @@ class TransactionHistoryActivity : AppCompatActivity() {
         val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
         val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
 
-        val transactionType = when (typeNorm) {
-            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
-            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
-            "refund" -> TransactionType.REFUND
-            "bonus" -> TransactionType.BONUS
+        val isRewardByText = walletTransaction.description?.contains("reward", ignoreCase = true) == true
+        val isRewardByAmount = (walletTransaction.amount ?: 0.0) > 0 &&
+            kotlin.math.abs((walletTransaction.amount ?: 0.0) - REWARD_AMOUNT_RUPEES) < 0.01
+        val transactionType = when {
+            isRewardByText || isRewardByAmount || typeNorm == "bonus" -> TransactionType.BONUS
+            typeNorm in listOf("credit", "top_up", "topup", "wallet_topup", "wallet_recharge") -> TransactionType.TOP_UP
+            typeNorm in listOf("debit", "payment", "penalty_deduction") -> TransactionType.PARKING_PAYMENT
+            typeNorm == "refund" -> TransactionType.REFUND
             else -> TransactionType.TOP_UP
         }
 
@@ -372,16 +375,18 @@ class TransactionHistoryActivity : AppCompatActivity() {
             else -> amount
         }
 
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Bonus"
+        val isReward = transactionType == TransactionType.BONUS || isRewardByText || isRewardByAmount
+        val baseDescription = when {
+            isReward -> "Reward Added"
+            transactionType == TransactionType.TOP_UP -> "Wallet Top-up"
+            transactionType == TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            transactionType == TransactionType.REFUND -> "Refund"
+            else -> "Wallet Top-up"
         }
         val description = when (statusNorm) {
             "failed" -> "$baseDescription Failed"
             "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> walletTransaction.description?.trim()?.ifBlank { baseDescription } ?: baseDescription
+            else -> if (isReward) baseDescription else walletTransaction.description?.trim()?.ifBlank { baseDescription } ?: baseDescription
         }
 
         return Transaction(
@@ -394,6 +399,10 @@ class TransactionHistoryActivity : AppCompatActivity() {
             paymentMethod = null,
             status = walletTransaction.status
         )
+    }
+
+    companion object {
+        private const val REWARD_AMOUNT_RUPEES = 20.0
     }
 
 
@@ -421,7 +430,7 @@ class TransactionHistoryActivity : AppCompatActivity() {
     private fun showDateFilterModal() {
         val modal = binding.dateFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.dateModalCloseButton
+        val closeButton = modal.findViewById<View>(R.id.btn_close_date)
         
         // Get screen height for consistent positioning
         val displayMetrics = resources.displayMetrics
@@ -431,13 +440,10 @@ class TransactionHistoryActivity : AppCompatActivity() {
         // Set initial position off screen
         modal.translationY = slideDistance
         modal.alpha = 0f
-        closeButton.translationY = slideDistance - 44f // Position close button above modal
-        closeButton.alpha = 0f
         overlay.alpha = 0f
         
-        // Make modal, close button and overlay visible
+        // Make modal and overlay visible
         modal.visibility = View.VISIBLE
-        closeButton.visibility = View.VISIBLE
         overlay.visibility = View.VISIBLE
         
         // Animate overlay fade in with blur effect
@@ -454,32 +460,16 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide up with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, -44f).apply {
-            spring = SpringForce(-44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                stiffness = SpringForce.STIFFNESS_LOW
-            }
-        }
-        
         // Animate modal fade in
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 0f, 1f).apply {
             duration = 400
             interpolator = OvershootInterpolator(0.6f) // Slightly less overshoot for smoother feel
         }
         
-        // Animate close button fade in
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 0f, 1f).apply {
-            duration = 400
-            interpolator = OvershootInterpolator(0.6f)
-        }
-        
         // Start animations
         overlayAnimator.start()
         slideUpAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
         
         // Set up close modal functionality
         overlay.setOnClickListener {
@@ -493,7 +483,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
     private fun hideDateFilterModal() {
         val modal = binding.dateFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.dateModalCloseButton
         
         // Animate overlay fade out with slower, smoother timing and blur effect
         val overlayAnimator = ObjectAnimator.ofFloat(overlay, "alpha", 1f, 0f).apply {
@@ -514,14 +503,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide down with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, slideDistance - 44f).apply {
-            spring = SpringForce(slideDistance - 44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
-                stiffness = SpringForce.STIFFNESS_MEDIUM
-            }
-        }
-        
         // Animate modal fade out with smoother curve
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 1f, 0f).apply {
             duration = 400 // Longer duration for smoother fade
@@ -529,38 +510,26 @@ class TransactionHistoryActivity : AppCompatActivity() {
             startDelay = 50 // Small delay to let slide start first
         }
         
-        // Animate close button fade out
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 1f, 0f).apply {
-            duration = 400
-            interpolator = AccelerateDecelerateInterpolator()
-            startDelay = 50
-        }
-        
-        // Hide modal, close button and overlay after animations complete
+        // Hide modal and overlay after animations complete
         slideDownAnimation.addEndListener { _, _, _, _ ->
             modal.visibility = View.GONE
-            closeButton.visibility = View.GONE
             overlay.visibility = View.GONE
             // Reset positions for next time
             modal.translationY = slideDistance
             modal.alpha = 0f
-            closeButton.translationY = slideDistance - 44f
-            closeButton.alpha = 0f
             overlay.alpha = 0f
         }
         
         // Start animations simultaneously for smooth effect
         overlayAnimator.start()
         slideDownAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
     }
 
     private fun showAmountFilterModal() {
         val modal = binding.amountFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.amountModalCloseButton
+        val closeButton = modal.findViewById<View>(R.id.btn_close_amount)
         
         // Get screen height for consistent positioning
         val displayMetrics = resources.displayMetrics
@@ -570,13 +539,10 @@ class TransactionHistoryActivity : AppCompatActivity() {
         // Set initial position off screen
         modal.translationY = slideDistance
         modal.alpha = 0f
-        closeButton.translationY = slideDistance - 44f // Position close button above modal
-        closeButton.alpha = 0f
         overlay.alpha = 0f
         
-        // Make modal, close button and overlay visible
+        // Make modal and overlay visible
         modal.visibility = View.VISIBLE
-        closeButton.visibility = View.VISIBLE
         overlay.visibility = View.VISIBLE
         
         // Animate overlay fade in with blur effect
@@ -593,32 +559,16 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide up with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, -44f).apply {
-            spring = SpringForce(-44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                stiffness = SpringForce.STIFFNESS_LOW
-            }
-        }
-        
         // Animate modal fade in
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 0f, 1f).apply {
             duration = 400
             interpolator = OvershootInterpolator(0.6f) // Slightly less overshoot for smoother feel
         }
         
-        // Animate close button fade in
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 0f, 1f).apply {
-            duration = 400
-            interpolator = OvershootInterpolator(0.6f)
-        }
-        
         // Start animations
         overlayAnimator.start()
         slideUpAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
         
         // Set up close modal functionality
         overlay.setOnClickListener {
@@ -632,7 +582,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
     private fun hideAmountFilterModal() {
         val modal = binding.amountFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.amountModalCloseButton
         
         // Animate overlay fade out with faster timing
         val overlayAnimator = ObjectAnimator.ofFloat(overlay, "alpha", 1f, 0f).apply {
@@ -653,14 +602,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide down with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, slideDistance - 44f).apply {
-            spring = SpringForce(slideDistance - 44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
-                stiffness = SpringForce.STIFFNESS_MEDIUM
-            }
-        }
-        
         // Animate modal fade out with smoother curve
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 1f, 0f).apply {
             duration = 400 // Longer duration for smoother fade
@@ -668,38 +609,26 @@ class TransactionHistoryActivity : AppCompatActivity() {
             startDelay = 50 // Small delay to let slide start first
         }
         
-        // Animate close button fade out
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 1f, 0f).apply {
-            duration = 400
-            interpolator = AccelerateDecelerateInterpolator()
-            startDelay = 50
-        }
-        
-        // Hide modal, close button and overlay after animations complete
+        // Hide modal and overlay after animations complete
         slideDownAnimation.addEndListener { _, _, _, _ ->
             modal.visibility = View.GONE
-            closeButton.visibility = View.GONE
             overlay.visibility = View.GONE
             // Reset positions for next time
             modal.translationY = slideDistance
             modal.alpha = 0f
-            closeButton.translationY = slideDistance - 44f
-            closeButton.alpha = 0f
             overlay.alpha = 0f
         }
         
         // Start animations simultaneously for smooth effect
         overlayAnimator.start()
         slideDownAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
     }
 
     private fun showPaymentFilterModal() {
         val modal = binding.paymentFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.paymentModalCloseButton
+        val closeButton = modal.findViewById<View>(R.id.btn_close_payment)
         
         // Get screen height for consistent positioning
         val displayMetrics = resources.displayMetrics
@@ -709,13 +638,10 @@ class TransactionHistoryActivity : AppCompatActivity() {
         // Set initial position off screen
         modal.translationY = slideDistance
         modal.alpha = 0f
-        closeButton.translationY = slideDistance - 44f // Position close button above modal
-        closeButton.alpha = 0f
         overlay.alpha = 0f
         
-        // Make modal, close button and overlay visible
+        // Make modal and overlay visible
         modal.visibility = View.VISIBLE
-        closeButton.visibility = View.VISIBLE
         overlay.visibility = View.VISIBLE
         
         // Animate overlay fade in with blur effect
@@ -732,32 +658,16 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide up with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, -44f).apply {
-            spring = SpringForce(-44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                stiffness = SpringForce.STIFFNESS_LOW
-            }
-        }
-        
         // Animate modal fade in
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 0f, 1f).apply {
             duration = 400
             interpolator = OvershootInterpolator(0.6f) // Slightly less overshoot for smoother feel
         }
         
-        // Animate close button fade in
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 0f, 1f).apply {
-            duration = 400
-            interpolator = OvershootInterpolator(0.6f)
-        }
-        
         // Start animations
         overlayAnimator.start()
         slideUpAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
         
         // Set up close modal functionality
         overlay.setOnClickListener {
@@ -771,7 +681,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
     private fun hidePaymentFilterModal() {
         val modal = binding.paymentFilterModal
         val overlay = binding.modalOverlay
-        val closeButton = binding.paymentModalCloseButton
         
         // Animate overlay fade out with faster timing
         val overlayAnimator = ObjectAnimator.ofFloat(overlay, "alpha", 1f, 0f).apply {
@@ -792,14 +701,6 @@ class TransactionHistoryActivity : AppCompatActivity() {
             }
         }
         
-        // Animate close button slide down with spring animation
-        val closeButtonSlideAnimation = SpringAnimation(closeButton, SpringAnimation.TRANSLATION_Y, slideDistance - 44f).apply {
-            spring = SpringForce(slideDistance - 44f).apply {
-                dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
-                stiffness = SpringForce.STIFFNESS_MEDIUM
-            }
-        }
-        
         // Animate modal fade out with smoother curve
         val modalAlphaAnimator = ObjectAnimator.ofFloat(modal, "alpha", 1f, 0f).apply {
             duration = 400 // Longer duration for smoother fade
@@ -807,31 +708,19 @@ class TransactionHistoryActivity : AppCompatActivity() {
             startDelay = 50 // Small delay to let slide start first
         }
         
-        // Animate close button fade out
-        val closeButtonAlphaAnimator = ObjectAnimator.ofFloat(closeButton, "alpha", 1f, 0f).apply {
-            duration = 400
-            interpolator = AccelerateDecelerateInterpolator()
-            startDelay = 50
-        }
-        
-        // Hide modal, close button and overlay after animations complete
+        // Hide modal and overlay after animations complete
         slideDownAnimation.addEndListener { _, _, _, _ ->
             modal.visibility = View.GONE
-            closeButton.visibility = View.GONE
             overlay.visibility = View.GONE
             // Reset positions for next time
             modal.translationY = slideDistance
             modal.alpha = 0f
-            closeButton.translationY = slideDistance - 44f
-            closeButton.alpha = 0f
             overlay.alpha = 0f
         }
         
         // Start animations simultaneously for smooth effect
         overlayAnimator.start()
         slideDownAnimation.start()
-        closeButtonSlideAnimation.start()
         modalAlphaAnimator.start()
-        closeButtonAlphaAnimator.start()
     }
 }

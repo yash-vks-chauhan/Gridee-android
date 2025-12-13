@@ -245,11 +245,14 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
         val typeNorm = walletTransaction.type?.trim()?.lowercase(Locale.getDefault())
         val statusNorm = walletTransaction.status?.trim()?.lowercase(Locale.getDefault())
 
-        val transactionType = when (typeNorm) {
-            "credit", "top_up", "topup", "wallet_topup", "wallet_recharge" -> TransactionType.TOP_UP
-            "debit", "payment", "penalty_deduction" -> TransactionType.PARKING_PAYMENT
-            "refund" -> TransactionType.REFUND
-            "bonus" -> TransactionType.BONUS
+        val isRewardByText = walletTransaction.description?.contains("reward", ignoreCase = true) == true
+        val isRewardByAmount = (walletTransaction.amount ?: 0.0) > 0 &&
+            kotlin.math.abs((walletTransaction.amount ?: 0.0) - REWARD_AMOUNT_RUPEES) < 0.01
+        val transactionType = when {
+            isRewardByText || isRewardByAmount || typeNorm == "bonus" -> TransactionType.BONUS
+            typeNorm in listOf("credit", "top_up", "topup", "wallet_topup", "wallet_recharge") -> TransactionType.TOP_UP
+            typeNorm in listOf("debit", "payment", "penalty_deduction") -> TransactionType.PARKING_PAYMENT
+            typeNorm == "refund" -> TransactionType.REFUND
             else -> TransactionType.TOP_UP
         }
 
@@ -260,16 +263,18 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             else -> amount
         }
 
-        val baseDescription = when (transactionType) {
-            TransactionType.TOP_UP -> "Wallet Top-up"
-            TransactionType.PARKING_PAYMENT -> "Parking Payment"
-            TransactionType.REFUND -> "Refund"
-            TransactionType.BONUS -> "Bonus"
+        val isReward = transactionType == TransactionType.BONUS || isRewardByText || isRewardByAmount
+        val baseDescription = when {
+            isReward -> "Reward Added"
+            transactionType == TransactionType.TOP_UP -> "Wallet Top-up"
+            transactionType == TransactionType.PARKING_PAYMENT -> "Parking Payment"
+            transactionType == TransactionType.REFUND -> "Refund"
+            else -> "Wallet Top-up"
         }
         val description = when (statusNorm) {
             "failed" -> "$baseDescription Failed"
             "cancelled", "canceled" -> "$baseDescription Cancelled"
-            else -> walletTransaction.description?.trim() ?: baseDescription
+            else -> if (isReward) baseDescription else walletTransaction.description?.trim() ?: baseDescription
         }
 
         return Transaction(
@@ -281,6 +286,10 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
             balanceAfter = walletTransaction.balanceAfter ?: 0.0,
             status = walletTransaction.status
         )
+    }
+
+    companion object {
+        private const val REWARD_AMOUNT_RUPEES = 20.0
     }
 
     private fun getUserId(): String? {
