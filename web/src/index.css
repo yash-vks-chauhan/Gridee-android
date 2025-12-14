@@ -536,6 +536,18 @@ a:hover {
     transition-delay: 0.35s;
 }
 
+.content-card.active li:nth-child(5) {
+    transition-delay: 0.4s;
+}
+
+.content-card.active li:nth-child(6) {
+    transition-delay: 0.45s;
+}
+
+.content-card.active li:nth-child(7) {
+    transition-delay: 0.5s;
+}
+
 /* The Refined Separator (Always Visible) */
 .content-card::after {
     content: "";
