@@ -111,9 +111,31 @@ function Home() {
 
                         {/* Cinematic Coming Soon */}
                         <div className="coming-soon-wrapper" style={{ marginTop: '30vh', position: 'relative', zIndex: 20 }}>
-                            <div className="coming-soon-text">
+                            <motion.div
+                                className="coming-soon-text"
+                                animate={{
+                                    y: [0, -12, 0],
+                                    filter: ["blur(0px)", "blur(2px)", "blur(0px)"], // Smooth breathing blur
+                                }}
+                                transition={{
+                                    y: {
+                                        duration: 6,
+                                        repeat: Infinity,
+                                        ease: "easeInOut"
+                                    },
+                                    filter: {
+                                        duration: 4,
+                                        repeat: Infinity,
+                                        ease: "easeInOut",
+                                    }
+                                }}
+                                whileHover={{
+                                    scale: 1.05,
+                                    transition: { duration: 0.4 }
+                                }}
+                            >
                                 Coming Soon
-                            </div>
+                            </motion.div>
 
                             <div id="countdown" className="countdown-container">
                                 <CountdownUnit value={timeLeft.days} label="Days" />
