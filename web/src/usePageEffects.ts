@@ -34,14 +34,23 @@ export const usePageEffects = () => {
             };
         }
 
-        // Helper to smoothly update title
+        // Helper to smoothly update title with cinematic slide
         function updateStickyTitle(newText: string) {
             if (!stickyTitle || stickyTitle.textContent === newText) return;
-            (stickyTitle as HTMLElement).style.opacity = '0';
+
+            // Slide out old
+            stickyTitle.classList.add('slide-out');
+
             setTimeout(() => {
                 stickyTitle.textContent = newText;
-                (stickyTitle as HTMLElement).style.opacity = '1';
-            }, 200);
+                stickyTitle.classList.remove('slide-out');
+                stickyTitle.classList.add('slide-in');
+
+                // Clean up slide-in class after animation
+                setTimeout(() => {
+                    stickyTitle.classList.remove('slide-in');
+                }, 300);
+            }, 300);
         }
 
         // Use Lenis scroll event for sticky header visibility
@@ -52,15 +61,19 @@ export const usePageEffects = () => {
                     stickyHeader.classList.add('visible');
                 } else {
                     stickyHeader.classList.remove('visible');
-                    updateStickyTitle(originalTitle || '');
+                    // Reset to original title if we scroll back to top
+                    if (stickyTitle && stickyTitle.textContent !== originalTitle) {
+                        updateStickyTitle(originalTitle || '');
+                    }
                 }
             });
         }
 
         // Focus Mode & Cascade Reveal
+        const isMobile = window.innerWidth < 768;
         const observerOptions = {
             root: null,
-            rootMargin: '-25% 0px -25% 0px',
+            rootMargin: isMobile ? '-15% 0px -15% 0px' : '-25% 0px -25% 0px',
             threshold: 0
         };
 
@@ -117,14 +130,23 @@ export const usePageEffects = () => {
             };
 
             const handleClick = () => {
-                const email = emailBtn.textContent || '';
+                const email = 'gridee.business@gmail.com'; // Hardcoded for safety
                 navigator.clipboard.writeText(email).then(() => {
+
+                    // Morph Button
+                    emailBtn.classList.add('copied');
+                    const originalText = emailBtn.textContent;
+                    emailBtn.textContent = "Copied ✓";
+
                     if (tooltip) {
-                        tooltip.classList.add('visible');
-                        setTimeout(() => {
-                            tooltip.classList.remove('visible');
-                        }, 2000);
+                        // tooltip.classList.add('visible'); // Optional: Disable tooltip if button morphs
                     }
+
+                    setTimeout(() => {
+                        emailBtn.classList.remove('copied');
+                        emailBtn.textContent = originalText;
+                        // tooltip?.classList.remove('visible');
+                    }, 2000);
                 });
             };
 
