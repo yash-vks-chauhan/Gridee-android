@@ -78,17 +78,16 @@ public class UserService {
         if (!PHONE_PATTERN.matcher(userRequest.getPhone()).matches()) {
             throw new IllegalArgumentException("Invalid phone format.");
         }
-        if (userRequest.getParkingLotName() == null || userRequest.getParkingLotName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Parking lot name is required.");
-        }
         if (userRequest.getPassword() == null || userRequest.getPassword().isEmpty()) {
             throw new IllegalArgumentException("Password is required.");
         }
 
-        // Fetch parking lot by name
-        Optional<ParkingLot> lot = parkingLotRepository.findByName(userRequest.getParkingLotName());
-        if (lot.isEmpty()) {
-            throw new IllegalArgumentException("Parking lot not found: " + userRequest.getParkingLotName());
+        Optional<ParkingLot> lot = Optional.empty();
+        if (StringUtils.hasText(userRequest.getParkingLotName())) {
+            lot = parkingLotRepository.findByName(userRequest.getParkingLotName().trim());
+            if (lot.isEmpty()) {
+                throw new IllegalArgumentException("Parking lot not found: " + userRequest.getParkingLotName());
+            }
         }
 
         if (userRepository.findByEmailAndActive(userRequest.getEmail(), true).isPresent()) {
@@ -105,8 +104,13 @@ public class UserService {
         user.setEmail(userRequest.getEmail());
         user.setPhone(userRequest.getPhone());
         user.setVehicleNumbers(userRequest.getVehicleNumbers());
-        user.setParkingLotId(lot.get().getId());
-        user.setParkingLotName(lot.get().getName());
+        if (lot.isPresent()) {
+            user.setParkingLotId(lot.get().getId());
+            user.setParkingLotName(lot.get().getName());
+        } else {
+            user.setParkingLotId(null);
+            user.setParkingLotName(null);
+        }
         user.setWalletCoins(0);
         user.setFirstUser(true);
         user.setCreatedAt(new java.util.Date());

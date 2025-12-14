@@ -199,7 +199,7 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         binding.btnPrivacyPolicy.setOnClickListener {
             try {
                 // Open privacy policy in default browser
-                val privacyPolicyUrl = "https://yash-vks-chauhan.github.io/Gridee-android/#content"
+                val privacyPolicyUrl = "https://docs.gridee.in/privacy"
                 val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(privacyPolicyUrl))
                 startActivity(intent)
             } catch (e: Exception) {

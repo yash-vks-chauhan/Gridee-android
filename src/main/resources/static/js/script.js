@@ -89,17 +89,19 @@ async function createUser() {
     const phone = document.getElementById("userPhone").value.trim();
     const password = document.getElementById("userPassword").value;
     const role = document.getElementById("userRole").value.trim();
-    const parkingLotName = document.getElementById("userParkingLotName").value.trim(); // <-- Add this line
+    const parkingLotName = document.getElementById("userParkingLotName").value.trim();
 
-    if (!name || !email || !phone || !password || !role || !parkingLotName) {
-        alert("Fill all required fields (name, email, phone, password, at least one vehicle number, role, parking lot name).");
+    if (!name || !email || !phone || !password || !role) {
+        alert("Fill all required fields (name, email, phone, password, role).");
         return;
     }
     try {
+        const payload = { name, email, phone, passwordHash: password, role };
+        if (parkingLotName) payload.parkingLotName = parkingLotName;
         const res = await fetch(`${baseUrl}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, phone, passwordHash: password, role, parkingLotName }), // <-- Add parkingLotName here
+            body: JSON.stringify(payload),
         });
         if (res.ok) {
             fetchUsers();

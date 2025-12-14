@@ -45,6 +45,6 @@ data class UserRegistration(
     val email: String,
     val phone: String,
     val passwordHash: String,
-    val parkingLotName: String,
+    val parkingLotName: String?,
     val vehicleNumbers: List<String> = emptyList()
 )

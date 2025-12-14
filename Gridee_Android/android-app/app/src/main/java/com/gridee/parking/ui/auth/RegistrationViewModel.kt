@@ -41,7 +41,7 @@ class RegistrationViewModel : ViewModel() {
         password: String,
         parkingLotName: String
     ) {
-        val normalizedParkingLot = parkingLotName.trim()
+        val normalizedParkingLot = parkingLotName.trim().ifBlank { null }
         // Validate input
         val errors = validateInput(name, email, phone, password, normalizedParkingLot)
         if (errors.isNotEmpty()) {
@@ -103,7 +103,7 @@ class RegistrationViewModel : ViewModel() {
         email: String,
         phone: String,
         password: String,
-        parkingLotName: String
+        parkingLotName: String?
     ): Map<String, String> {
         val errors = mutableMapOf<String, String>()
         
@@ -129,10 +129,6 @@ class RegistrationViewModel : ViewModel() {
             errors["password"] = "Password must be at least 6 characters"
         }
 
-        if (parkingLotName.isBlank()) {
-            errors["parkingLot"] = "Parking lot selection is required"
-        }
-        
         return errors
     }
 
