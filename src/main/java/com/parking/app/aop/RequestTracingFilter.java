@@ -17,7 +17,7 @@ import java.util.UUID;
 /**
  * Request Tracing Filter - Adds trace ID and standardized context to every request
  * Following OpenTelemetry and ECS (Elastic Common Schema) standards
- * Compatible with: Datadog, New Relic, AWS CloudWatch, ELK Stack, Splunk
+ * Compatible with: Datadog, New Relic, ELK Stack, Splunk
  */
 @Component
 @Order(1)

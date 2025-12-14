@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Business Events Logger for analytics and KPI tracking
  * Logs business-critical events in a standardized format for cloud analytics tools
- * Compatible with: Datadog, New Relic, Splunk, ELK Stack, AWS CloudWatch
+ * Compatible with: Datadog, New Relic, Splunk, ELK Stack
  */
 @Component
 public class BusinessEventsLogger {
@@ -133,4 +133,3 @@ public class BusinessEventsLogger {
         }
     }
 }
-

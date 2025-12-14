@@ -40,17 +40,19 @@ This is the Android frontend for the Gridee parking management system.
 
 ## API Integration
 
-The app connects to the Spring Boot backend at:
-- **Emulator**: `http://10.0.2.2:8080/`
-- **Physical Device**: Update `ApiClient.kt` with your local IP
+The app connects to the backend at:
+- **Production (Render)**: `https://gridee.onrender.com/api`
+- **Emulator (local backend)**: `http://10.0.2.2:8080/`
+- **Physical device (local backend)**: set your machine IP in `app/src/main/java/com/gridee/parking/config/ApiConfig.kt`
 
 ## Setup Instructions
 
-1. **Backend Setup**: Ensure the Spring Boot backend is running on port 8080
+1. **Backend Setup**: Use the production backend (Render) or run the Spring Boot backend locally on port 8080
 2. **MongoDB**: Make sure MongoDB is running with the `parkingdb` database
 3. **Network Configuration**: 
-   - For emulator: No changes needed
-   - For physical device: Update `BASE_URL` in `ApiClient.kt` with your computer's IP address
+   - For production: No changes needed
+   - For emulator: set `BASE_URL` to `http://10.0.2.2:8080/` in `ApiConfig.kt`
+   - For physical device: set `BASE_URL` in `ApiConfig.kt` to your computer's IP address
 
 ## Project Structure
 

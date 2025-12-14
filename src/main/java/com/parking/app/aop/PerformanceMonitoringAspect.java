@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Performance Monitoring Aspect - Tracks execution time with standardized metrics
- * Compatible with: Datadog APM, New Relic, Dynatrace, AWS X-Ray
+ * Compatible with: Datadog APM, New Relic, Dynatrace
  */
 @Aspect
 @Component

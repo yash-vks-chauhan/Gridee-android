@@ -10,10 +10,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.converter.scalars.ScalarsConverterFactory
 import com.google.gson.GsonBuilder
-import java.security.cert.X509Certificate
-import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
-import javax.net.ssl.X509TrustManager
 
 object ApiClient {
     // Dynamic BASE_URL from ApiConfig
@@ -22,13 +18,6 @@ object ApiClient {
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
-    
-    // Create a trust manager that accepts all certificates (for HTTPS)
-    private val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
-        override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-        override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
-        override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
-    })
     
     private val httpClient = OkHttpClient.Builder()
         // Attach JWT token first so logs show it
@@ -56,22 +45,6 @@ object ApiClient {
         .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
         .writeTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
-        .apply {
-            // SSL Configuration for HTTPS (only applied when needed)
-            if (ApiConfig.isSSLRequired()) {
-                try {
-                    val sslContext = SSLContext.getInstance("TLS")
-                    sslContext.init(null, trustAllCerts, java.security.SecureRandom())
-                    sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
-                    hostnameVerifier { _, _ -> true }
-                    println("ApiClient: SSL configuration applied for HTTPS")
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            } else {
-                println("ApiClient: Using HTTP - no SSL configuration needed")
-            }
-        }
         .build()
     
     // Use a lenient Gson to tolerate slightly malformed JSON from backend

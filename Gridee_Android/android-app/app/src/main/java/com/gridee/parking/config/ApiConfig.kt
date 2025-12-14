@@ -8,15 +8,14 @@ object ApiConfig {
     // Backend Server Configuration
     // Note: Base URL must NOT include "/api" because paths in ApiService already start with "api/..."
     
-    // ✅ FOR PHYSICAL DEVICE: Use your computer's local IP (make sure device is on same WiFi)
-    const val BASE_URL = "http://10.58.156.227:8080/"  // Current computer IP (Hotspot)
+    // ✅ Production (Render)
+    // API base: https://gridee.onrender.com/api
+    const val BASE_URL = "https://gridee.onrender.com/"
     
     // Alternative backend URLs (uncomment to use)
-    // const val BASE_URL = "http://localhost:8080/"  // Via ADB reverse (needs: adb reverse tcp:8080 tcp:8080)
-    // const val BASE_URL = "http://10.0.2.2:8080/"  // For Android emulator
-    // const val BASE_URL = "http://192.168.42.227:8080/"  // Phone hotspot network
-    // const val BASE_URL = "http://192.168.146.227:8080/"  // Previous network
-    // const val BASE_URL = "http://192.168.1.103:8080/"  // For regular WiFi network
+    // const val BASE_URL = "http://10.0.2.2:8080/"  // Android emulator (local backend)
+    // const val BASE_URL = "http://localhost:8080/"  // Via ADB reverse (adb reverse tcp:8080 tcp:8080)
+    // const val BASE_URL = "http://192.168.1.100:8080/"  // Physical device (your machine IP)
     
     // Authentication is handled via JWT tokens (no basic auth required)
     val REQUIRES_AUTH = false
@@ -28,8 +27,8 @@ object ApiConfig {
         return null  // JWT tokens are handled by JwtAuthInterceptor
     }
     
-    // Apply SSL trust configuration whenever using https
+    // Convenience helper
     fun isSSLRequired(): Boolean = BASE_URL.startsWith("https://")
     
-    fun getEnvironmentInfo(): String = "BACKEND"
+    fun getEnvironmentInfo(): String = "RENDER"
 }
