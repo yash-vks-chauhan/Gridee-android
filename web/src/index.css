@@ -1049,51 +1049,85 @@ li::before {
 }
 
 /* Countdown Timer Styles */
+/* Countdown Timer Styles - Cinematic Divider Plan */
 .countdown-container {
     display: flex;
     justify-content: center;
-    gap: 4vw;
-    margin-top: 60px;
+    align-items: center;
+    gap: 0;
+    /* Gap handled by padding for dividers */
+    margin-top: 80px;
     opacity: 0;
     animation: simpleFade 2s ease-out 2s forwards;
-
-    /* Glassmorphism */
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    padding: 40px 60px;
-    border-radius: 24px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 .countdown-item {
     display: flex;
     flex-direction: column;
     align-items: center;
+    position: relative;
+    padding: 0 4vw;
+    /* Spacing around the divider */
+}
+
+/* The Cinematic Divider */
+.countdown-item:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 60%;
+    background: linear-gradient(to bottom, transparent, var(--text-secondary), transparent);
+    opacity: 0.3;
 }
 
 .countdown-number {
-    font-size: clamp(2.5rem, 5vw, 4rem);
-    font-weight: 300;
-    font-family: "SF Mono", "Roboto Mono", monospace;
+    font-size: clamp(3.5rem, 7vw, 5.5rem);
+    font-weight: 700;
+    /* Bold for cinematic feel */
+    font-family: var(--font-stack);
+    /* Use Inter/System instead of Mono for cleaner look */
     color: var(--text-primary);
     line-height: 1;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.05em;
+    letter-spacing: -0.03em;
+
+    /* Subtle gradient text */
+    background: linear-gradient(to bottom, var(--text-primary) 20%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
 }
 
 .countdown-label {
-    font-size: clamp(0.75rem, 1.5vw, 1rem);
+    font-size: 12px;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-top: 12px;
+    letter-spacing: 0.3em;
+    margin-top: 16px;
+    font-weight: 500;
+    opacity: 0.8;
 }
 
 @media (max-width: 768px) {
     .countdown-container {
-        gap: 20px;
+        margin-top: 60px;
+    }
+
+    .countdown-item {
+        padding: 0 16px;
+    }
+
+    .countdown-number {
+        font-size: 2.5rem;
+    }
+
+    .countdown-label {
+        font-size: 10px;
+        letter-spacing: 0.15em;
     }
 }
 

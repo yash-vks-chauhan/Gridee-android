@@ -2,7 +2,52 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { usePageEffects } from './usePageEffects';
 import { Smoke } from '@/components/ui/shadcn-io/smoke';
+import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
+
+const CountdownUnit = ({ value, label }: { value: number; label: string }) => {
+    const formattedValue = String(value).padStart(2, '0');
+
+    return (
+        <div className="countdown-item">
+            <div style={{
+                position: 'relative',
+                display: 'inline-flex',
+                justifyContent: 'center',
+                overflow: 'hidden',
+                padding: '10px 0', // Increased padding for mask space
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%)'
+            }}>
+                {/* Ghost element to reserve layout space */}
+                <span className="countdown-number" style={{ opacity: 0, visibility: 'hidden', pointerEvents: 'none', position: 'relative', zIndex: -1 }}>
+                    88
+                </span>
+
+                {/* Animated Numbers */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <AnimatePresence mode="popLayout" initial={false}>
+                        <motion.span
+                            key={value}
+                            className="countdown-number"
+                            initial={{ y: '60%', opacity: 0, filter: 'blur(8px)' }}
+                            animate={{ y: '0%', opacity: 1, filter: 'blur(0px)' }}
+                            exit={{ y: '-60%', opacity: 0, filter: 'blur(8px)' }}
+                            transition={{
+                                duration: 0.5,
+                                ease: [0.22, 1, 0.36, 1] // "Swift & Smooth" ease
+                            }}
+                            style={{ position: 'absolute', width: '100%', textAlign: 'center', willChange: 'transform, opacity, filter' }}
+                        >
+                            {formattedValue}
+                        </motion.span>
+                    </AnimatePresence>
+                </div>
+            </div>
+            <span className="countdown-label">{label}</span>
+        </div>
+    );
+};
 
 function Home() {
     usePageEffects();
@@ -71,22 +116,10 @@ function Home() {
                             </div>
 
                             <div id="countdown" className="countdown-container">
-                                <div className="countdown-item">
-                                    <span className="countdown-number" id="days">{String(timeLeft.days).padStart(2, '0')}</span>
-                                    <span className="countdown-label">Days</span>
-                                </div>
-                                <div className="countdown-item">
-                                    <span className="countdown-number" id="hours">{String(timeLeft.hours).padStart(2, '0')}</span>
-                                    <span className="countdown-label">Hours</span>
-                                </div>
-                                <div className="countdown-item">
-                                    <span className="countdown-number" id="minutes">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                                    <span className="countdown-label">Minutes</span>
-                                </div>
-                                <div className="countdown-item">
-                                    <span className="countdown-number" id="seconds">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                                    <span className="countdown-label">Seconds</span>
-                                </div>
+                                <CountdownUnit value={timeLeft.days} label="Days" />
+                                <CountdownUnit value={timeLeft.hours} label="Hours" />
+                                <CountdownUnit value={timeLeft.minutes} label="Minutes" />
+                                <CountdownUnit value={timeLeft.seconds} label="Seconds" />
                             </div>
                         </div>
                     </div>
