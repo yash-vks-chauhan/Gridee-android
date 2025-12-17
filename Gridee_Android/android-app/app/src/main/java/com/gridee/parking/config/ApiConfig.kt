@@ -8,9 +8,9 @@ object ApiConfig {
     // Backend Server Configuration
     // Note: Base URL must NOT include "/api" because paths in ApiService already start with "api/..."
     
-    // ✅ Production (Render)
-    // API base: https://gridee.onrender.com/api
-    const val BASE_URL = "https://gridee.onrender.com/"
+    // ✅ Production (custom domain)
+    // API base: https://www.gridee.in/api
+    const val BASE_URL = "https://www.gridee.in/"
     
     // Alternative backend URLs (uncomment to use)
     // const val BASE_URL = "http://10.0.2.2:8080/"  // Android emulator (local backend)
@@ -30,5 +30,5 @@ object ApiConfig {
     // Convenience helper
     fun isSSLRequired(): Boolean = BASE_URL.startsWith("https://")
     
-    fun getEnvironmentInfo(): String = "RENDER"
+    fun getEnvironmentInfo(): String = "GRIDEE.IN"
 }

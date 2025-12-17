@@ -39,6 +39,10 @@ class ParkingDiscoveryViewModel : ViewModel() {
     private val _maxDistance = MutableLiveData<Double>()
     private val _selectedAmenities = MutableLiveData<List<String>>()
     private val _availableOnly = MutableLiveData<Boolean>()
+
+    // When a screen explicitly loads spots for a lot, don't let background "loadParkingData()"
+    // overwrite the spot list (can otherwise revert UI back to empty).
+    private var lockSpotUpdates: Boolean = false
     
     init {
         loadParkingData()
@@ -57,41 +61,43 @@ class ParkingDiscoveryViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Starting data load")
+                
                 // Load parking lots
                 val lotsResponse = parkingRepository.getParkingLots()
-                if (!lotsResponse.isSuccessful) { _isLoading.value = false; return@launch }
-                val lots = lotsResponse.body() ?: emptyList()
-
-                // Filter out known dummy/test lots by name (case-insensitive)
-                val blocked = setOf(
-                    "tp avenue parking",
-                    "db city mall parking",
-                    "new market parking"
-                )
-                val filteredLots = lots.filter { lot ->
-                    val name = lot.name.trim().lowercase()
-                    name !in blocked
+                if (!lotsResponse.isSuccessful) { 
+                    println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Lots API failed - ${lotsResponse.code()}")
+                    _isLoading.value = false
+                    return@launch 
                 }
+                val lots = lotsResponse.body() ?: emptyList()
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Loaded ${lots.size} parking lots")
 
-                // Aggregate spots per lot (avoid admin-only all-spots) with id/name fallback
+                // NO FILTERING - show ALL lots
+                val filteredLots = lots
+                
+                // Aggregate spots per lot
                 val allSpots = mutableListOf<ParkingSpot>()
+                val allowAllSpotsFallback = filteredLots.size == 1
+                
                 for (lot in filteredLots) {
-                    val spots = fetchSpotsWithFallback(lot.id, lot.name)
+                    println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Fetching spots for lot: id=${lot.id}, name=${lot.name}")
+                    val spots = fetchSpotsWithFallback(lot.id, lot.name, allowAllSpotsFallback)
+                    println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Got ${spots.size} spots for lot ${lot.name}")
                     allSpots.addAll(spots)
                 }
-
-                // Update lots with counts from aggregated spots
-                val updatedLots = filteredLots.map { lot ->
-                    val lotsSpots = allSpots.filter { it.lotId == lot.id || it.lotName == lot.name }
-                    val actualTotalSpots = lotsSpots.size
-                    val actualAvailableSpots = lotsSpots.count { it.status == "available" }
-                    lot.copy(totalSpots = actualTotalSpots, availableSpots = actualAvailableSpots)
+                
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Total spots aggregated=${allSpots.size}")
+                
+                _parkingLots.value = filteredLots
+                if (!lockSpotUpdates) {
+                    _parkingSpots.value = allSpots
+                    println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Updated _parkingSpots LiveData with ${allSpots.size} spots")
                 }
-
-                _parkingLots.value = updatedLots
-                _parkingSpots.value = allSpots
                 _isLoading.value = false
             } catch (e: Exception) {
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingData: Exception - ${e.message}")
+                e.printStackTrace()
                 _isLoading.value = false
             }
         }
@@ -99,13 +105,16 @@ class ParkingDiscoveryViewModel : ViewModel() {
     
     fun loadParkingSpotsForLot(lotId: String, lotName: String? = null) {
         _isLoading.value = true
+        lockSpotUpdates = true
         
         viewModelScope.launch {
             try {
-                val spots = fetchSpotsWithFallback(lotId, lotName)
+                val spots = fetchSpotsWithFallback(lotId, lotName, allowAllSpotsFallback = true)
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingSpotsForLot: Fetched spots for lotId='$lotId', lotName='$lotName', size=${spots.size}")
                 _parkingSpots.value = spots
                 _isLoading.value = false
             } catch (e: Exception) {
+                println("DEBUG ParkingDiscoveryViewModel.loadParkingSpotsForLot: Exception - ${e.message}")
                 _isLoading.value = false
             }
         }
@@ -136,13 +145,21 @@ class ParkingDiscoveryViewModel : ViewModel() {
                 (spot.spotCode?.lowercase()?.contains(query) == true) ||
                 spot.status.lowercase().contains(query)
             
+            // TEMPORARILY DISABLED: availability filter
+            // Re-enable this after confirming spots are visible
+            /*
             val matchesAvailability = _availableOnly.value?.let { availableOnly -> 
                 if (availableOnly) spot.available > 0 else true 
             } ?: true
             
             matchesQuery && matchesAvailability
+            */
+            
+            // TEMPORARY: Only filter by query, show all spots regardless of availability
+            matchesQuery
         }
         
+        println("DEBUG ParkingDiscoveryViewModel.filterParkingSpots: Filtered from ${allSpots.size} to ${filteredSpots.size} spots")
         _parkingSpots.value = filteredSpots
         _isLoading.value = false
     }
@@ -159,52 +176,45 @@ class ParkingDiscoveryViewModel : ViewModel() {
         filterParkingSpots()
     }
 
-    // Try fetching by lotId first; if empty/fails and we have a name, retry with lotName for legacy data
-    private suspend fun fetchSpotsWithFallback(lotId: String, lotName: String?): List<ParkingSpot> {
-        val attempts = listOf(lotId, lotName).filter { !it.isNullOrBlank() }.distinct()
+    // Try fetching by lotId first; if empty/fails and we have a name, retry with lotName for legacy data.
+    // If still empty (common when Atlas spot docs aren't linked to a lot), optionally fall back to all-spots.
+    private suspend fun fetchSpotsWithFallback(
+        lotId: String,
+        lotName: String?,
+        allowAllSpotsFallback: Boolean
+    ): List<ParkingSpot> {
+        // Match iOS behavior: prefer lotName first, then lotId
+        val attempts = listOf(lotName, lotId).filter { !it.isNullOrBlank() }.distinct()
 
-        for ((index, key) in attempts.withIndex()) {
+        for (key in attempts) {
             try {
                 val resp = parkingRepository.getParkingSpotsByLot(key!!)
                 if (resp.isSuccessful) {
                     val spots = resp.body() ?: emptyList()
-                    // Return immediately if we got data or if this was the last attempt
-                    if (spots.isNotEmpty() || index == attempts.lastIndex) {
-                        return spots
-                    }
+                    if (spots.isNotEmpty()) return spots
                 }
             } catch (_: Exception) {
                 // Continue to next attempt
             }
         }
 
-        // No data from backend; provide deterministic sample spots so UI is not empty
-        return generateSampleSpots(lotId, lotName)
-    }
+        if (!allowAllSpotsFallback) return emptyList()
 
-    private fun generateSampleSpots(lotId: String, lotName: String?): List<ParkingSpot> {
-        // Use lotId when available, otherwise derive an id from lot name to keep counts stable
-        val safeLotId = lotId.takeIf { it.isNotBlank() }
-            ?: (lotName?.lowercase()?.replace("\\s+".toRegex(), "-") ?: "temp-lot")
-        val label = lotName?.takeIf { it.isNotBlank() } ?: "Parking Lot"
-        val zones = listOf("Basement", "Level 1", "Level 2")
-        val spotCodes = listOf("A1", "A2", "B1", "B2", "C1", "C2")
-        val statuses = listOf("available", "available", "available", "occupied", "occupied", "reserved")
+        // Final fallback: fetch all spots (Render currently returns data here even when by-lot is empty).
+        return try {
+            val resp = parkingRepository.getParkingSpots()
+            if (!resp.isSuccessful) return emptyList()
 
-        return spotCodes.mapIndexed { index, code ->
-            val status = statuses.getOrElse(index) { "available" }
-            val available = if (status == "available") 1 else 0
-            ParkingSpot(
-                id = "$safeLotId-$code",
-                lotId = safeLotId,
-                lotName = label,
-                spotCode = code,
-                name = "$label - $code",
-                zoneName = zones[index % zones.size],
-                capacity = 1,
-                available = available,
-                status = status
-            )
+            val safeLotId = lotId.takeIf { it.isNotBlank() }
+                ?: (lotName?.lowercase()?.replace("\\s+".toRegex(), "-") ?: "")
+            val spots = resp.body() ?: emptyList()
+
+            spots.map { spot ->
+                val needsLot = spot.lotId.isBlank() && spot.lotName.isNullOrBlank()
+                if (!needsLot) spot else spot.copy(lotId = safeLotId, lotName = lotName)
+            }
+        } catch (_: Exception) {
+            emptyList()
         }
     }
 }

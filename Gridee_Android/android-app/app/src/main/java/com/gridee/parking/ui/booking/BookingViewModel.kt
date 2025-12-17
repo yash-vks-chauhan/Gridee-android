@@ -126,7 +126,8 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     fun loadParkingSpotsForLot(lotId: String, lotName: String? = null, onResult: (List<ParkingSpot>) -> Unit) {
         viewModelScope.launch {
             try {
-                val attempts = listOf(lotId, lotName).filter { !it.isNullOrBlank() }.distinct()
+                // Match iOS: prefer lotName, then fall back to lotId
+                val attempts = listOf(lotName, lotId).filter { !it.isNullOrBlank() }.distinct()
                 var spots: List<ParkingSpot> = emptyList()
 
                 for ((index, key) in attempts.withIndex()) {
@@ -134,6 +135,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
                         val spotsResponse = parkingRepository.getParkingSpotsByLot(key!!)
                         if (spotsResponse.isSuccessful) {
                             val body = spotsResponse.body() ?: emptyList()
+                            println("DEBUG BookingViewModel.loadParkingSpotsForLot: Fetched spots with key='$key', size=${body.size}")
                             spots = body
                             if (body.isNotEmpty() || index == attempts.lastIndex) break
                         }
@@ -142,8 +144,10 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
                     }
                 }
 
+                println("DEBUG BookingViewModel.loadParkingSpotsForLot: Final result size=${spots.size}")
                 onResult(spots)
             } catch (e: Exception) {
+                println("DEBUG BookingViewModel.loadParkingSpotsForLot: Exception - ${e.message}")
                 onResult(emptyList())
             }
         }
@@ -158,7 +162,8 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
                 val lots = lotsResponse.body() ?: emptyList()
                 val combined = mutableListOf<ParkingSpot>()
                 for (lot in lots) {
-                    val attempts = listOf(lot.id, lot.name).filter { !it.isNullOrBlank() }.distinct()
+                    // Try with lotName first (iOS-compatible), then lotId
+                    val attempts = listOf(lot.name, lot.id).filter { !it.isNullOrBlank() }.distinct()
                     for ((index, key) in attempts.withIndex()) {
                         try {
                             val resp = parkingRepository.getParkingSpotsByLot(key!!)

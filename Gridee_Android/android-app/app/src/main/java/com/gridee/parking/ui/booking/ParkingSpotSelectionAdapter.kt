@@ -55,6 +55,8 @@ class ParkingSpotSelectionAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(parkingSpot: ParkingSpot) {
+            println("DEBUG ParkingSpotSelectionAdapter.bind: id=${parkingSpot.id}, name=${parkingSpot.name}, available=${parkingSpot.available}, capacity=${parkingSpot.capacity}")
+            
             binding.apply {
                 val displayName = parkingSpot.name
                     ?: parkingSpot.zoneName

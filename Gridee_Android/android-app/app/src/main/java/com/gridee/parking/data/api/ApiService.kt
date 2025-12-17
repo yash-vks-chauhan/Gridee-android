@@ -70,7 +70,7 @@ interface ApiService {
     suspend fun getParkingSpotsByLot(@Path("lotId") lotId: String): Response<List<ParkingSpot>>
 
     // Single spot by ID (non-admin)
-    @GET("api/parking-spots/{id}")
+    @GET("api/parking-spots/id/{id}")
     suspend fun getParkingSpotById(@Path("id") id: String): Response<ParkingSpot>
     
     // Backend endpoints for user bookings list/history

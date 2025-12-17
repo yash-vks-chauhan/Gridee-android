@@ -1,10 +1,10 @@
 package com.parking.app.service;
 
 import com.parking.app.model.Bookings;
-import com.parking.app.model.ParkingLot;
 import com.parking.app.model.ParkingSpot;
-import com.parking.app.repository.ParkingLotRepository;
 import com.parking.app.repository.ParkingSpotRepository;
+import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoOperations;
@@ -14,11 +14,8 @@ import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,17 +73,11 @@ public class ParkingSpotService {
     @Autowired
     private MongoOperations mongoOperations;
 
-    @Autowired
-    private ParkingLotRepository parkingLotRepository;
-
     // ===== CRUD Operations =====
 
     public ParkingSpot createParkingSpot(ParkingSpot spot) {
         if (spot.getAvailable() == MIN_AVAILABLE_SPOTS) {
             spot.setAvailable(spot.getCapacity());
-        }
-        if (spot.getLotId() == null || spot.getLotId().isEmpty()) {
-            spot.setLotId(spot.getLotName());
         }
         setProperZoneName(spot);
         return parkingSpotRepository.save(spot);
@@ -95,14 +86,14 @@ public class ParkingSpotService {
     public ParkingSpot updateParkingSpot(String spotId, ParkingSpot spotDetails) {
         ParkingSpot existingSpot = parkingSpotRepository.findById(spotId).orElse(null);
         if (existingSpot != null) {
-            if (spotDetails.getLotId() != null) existingSpot.setLotId(spotDetails.getLotId());
-            if (spotDetails.getLotName() != null) existingSpot.setLotName(spotDetails.getLotName());
-            if (spotDetails.getZoneName() != null) existingSpot.setZoneName(spotDetails.getZoneName());
-            if (spotDetails.getCapacity() > MIN_AVAILABLE_SPOTS) existingSpot.setCapacity(spotDetails.getCapacity());
-            if (spotDetails.getAvailable() >= MIN_AVAILABLE_SPOTS) existingSpot.setAvailable(spotDetails.getAvailable());
-            if (existingSpot.getLotId() == null || existingSpot.getLotId().isEmpty()) {
-                existingSpot.setLotId(existingSpot.getLotName());
-            }
+            if (spotDetails.getLotName() != null)
+                existingSpot.setLotName(spotDetails.getLotName());
+            if (spotDetails.getZoneName() != null)
+                existingSpot.setZoneName(spotDetails.getZoneName());
+            if (spotDetails.getCapacity() > MIN_AVAILABLE_SPOTS)
+                existingSpot.setCapacity(spotDetails.getCapacity());
+            if (spotDetails.getAvailable() >= MIN_AVAILABLE_SPOTS)
+                existingSpot.setAvailable(spotDetails.getAvailable());
             return parkingSpotRepository.save(existingSpot);
         }
         return null;
@@ -127,18 +118,69 @@ public class ParkingSpotService {
     }
 
     public List<ParkingSpot> getAllParkingSpots() {
-        List<ParkingSpot> spots = parkingSpotRepository.findAll();
+        List<ParkingSpot> spots;
+        try {
+            spots = parkingSpotRepository.findAll();
+        } catch (Exception ignored) {
+            // Tolerate legacy Atlas field types (e.g., `available` stored as boolean).
+            spots = mongoOperations.find(new Query(), Document.class, "parking_spots").stream()
+                    .map(this::mapDocumentToSpot)
+                    .collect(Collectors.toList());
+        }
+
+        // Auto-activate any inactive spots and apply proper zone names
+        for (ParkingSpot spot : spots) {
+            if (!spot.isActive()) {
+                spot.setActive(true);
+                parkingSpotRepository.save(spot);
+                System.out.println("Auto-activated parking spot: " + spot.getId());
+            }
+        }
+
         return spots.stream()
                 .map(this::ensureProperZoneName)
                 .collect(Collectors.toList());
     }
 
     public List<ParkingSpot> getSpotsByLotId(String lotId) {
-        return findSpotsByLotReference(lotId);
+        List<ParkingSpot> spots = new java.util.ArrayList<>();
+
+        try {
+            List<ParkingSpot> byLotId = parkingSpotRepository.findByLotId(lotId);
+            if (!byLotId.isEmpty()) {
+                spots = byLotId;
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (spots.isEmpty()) {
+            try {
+                spots = parkingSpotRepository.findByLotName(lotId);
+            } catch (Exception ignored) {
+                Query q = new Query(new Criteria().orOperator(
+                        Criteria.where("lotId").is(lotId),
+                        Criteria.where("lotName").is(lotId)));
+                spots = mongoOperations.find(q, Document.class, "parking_spots").stream()
+                        .map(this::mapDocumentToSpot)
+                        .collect(Collectors.toList());
+            }
+        }
+
+        // Auto-activate any inactive spots
+        for (ParkingSpot spot : spots) {
+            if (!spot.isActive()) {
+                spot.setActive(true);
+                parkingSpotRepository.save(spot);
+                System.out.println("Auto-activated parking spot: " + spot.getId());
+            }
+        }
+
+        return spots;
     }
 
-    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime, List<Bookings> overlappingBookings) {
-        List<ParkingSpot> allSpots = findSpotsByLotReference(lotId);
+    public List<ParkingSpot> getAvailableSpots(String lotId, ZonedDateTime startTime, ZonedDateTime endTime,
+            List<Bookings> overlappingBookings) {
+        List<ParkingSpot> allSpots = getSpotsByLotId(lotId);
         Set<String> bookedSpotIds = overlappingBookings.stream()
                 .map(Bookings::getSpotId)
                 .collect(Collectors.toSet());
@@ -149,28 +191,17 @@ public class ParkingSpotService {
 
     // ===== Availability Management =====
 
-    /**
-     * Atomically reserves a spot for booking - prevents race conditions
-     * This method is thread-safe and ensures no overbooking even with concurrent requests
-     *
-     * @param spotId The spot to reserve
-     * @return true if reservation successful, false if no spots available
-     */
-//    @Transactional
     public boolean atomicReserveSpotForBooking(String spotId) {
         Query spotQuery = new Query(
                 Criteria.where(FIELD_ID).is(spotId)
-                        .and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS)
-        );
+                        .and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS));
         Update decUpdate = new Update().inc(FIELD_AVAILABLE, DECREMENT_VALUE);
 
-        // findAndModify is atomic in MongoDB - either succeeds or fails, no race condition
         ParkingSpot updatedSpot = mongoOperations.findAndModify(
                 spotQuery,
                 decUpdate,
-                FindAndModifyOptions.options().returnNew(false), // Return old document to verify
-                ParkingSpot.class
-        );
+                FindAndModifyOptions.options().returnNew(false),
+                ParkingSpot.class);
 
         return updatedSpot != null && updatedSpot.getAvailable() > MIN_AVAILABLE_SPOTS;
     }
@@ -178,8 +209,7 @@ public class ParkingSpotService {
     public void decrementSpotAvailability(String spotId) {
         Query spotQuery = new Query(Criteria.where(FIELD_ID).is(spotId).and(FIELD_AVAILABLE).gt(MIN_AVAILABLE_SPOTS));
         Update decUpdate = new Update().inc(FIELD_AVAILABLE, DECREMENT_VALUE);
-        ParkingSpot updatedSpot = mongoOperations.findAndModify(
-                spotQuery, decUpdate, ParkingSpot.class);
+        ParkingSpot updatedSpot = mongoOperations.findAndModify(spotQuery, decUpdate, ParkingSpot.class);
         if (updatedSpot == null) {
             throw new RuntimeException(ERROR_NO_SPOTS_AVAILABLE);
         }
@@ -195,7 +225,7 @@ public class ParkingSpotService {
         Optional<ParkingSpot> spot = parkingSpotRepository.findById(spotId);
         if (spot.isPresent() && spot.get().getAvailable() > spot.get().getCapacity()) {
             spot.get().setAvailable(spot.get().getCapacity());
-            mongoOperations.save(spot);
+            mongoOperations.save(spot.get());
         }
     }
 
@@ -208,8 +238,11 @@ public class ParkingSpotService {
                 .set(FIELD_HELD_BY, userId)
                 .set(FIELD_HELD_AT, new Date());
 
-        return mongoOperations.findAndModify(spotQuery, holdUpdate,
-                FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
+        return mongoOperations.findAndModify(
+                spotQuery,
+                holdUpdate,
+                FindAndModifyOptions.options().returnNew(true),
+                ParkingSpot.class);
     }
 
     public ParkingSpot releaseSpot(String spotId) {
@@ -219,8 +252,11 @@ public class ParkingSpotService {
                 .unset(FIELD_HELD_BY)
                 .unset(FIELD_HELD_AT);
 
-        return mongoOperations.findAndModify(spotQuery, releaseUpdate,
-                FindAndModifyOptions.options().returnNew(true), ParkingSpot.class);
+        return mongoOperations.findAndModify(
+                spotQuery,
+                releaseUpdate,
+                FindAndModifyOptions.options().returnNew(true),
+                ParkingSpot.class);
     }
 
     // ===== Zone Name Management =====
@@ -315,32 +351,72 @@ public class ParkingSpotService {
         System.out.println(LOG_CAPACITY_RESET);
     }
 
-    // Fetch spots regardless of whether lotId or lotName was stored; dedupe by spot id.
-    private List<ParkingSpot> findSpotsByLotReference(String lotIdOrName) {
-        Map<String, ParkingSpot> uniqueSpots = new LinkedHashMap<>();
+    private ParkingSpot mapDocumentToSpot(Document doc) {
+        ParkingSpot spot = new ParkingSpot();
 
-        // Resolve lot name from lotId if available (legacy data stored lotName only)
-        String resolvedLotName = null;
-        try {
-            if (parkingLotRepository != null) {
-                Optional<ParkingLot> lot = parkingLotRepository.findById(lotIdOrName);
-                if (lot.isPresent()) {
-                    resolvedLotName = lot.get().getName();
-                }
-            }
-        } catch (Exception ignored) {}
+        String id = extractId(doc.get("_id"));
+        spot.setId(id);
 
-        parkingSpotRepository.findByLotId(lotIdOrName)
-                .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
+        String lotId = doc.getString("lotId");
+        spot.setLotId(lotId == null ? "" : lotId);
+        spot.setLotName(doc.getString("lotName"));
 
-        parkingSpotRepository.findByLotName(lotIdOrName)
-                .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
-
-        if (resolvedLotName != null && !resolvedLotName.equals(lotIdOrName)) {
-            parkingSpotRepository.findByLotName(resolvedLotName)
-                    .forEach(spot -> uniqueSpots.put(spot.getId(), ensureProperZoneName(spot)));
+        String zoneName = doc.getString("zoneName");
+        if (isInvalidZoneName(zoneName)) {
+            zoneName = generateZoneNameFromId(id);
         }
+        spot.setZoneName(zoneName);
 
-        return new ArrayList<>(uniqueSpots.values());
+        spot.setCapacity(extractInt(doc.get("capacity"), 0));
+        int available = extractAvailableAsInt(doc.get("available"));
+        spot.setAvailable(available);
+
+        String status = doc.getString("status");
+        if (status == null || status.isBlank()) {
+            status = available > 0 ? "available" : "unavailable";
+        }
+        spot.setStatus(status);
+
+        spot.setBookingRate(extractDouble(doc.get("bookingRate"), 0.0));
+        spot.setCheckInPenaltyRate(extractDouble(doc.get("checkInPenaltyRate"), 0.0));
+        spot.setCheckOutPenaltyRate(extractDouble(doc.get("checkOutPenaltyRate"), 0.0));
+        spot.setDescription(doc.getString("description"));
+        spot.setActive(Boolean.TRUE.equals(doc.getBoolean("active", true)));
+
+        return spot;
+    }
+
+    private String extractId(Object rawId) {
+        if (rawId == null) {
+            return "";
+        }
+        if (rawId instanceof ObjectId objectId) {
+            return objectId.toHexString();
+        }
+        return String.valueOf(rawId);
+    }
+
+    private int extractAvailableAsInt(Object availableObj) {
+        if (availableObj instanceof Boolean b) {
+            return b ? 1 : 0;
+        }
+        if (availableObj instanceof Number n) {
+            return n.intValue();
+        }
+        return 0;
+    }
+
+    private int extractInt(Object value, int defaultValue) {
+        if (value instanceof Number n) {
+            return n.intValue();
+        }
+        return defaultValue;
+    }
+
+    private double extractDouble(Object value, double defaultValue) {
+        if (value instanceof Number n) {
+            return n.doubleValue();
+        }
+        return defaultValue;
     }
 }

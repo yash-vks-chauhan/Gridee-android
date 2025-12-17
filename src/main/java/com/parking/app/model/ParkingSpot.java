@@ -12,7 +12,6 @@ public class ParkingSpot {
 
     // Field name constants for MongoDB queries
     public static final String FIELD_ID = "_id";
-    public static final String FIELD_LOT_ID = "lotId";
     public static final String FIELD_LOT_NAME = "lotName";
     public static final String FIELD_ZONE_NAME = "zoneName";
     public static final String FIELD_CAPACITY = "capacity";
@@ -27,9 +26,8 @@ public class ParkingSpot {
     @Id
     private String id;
 
-    // Use lotId for backend <-> app alignment (lotName kept for compatibility)
+    private String lotName;// Reference to ParkingLot
     private String lotId;
-    private String lotName;       // Reference to ParkingLot
     private String zoneName;    // Zone like "TP Avenue Parking"
     private int capacity;       // Total slots in this zone
     private int available;      // Current available slots

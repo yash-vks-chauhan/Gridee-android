@@ -3,6 +3,7 @@ package com.parking.app.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -31,6 +32,8 @@ public class SecurityConfig {
 
         http
                 .authorizeHttpRequests(auth -> auth
+                        // Public read-only endpoints for mobile home screens
+                        .requestMatchers(HttpMethod.GET, "/api/parking-spots/**", "/api/parking-lots/**").permitAll()
                         .requestMatchers(
                                 "/api/parking-lots/list/by-names",
                                 "/api/auth/register",

@@ -306,3 +306,311 @@ Registering 10 normal users...
 
 2025-12-14 12:03:56.884  INFO [gridee-parking,,] [] --- [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
 2025-12-14 12:03:56.896  INFO [gridee-parking,,] [] --- [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2025-12-16 17:41:14.718  WARN [gridee-parking,,] [] --- [Test worker] ory$DuplicateJsonObjectContextCustomizer : 
+
+Found multiple occurrences of org.json.JSONObject on the class path:
+
+	jar:file:/Users/yashchauhan/.gradle/caches/modules-2/files-2.1/org.json/json/20240303/ebb88e8fb5122b7506d5cf1d69f1ccdb790d22a/json-20240303.jar!/org/json/JSONObject.class
+	jar:file:/Users/yashchauhan/.gradle/caches/modules-2/files-2.1/com.vaadin.external.google/android-json/0.0.20131108.vaadin1/fa26d351fe62a6a17f5cda1287c1c6110dec413f/android-json-0.0.20131108.vaadin1.jar!/org/json/JSONObject.class
+
+You may wish to exclude one of them to ensure predictable runtime behavior
+
+2025-12-16 17:41:14.748  INFO [gridee-parking,,] [] --- [Test worker] .p.a.i.BookingConcurrencyIntegrationTest : Starting BookingConcurrencyIntegrationTest v0.0.1-SNAPSHOT using Java 17.0.16 with PID 45677 (started by yashchauhan in /Users/yashchauhan/gridee-android)
+2025-12-16 17:41:14.750  INFO [gridee-parking,,] [] --- [Test worker] .p.a.i.BookingConcurrencyIntegrationTest : The following 1 profile is active: "local"
+2025-12-16 17:41:18.062  INFO [gridee-parking,,] [] --- [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2025-12-16 17:41:18.064  INFO [gridee-parking,,] [] --- [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data MongoDB repositories in DEFAULT mode.
+2025-12-16 17:41:18.528  INFO [gridee-parking,,] [] --- [Test worker] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 452 ms. Found 7 MongoDB repository interfaces.
+2025-12-16 17:41:20.345  INFO [gridee-parking,,] [] --- [Test worker] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8443 (http)
+2025-12-16 17:41:20.371  INFO [gridee-parking,,] [] --- [Test worker] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-12-16 17:41:20.372  INFO [gridee-parking,,] [] --- [Test worker] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.44]
+2025-12-16 17:41:20.559  INFO [gridee-parking,,] [] --- [Test worker] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-12-16 17:41:20.560  INFO [gridee-parking,,] [] --- [Test worker] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 5314 ms
+2025-12-16 17:41:21.854  INFO [gridee-parking,,] [] --- [Test worker] org.mongodb.driver.client                : MongoClient with metadata {"driver": {"name": "mongo-java-driver|sync|spring-boot", "version": "5.5.1"}, "os": {"type": "Darwin", "name": "Mac OS X", "architecture": "aarch64", "version": "26.0"}, "platform": "Java/Eclipse Adoptium/17.0.16+8"} created with settings MongoClientSettings{readPreference=primary, writeConcern=WriteConcern{w=null, wTimeout=null ms, journal=null}, retryWrites=true, retryReads=true, readConcern=ReadConcern{level=null}, credential=null, transportSettings=null, commandListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener@574c8a2a], codecRegistry=ProvidersCodecRegistry{codecProviders=[ValueCodecProvider{}, BsonValueCodecProvider{}, DBRefCodecProvider{}, DBObjectCodecProvider{}, DocumentCodecProvider{}, CollectionCodecProvider{}, IterableCodecProvider{}, MapCodecProvider{}, GeoJsonCodecProvider{}, GridFSFileCodecProvider{}, Jsr310CodecProvider{}, JsonObjectCodecProvider{}, BsonCodecProvider{}, EnumCodecProvider{}, com.mongodb.client.model.mql.ExpressionCodecProvider@59362a47, com.mongodb.Jep395RecordCodecProvider@5c09b49f, com.mongodb.KotlinCodecProvider@2482b6f0]}, loggerSettings=LoggerSettings{maxDocumentLength=1000}, clusterSettings={hosts=[localhost:27017], srvServiceName=mongodb, mode=SINGLE, requiredClusterType=UNKNOWN, requiredReplicaSetName='null', serverSelector='null', clusterListeners='[]', serverSelectionTimeout='30000 ms', localThreshold='15 ms'}, socketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=0, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, heartbeatSocketSettings=SocketSettings{connectTimeoutMS=10000, readTimeoutMS=10000, receiveBufferSize=0, proxySettings=ProxySettings{host=null, port=null, username=null, password=null}}, connectionPoolSettings=ConnectionPoolSettings{maxSize=100, minSize=0, maxWaitTimeMS=120000, maxConnectionLifeTimeMS=0, maxConnectionIdleTimeMS=0, maintenanceInitialDelayMS=0, maintenanceFrequencyMS=60000, connectionPoolListeners=[io.micrometer.core.instrument.binder.mongodb.MongoMetricsConnectionPoolListener@4e9eb9b6], maxConnecting=2}, serverSettings=ServerSettings{heartbeatFrequencyMS=10000, minHeartbeatFrequencyMS=500, serverMonitoringMode=AUTO, serverListeners='[]', serverMonitorListeners='[]'}, sslSettings=SslSettings{enabled=false, invalidHostNameAllowed=false, context=null}, applicationName='null', compressorList=[], uuidRepresentation=JAVA_LEGACY, serverApi=null, autoEncryptionSettings=null, dnsClient=null, inetAddressResolver=null, contextProvider=null, timeoutMS=null}
+2025-12-16 17:41:21.925  INFO [gridee-parking,,] [] --- [cluster-ClusterId{value='69414c691cf37ac4f3175552', description='null'}-localhost:27017] org.mongodb.driver.cluster               : Monitor thread successfully connected to server with description ServerDescription{address=localhost:27017, type=STANDALONE, cryptd=false, state=CONNECTED, ok=true, minWireVersion=0, maxWireVersion=27, maxDocumentSize=16777216, logicalSessionTimeoutMinutes=30, roundTripTimeNanos=92415958, minRoundTripTimeNanos=0}
+2025-12-16 17:41:24.406  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.service.lock.MongoLockService    : ⚠️ MongoDB Lock Service ENABLED - Fallback mode for low-traffic environments
+2025-12-16 17:41:24.406  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.service.lock.MongoLockService    :    For production with high load, switch to Redis: app.locking.provider=redis
+2025-12-16 17:41:24.976  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   : 🔧 Initializing MongoDB Change Stream for Bookings audit...
+2025-12-16 17:41:25.004  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   : ✅ MongoDB Change Stream ENABLED for Bookings collection
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :    📝 Automatic audit trail active
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :    📊 Capturing: INSERT, UPDATE, DELETE operations
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :    💾 Saving to: booking_audit collection
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   : 
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :    ⚠️  IMPORTANT: MongoDB must be running as a replica set
+2025-12-16 17:41:25.005  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :    ℹ️  For local development, initialize replica set with:
+2025-12-16 17:41:25.006  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.config.MongoChangeStreamConfig   :       rs.initiate()
+2025-12-16 17:41:27.840  INFO [gridee-parking,,] [] --- [Test worker] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+2025-12-16 17:41:28.004  INFO [gridee-parking,,] [] --- [Test worker] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+2025-12-16 17:41:31.652  INFO [gridee-parking,,] [] --- [Test worker] o.s.v.b.OptionalValidatorFactoryBean     : Failed to set up a Bean Validation provider: jakarta.validation.NoProviderFoundException: Unable to create a Configuration, because no Jakarta Bean Validation provider could be found. Add a provider like Hibernate Validator (RI) to your classpath.
+2025-12-16 17:41:36.949  WARN [gridee-parking,,] [] --- [Test worker] o.s.b.a.f.FreeMarkerAutoConfiguration    : Cannot find template location: [classpath:/templates/] (please add some templates, check your FreeMarker configuration, or set spring.freemarker.check-template-location=false)
+2025-12-16 17:41:37.459  INFO [gridee-parking,,] [] --- [Test worker] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8443 (http) with context path '/'
+2025-12-16 17:41:37.905  INFO [gridee-parking,,] [] --- [Test worker] .p.a.i.BookingConcurrencyIntegrationTest : Started BookingConcurrencyIntegrationTest in 24.785 seconds (process running for 29.525)
+2025-12-16 17:41:38.126  INFO [gridee-parking,,] [] --- [Test worker] c.parking.app.config.MongoIndexConfig    : Creating MongoDB indexes for optimal booking performance...
+2025-12-16 17:41:38.595 ERROR [gridee-parking,,] [] --- [SimpleAsyncTaskExecutor-1] rContainer$DecoratingLoggingErrorHandler : Unexpected error occurred while listening to MongoDB
+org.springframework.data.mongodb.UncategorizedMongoDbException: Command failed with error 40573 (Location40573): 'The $changeStream stage is only supported on replica sets' on server localhost:27017. The full response is {"ok": 0.0, "errmsg": "The $changeStream stage is only supported on replica sets", "code": 40573, "codeName": "Location40573"}
+	at org.springframework.data.mongodb.core.MongoExceptionTranslator.doTranslateException(MongoExceptionTranslator.java:151)
+	at org.springframework.data.mongodb.core.MongoExceptionTranslator.translateExceptionIfPossible(MongoExceptionTranslator.java:74)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.execute(CursorReadingTask.java:249)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.lambda$start$4(CursorReadingTask.java:128)
+	at org.springframework.data.util.Lock.execute(Lock.java:106)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.start(CursorReadingTask.java:122)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.run(CursorReadingTask.java:76)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Caused by: com.mongodb.MongoCommandException: Command failed with error 40573 (Location40573): 'The $changeStream stage is only supported on replica sets' on server localhost:27017. The full response is {"ok": 0.0, "errmsg": "The $changeStream stage is only supported on replica sets", "code": 40573, "codeName": "Location40573"}
+	at com.mongodb.internal.connection.ProtocolHelper.getCommandFailureException(ProtocolHelper.java:210)
+	at com.mongodb.internal.connection.InternalStreamConnection.receiveCommandMessageResponse(InternalStreamConnection.java:520)
+	at com.mongodb.internal.connection.InternalStreamConnection.sendAndReceiveInternal(InternalStreamConnection.java:448)
+	at com.mongodb.internal.connection.InternalStreamConnection.lambda$sendAndReceive$0(InternalStreamConnection.java:375)
+	at com.mongodb.internal.connection.InternalStreamConnection.sendAndReceive(InternalStreamConnection.java:378)
+	at com.mongodb.internal.connection.UsageTrackingInternalConnection.sendAndReceive(UsageTrackingInternalConnection.java:111)
+	at com.mongodb.internal.connection.DefaultConnectionPool$PooledConnection.sendAndReceive(DefaultConnectionPool.java:747)
+	at com.mongodb.internal.connection.CommandProtocolImpl.execute(CommandProtocolImpl.java:61)
+	at com.mongodb.internal.connection.DefaultServer$DefaultServerProtocolExecutor.execute(DefaultServer.java:208)
+	at com.mongodb.internal.connection.DefaultServerConnection.executeProtocol(DefaultServerConnection.java:112)
+	at com.mongodb.internal.connection.DefaultServerConnection.command(DefaultServerConnection.java:82)
+	at com.mongodb.internal.connection.DefaultServerConnection.command(DefaultServerConnection.java:74)
+	at com.mongodb.internal.connection.DefaultServer$OperationCountTrackingConnection.command(DefaultServer.java:298)
+	at com.mongodb.internal.operation.SyncOperationHelper.createReadCommandAndExecute(SyncOperationHelper.java:298)
+	at com.mongodb.internal.operation.SyncOperationHelper.lambda$executeRetryableRead$3(SyncOperationHelper.java:197)
+	at com.mongodb.internal.operation.SyncOperationHelper.lambda$withSourceAndConnection$0(SyncOperationHelper.java:131)
+	at com.mongodb.internal.operation.SyncOperationHelper.withSuppliedResource(SyncOperationHelper.java:156)
+	at com.mongodb.internal.operation.SyncOperationHelper.lambda$withSourceAndConnection$1(SyncOperationHelper.java:130)
+	at com.mongodb.internal.operation.SyncOperationHelper.withSuppliedResource(SyncOperationHelper.java:156)
+	at com.mongodb.internal.operation.SyncOperationHelper.withSourceAndConnection(SyncOperationHelper.java:129)
+	at com.mongodb.internal.operation.SyncOperationHelper.lambda$executeRetryableRead$4(SyncOperationHelper.java:195)
+	at com.mongodb.internal.operation.SyncOperationHelper.lambda$decorateReadWithRetries$13(SyncOperationHelper.java:317)
+	at com.mongodb.internal.async.function.RetryingSyncSupplier.get(RetryingSyncSupplier.java:67)
+	at com.mongodb.internal.operation.SyncOperationHelper.executeRetryableRead(SyncOperationHelper.java:201)
+	at com.mongodb.internal.operation.SyncOperationHelper.executeRetryableRead(SyncOperationHelper.java:180)
+	at com.mongodb.internal.operation.AggregateOperationImpl.execute(AggregateOperationImpl.java:190)
+	at com.mongodb.internal.operation.ChangeStreamOperation.execute(ChangeStreamOperation.java:198)
+	at com.mongodb.internal.operation.ChangeStreamOperation.execute(ChangeStreamOperation.java:54)
+	at com.mongodb.client.internal.MongoClusterImpl$OperationExecutorImpl.execute(MongoClusterImpl.java:424)
+	at com.mongodb.client.internal.ChangeStreamIterableImpl.execute(ChangeStreamIterableImpl.java:223)
+	at com.mongodb.client.internal.ChangeStreamIterableImpl.cursor(ChangeStreamIterableImpl.java:193)
+	at com.mongodb.client.internal.ChangeStreamIterableImpl.iterator(ChangeStreamIterableImpl.java:188)
+	at org.springframework.data.mongodb.core.messaging.ChangeStreamTask.initCursor(ChangeStreamTask.java:163)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.lambda$start$3(CursorReadingTask.java:128)
+	at org.springframework.data.mongodb.core.messaging.CursorReadingTask.execute(CursorReadingTask.java:246)
+	... 5 common frames omitted
+2025-12-16 17:41:40.074  INFO [gridee-parking,,] [] --- [Test worker] c.parking.app.config.MongoIndexConfig    : ✅ MongoDB indexes created successfully for high-concurrency support
+2025-12-16 17:41:40.107  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════════
+2025-12-16 17:41:40.107  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🧹 Starting Test Database Cleanup
+2025-12-16 17:41:40.107  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════���═══════════
+2025-12-16 17:41:40.107  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🧹 Cleaning up MongoDB collections...
+2025-12-16 17:41:40.157  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 1 users
+2025-12-16 17:41:40.159  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 0 parking lots
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 0 parking spots
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 0 bookings
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 0 wallets
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Deleted 0 transactions
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ✅ Database cleanup completed
+
+2025-12-16 17:41:40.160  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 👤 Creating test admin user...
+2025-12-16 17:41:40.450  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    ✅ Admin user created successfully
+2025-12-16 17:41:40.450  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    📧 Email: test-admin@parking.com
+2025-12-16 17:41:40.450  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    🔑 Password: TestAdmin@123
+2025-12-16 17:41:40.450  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    👤 Name: Test Admin
+2025-12-16 17:41:40.450  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ✅ Admin user setup completed
+
+2025-12-16 17:41:40.967  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🚀 Integration Test Setup Complete - Base URL: https://localhost:8443
+2025-12-16 17:41:40.967  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📝 Test will call REAL APIs with REAL authentication
+2025-12-16 17:41:40.968  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🗄️  Using test database: parkingdbtest
+2025-12-16 17:41:40.968  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════════
+
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════════
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🚀 Starting Comprehensive Integration Test Suite
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════════
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ⚙️  Test Configuration:
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Base URL: https://localhost:8443
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Total Users: 10
+2025-12-16 17:41:40.979  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Concurrent Users: 10
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Parking Lots: 3
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Spots per Lot: 2
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Capacity per Spot: 5
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Total Capacity: 30
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Booking Rate: $50.0/hour
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Rate Limit Delay: 1000ms
+2025-12-16 17:41:40.980  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════���═══
+
+2025-12-16 17:41:42.094  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 1: Create Parking Lots (Infrastructure Setup)
+2025-12-16 17:41:42.095  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ────────────────────────────��────────────
+2025-12-16 17:41:42.108  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.helper.AuthHelper    : 🔐 Logging in user: test-admin@parking.com
+2025-12-16 17:41:43.246  INFO [gridee-parking,,] [] --- [http-nio-8443-exec-1] o.apache.coyote.http11.Http11Processor   : Error parsing HTTP request header
+ Note: further occurrences of HTTP request parsing errors will be logged at DEBUG level.
+java.lang.IllegalArgumentException: Invalid character found in method name [0x160x030x030x010xb30x010x000x010xaf0x030x030x0b0x06tJ+N0x1360xbb0x9c0x910xce}0xa8s0xf20x18#0xc10xa8\0x8d0xc30x930xb90xd60x110xb7S0xc4HS ]. HTTP method names must be tokens
+	at org.apache.coyote.http11.Http11InputBuffer.parseRequestLine(Http11InputBuffer.java:403)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:271)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1769)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1189)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:658)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:63)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+2025-12-16 17:41:43.292 ERROR [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ❌ Admin login failed: Unsupported or unrecognized SSL message
+2025-12-16 17:41:43.642  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 2: Create Parking Spots
+2025-12-16 17:41:43.643  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ─────────────────────────────────────────
+2025-12-16 17:41:43.880  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 3: Register Test Users & Top Up Wallets
+2025-12-16 17:41:43.880  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ─────────────────────────────────────────
+2025-12-16 17:41:43.880  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ⚠️  Important: Using actual parking lot names created in Test 1
+2025-12-16 17:41:43.881  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - All users are NORMAL users (not admin)
+2025-12-16 17:41:43.881  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Each user will have wallet topped up
+2025-12-16 17:41:43.881  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+Registering 10 normal users...
+2025-12-16 17:41:43.898  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 4: Concurrent Booking - Limited Spots
+2025-12-16 17:41:43.898  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════
+2025-12-16 17:41:43.899  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📊 Scenario: 10 concurrent users → 2 spots (5 capacity each)
+2025-12-16 17:41:43.899  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    Expected: 5 users on spot 1, 5 users on spot 2
+2025-12-16 17:41:43.899  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ───────────────────────────────────────────────────
+
+2025-12-16 17:41:43.920  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 5: Cancel One Booking & Verify Spot Counts
+2025-12-16 17:41:43.920  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═════════════════════════════════════════════════
+2025-12-16 17:41:43.921  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : Cancelling one booking...
+
+2025-12-16 17:41:43.921  WARN [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ⚠️  No bookings found to cancel
+2025-12-16 17:41:43.921  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+✅ Cancelled 0 booking(s)
+2025-12-16 17:41:45.921  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ⏳ Waiting for async spot count updates...
+
+2025-12-16 17:41:45.922  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📊 Verifying Parking Lot Availability:
+2025-12-16 17:41:45.922  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ───────────────────────────────────────────────────
+2025-12-16 17:41:45.923  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ✅ Cancellation test PASSED
+2025-12-16 17:41:45.923  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - One booking cancelled successfully
+2025-12-16 17:41:45.923  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Spot counts remain consistent
+2025-12-16 17:41:45.923  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - No data corruption detected
+
+2025-12-16 17:41:46.014  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📋 TEST 6: Generate Comprehensive Report
+2025-12-16 17:41:46.014  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════════════
+2025-12-16 17:41:46.014  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📊 Collecting all metrics for detailed Allure report...
+
+2025-12-16 17:41:46.014  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+
+
+2025-12-16 17:41:46.014  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ═══════════════════════════════════════════════════════════
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📊 GENERATING COMPREHENSIVE TEST REPORT
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ═══════════════════════════════════════════════════════════
+
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📋 Collecting user metrics...
+
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📋 Collecting parking lot metrics...
+
+2025-12-16 17:41:46.015  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    📝 Debug: Total users with bookings: 0
+2025-12-16 17:41:46.018  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    📝 Debug: Total bookings recorded: 0
+2025-12-16 17:41:46.018  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+2025-12-16 17:41:46.018  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📋 Calculating summary totals...
+
+2025-12-16 17:41:46.022  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    ✅ Summary totals calculated
+2025-12-16 17:41:46.022  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :       Total Attempts: 0 (Success: 0, Failed: 0, Cancelled: 0)
+2025-12-16 17:41:46.022  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+📋 Validating data consistency...
+
+2025-12-16 17:41:46.023  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    ✅ Wallet balances match (within tolerance)
+2025-12-16 17:41:46.023  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    ✅ Booking counts within capacity limits
+2025-12-16 17:41:46.023  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    ✅ Financial reconciliation successful
+2025-12-16 17:41:46.023  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+   ✅ ALL VALIDATIONS PASSED
+
+2025-12-16 17:41:46.023  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📋 Generating Allure report attachments...
+
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :    ✅ Allure attachments generated
+
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+
+
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ═══════════════════════════════════════════════════════════
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :             COMPREHENSIVE TEST EXECUTION REPORT
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ═══════════════════════════════════════════════════════════
+
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📊 INFRASTRUCTURE SUMMARY
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ─────────────────────────────────────────────────────────
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Parking Lots:     0
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Parking Spots:    0
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Total Capacity:   0 bookings
+
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 👥 USER SUMMARY
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ─────────────────────────────────────────────────────────
+2025-12-16 17:41:46.055  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Total Users:      0
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Initial Balance:  $0.00
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Current Balance:  $0.00
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Utilized Amount:  $0.00
+
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 📈 BOOKING STATISTICS
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ─────────────────────────────────────────────────────────
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Total Attempts:   0
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Successful:       0 (0.0%)
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Failed:           0 (0.0%)
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Cancelled:        0
+
+2025-12-16 17:41:46.056  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 💰 FINANCIAL RECONCILIATION
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ─────────────────────────────────────────────────────────
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Expected Remaining: $0.00
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Actual Remaining:   $0.00
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Difference:         $0.00
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   Status:             ✅ MATCHED
+
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ✅ VALIDATION RESULTS
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ─────────────────────────────────────────────────────────
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :   ✅ All validation checks PASSED
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :      - Wallet balances reconciled
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :      - Booking counts within capacity
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :      - Financial data consistent
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+═══════════════════════════════════════════════════════════
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     :                    REPORT COMPLETE
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : ═══════════════════════════════════════════════════════════
+
+2025-12-16 17:41:46.057  INFO [gridee-parking,,] [] --- [Test worker] c.p.a.i.report.AllureReportGenerator     : 
+✅ Report generation complete
+
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ✅ Comprehensive report generated successfully
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - User wallet details with initial/current/utilized balances
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Booking success/failure breakdown per user
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Parking lot and spot utilization metrics
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Financial reconciliation and validation
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - All numbers verified and tallied
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+📊 Check Allure report for detailed attachments:
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    1. User Wallet Report - Shows initial, current, and utilized balances
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    2. Parking Lot Report - Shows capacity, booked, and available spots
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    3. Financial Reconciliation - Validates all monetary transactions
+2025-12-16 17:41:46.058  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    4. Summary Report - Overall test execution summary
+
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+
+
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════���═══════════════════════���═══
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📊 FINAL TEST REPORT
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════════════════════════════���═══════���═══
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 🏢 Infrastructure:
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Parking Lots: 0
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Parking Spots: 0
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Total Capacity: 0
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 👥 Users:
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Registered: 0
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Authenticated: 0
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+2025-12-16 17:41:46.091  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 📈 Booking Metrics:
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Total Attempts: 0
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Successful: 0
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Conflicts: 0
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Cancelled: 0
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Insufficient Funds: 0
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : 
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ✅ All Tests PASSED
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Real API calls executed
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Real authentication used
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Concurrent booking verified
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  :    - Data consistency maintained
+2025-12-16 17:41:46.092  INFO [gridee-parking,,] [] --- [Test worker] c.p.app.integration.BaseIntegrationTest  : ═══════════════════════���═══════════════════════════════���═══
+
+2025-12-16 17:41:46.225  INFO [gridee-parking,,] [] --- [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2025-12-16 17:41:46.228  INFO [gridee-parking,,] [] --- [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
