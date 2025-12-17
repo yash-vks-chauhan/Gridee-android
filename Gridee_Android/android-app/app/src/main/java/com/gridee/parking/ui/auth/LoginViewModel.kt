@@ -120,10 +120,22 @@ class LoginViewModel : ViewModel() {
     }
     
     fun handleGoogleSignInSuccess(context: Context, account: GoogleSignInAccount) {
+        android.util.Log.d("LoginViewModel", ">>> handleGoogleSignInSuccess called")
+        android.util.Log.d("LoginViewModel", "  - Email: ${account.email}")
+        android.util.Log.d("LoginViewModel", "  - Name: ${account.displayName}")
+        android.util.Log.d("LoginViewModel", "  - ID Token length: ${account.idToken?.length}")
+        
         _loginState.value = LoginState.Loading
         
         viewModelScope.launch {
             try {
+                android.util.Log.d("LoginViewModel", "Sending Google sign-in request to backend...")
+                android.util.Log.d("LoginViewModel", "  - Endpoint: POST /api/users/social-signin")
+                android.util.Log.d("LoginViewModel", "  - idToken: ${account.idToken?.take(30)}...")
+                android.util.Log.d("LoginViewModel", "  - email: ${account.email}")
+                android.util.Log.d("LoginViewModel", "  - name: ${account.displayName}")
+                android.util.Log.d("LoginViewModel", "  - profilePicture: ${account.photoUrl}")
+                
                 // Send Google account data to your backend for verification
                 val response = userRepository.googleSignIn(
                     idToken = account.idToken ?: "",
@@ -132,8 +144,20 @@ class LoginViewModel : ViewModel() {
                     profilePicture = account.photoUrl?.toString()
                 )
                 
+                android.util.Log.d("LoginViewModel", "Backend response received:")
+                android.util.Log.d("LoginViewModel", "  - HTTP Code: ${response.code()}")
+                android.util.Log.d("LoginViewModel", "  - is Successful: ${response.isSuccessful}")
+                android.util.Log.d("LoginViewModel", "  - Message: ${response.message()}")
+                
                 if (response.isSuccessful) {
+                    android.util.Log.d("LoginViewModel", "✅ Google sign-in backend SUCCESS")
                     response.body()?.let { auth ->
+                        android.util.Log.d("LoginViewModel", "Auth response body:")
+                        android.util.Log.d("LoginViewModel", "  - token: ${auth.token.take(30)}...")
+                        android.util.Log.d("LoginViewModel", "  - userId: ${auth.id}")
+                        android.util.Log.d("LoginViewModel", "  - userName: ${auth.name}")
+                        android.util.Log.d("LoginViewModel", "  - userRole: ${auth.role}")
+                        
                         // Save JWT token and user info
                         val jwtManager = JwtTokenManager(context)
                         jwtManager.saveAuthToken(
@@ -142,6 +166,7 @@ class LoginViewModel : ViewModel() {
                             userName = auth.name,
                             userRole = auth.role
                         )
+                        android.util.Log.d("LoginViewModel", "JWT token saved to preferences")
                         
                         // Build a User object from the response
                         val user = User(
@@ -152,26 +177,39 @@ class LoginViewModel : ViewModel() {
                             vehicleNumbers = auth.user.vehicleNumbers ?: emptyList(),
                             role = auth.role
                         )
+                        android.util.Log.d("LoginViewModel", "User object created, setting Success state")
                         _loginState.value = LoginState.Success(user)
                     } ?: run {
+                        android.util.Log.e("LoginViewModel", "❌ Response body is NULL")
                         _loginState.value = LoginState.Error("Sign in successful but no token received")
                     }
                 } else {
+                    android.util.Log.e("LoginViewModel", "❌ Google sign-in backend FAILED")
+                    
                     // Parse error response from backend
+                    val errorBody = response.errorBody()?.string()
+                    android.util.Log.e("LoginViewModel", "Error body: $errorBody")
+                    
                     val errorMessage = try {
-                        val errorBody = response.errorBody()?.string()
                         if (errorBody != null) {
                             val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
+                            android.util.Log.e("LoginViewModel", "Parsed error: ${errorResponse.message}")
                             errorResponse.message ?: "Google Sign In failed. Please try again"
                         } else {
                             "Google Sign In failed. Please try again"
                         }
                     } catch (e: Exception) {
+                        android.util.Log.e("LoginViewModel", "Failed to parse error: ${e.message}")
                         "Google Sign In failed. Please try again"
                     }
+                    android.util.Log.e("LoginViewModel", "Final error message: $errorMessage")
                     _loginState.value = LoginState.Error(errorMessage)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("LoginViewModel", "❌ EXCEPTION during Google sign-in", e)
+                android.util.Log.e("LoginViewModel", "  - Exception type: ${e.javaClass.simpleName}")
+                android.util.Log.e("LoginViewModel", "  - Message: ${e.message}")
+                android.util.Log.e("LoginViewModel", "  - Stack trace: ", e)
                 _loginState.value = LoginState.Error("Network error: ${e.message}")
             }
         }

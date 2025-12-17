@@ -1221,6 +1221,21 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
     
     private suspend fun loadParkingDataCache() {
         try {
+            // ✅ Load ALL parking spots first (works now after JsonNull fix!)
+            try {
+                val allSpotsResponse = ApiClient.apiService.getParkingSpots()
+                if (allSpotsResponse.isSuccessful) {
+                    allSpotsResponse.body()?.forEach { spot ->
+                        val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
+                        parkingSpotCache[spot.id] = spotName
+                        android.util.Log.d("BookingsFragment", "Cached spot: ${spot.id} -> $spotName")
+                    }
+                    android.util.Log.d("BookingsFragment", "Loaded ${parkingSpotCache.size} spots from /api/parking-spots")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("BookingsFragment", "Error loading all parking spots: ${e.message}")
+            }
+            
             // Load parking lots
             val lotsResponse = ApiClient.apiService.getParkingLots()
             if (lotsResponse.isSuccessful) {
@@ -1228,14 +1243,17 @@ class BookingsFragmentNew : BaseTabFragment<FragmentBookingsNewBinding>() {
                     parkingLotCache[lot.id] = lot.name
                     android.util.Log.d("BookingsFragment", "Cached lot: ${lot.id} -> ${lot.name}")
                     
-                    // Also try to load spots for this lot
+                    // Also try to load spots for this lot (as fallback)
                     try {
                         val spotsForLot = ApiClient.apiService.getParkingSpotsByLot(lot.id)
                         if (spotsForLot.isSuccessful) {
                             spotsForLot.body()?.forEach { spot ->
-                                val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
-                                parkingSpotCache[spot.id] = spotName
-                                android.util.Log.d("BookingsFragment", "Cached spot from lot: ${spot.id} -> ${spotName}")
+                                // Only cache if not already cached from /api/parking-spots
+                                if (!parkingSpotCache.containsKey(spot.id)) {
+                                    val spotName = spot.name ?: spot.zoneName ?: "Spot ${spot.id}"
+                                    parkingSpotCache[spot.id] = spotName
+                                    android.util.Log.d("BookingsFragment", "Cached spot from lot: ${spot.id} -> ${spotName}")
+                                }
                             }
                         }
                     } catch (e: Exception) {

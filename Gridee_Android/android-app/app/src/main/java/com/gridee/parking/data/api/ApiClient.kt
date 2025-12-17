@@ -35,6 +35,13 @@ object ApiClient {
                 val response = chain.proceed(request)
                 println("ApiClient: Response code: ${response.code}")
                 println("ApiClient: Response message: ${response.message}")
+                
+                // Log raw response body for parking-spots endpoints
+                if (request.url.encodedPath.contains("parking-spots")) {
+                    val responseBody = response.peekBody(Long.MAX_VALUE).string()
+                    println("ApiClient: Raw response body (first 500 chars): ${responseBody.take(500)}")
+                }
+                
                 response
             } catch (e: Exception) {
                 println("ApiClient: Network error: ${e.message}")

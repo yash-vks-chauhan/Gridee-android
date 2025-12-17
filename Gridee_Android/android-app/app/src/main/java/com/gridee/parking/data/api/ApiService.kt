@@ -44,6 +44,10 @@ interface ApiService {
     @POST("api/users/social-signin")
     suspend fun socialSignIn(@Body credentials: Map<String, String>): Response<AuthResponse>
 
+    // New AuthController endpoint for Google Sign-In
+    @POST("api/auth/google")
+    suspend fun googleSignIn(@Body credentials: Map<String, String>): Response<AuthResponse>
+
     // OAuth2 user info
     @GET("api/oauth2/user")
     suspend fun getOAuth2User(): Response<Map<String, Any>>

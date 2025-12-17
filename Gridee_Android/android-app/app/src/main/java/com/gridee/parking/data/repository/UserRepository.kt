@@ -78,14 +78,11 @@ class UserRepository {
         name: String,
         profilePicture: String?
     ): Response<AuthResponse> {
+        // Backend expects 'credential' key for the ID token
         val googleData = mapOf(
-            "idToken" to idToken,
-            "email" to email,
-            "name" to name,
-            "profilePicture" to (profilePicture ?: ""),
-            "provider" to "google"
+            "credential" to idToken
         )
-        return apiService.socialSignIn(googleData)
+        return apiService.googleSignIn(googleData)
     }
     
     suspend fun appleSignIn(authorizationCode: String): Response<AuthResponse> {

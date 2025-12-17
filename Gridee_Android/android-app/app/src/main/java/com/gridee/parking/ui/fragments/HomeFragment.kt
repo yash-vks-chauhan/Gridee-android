@@ -80,9 +80,11 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     private suspend fun fetchAllParkingSpots(): List<com.gridee.parking.data.model.ParkingSpot> {
         println("DEBUG HomeFragment.fetchAllParkingSpots: Starting to fetch all parking spots")
         
-        // Try primary endpoint first
+        // ✅ CURRENT WORKING SOLUTION: Fetch all spots directly
         try {
             val resp = parkingRepository.getParkingSpots()
+            println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint status=${resp.code()}, success=${resp.isSuccessful}")
+            
             if (resp.isSuccessful) {
                 val spots = resp.body() ?: emptyList()
                 println("DEBUG HomeFragment.fetchAllParkingSpots: Primary /api/parking-spots returned ${spots.size} spots")
@@ -92,14 +94,30 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
                     }
                     return spots
                 }
-                println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint returned empty, trying fallback")
+                println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint returned empty")
             } else {
-                println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint failed with status=${resp.code()}")
+                val errorBody = resp.errorBody()?.string()
+                println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint failed - status=${resp.code()}, error=$errorBody")
             }
         } catch (e: Exception) {
-            println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint exception - ${e.message}")
+            println("DEBUG HomeFragment.fetchAllParkingSpots: Primary endpoint exception - ${e.javaClass.simpleName}: ${e.message}")
+            e.printStackTrace()
         }
 
+        // Return empty if primary fails
+        return emptyList()
+
+        /* ========================================
+         * 📦 OLD LOT-BASED AGGREGATION APPROACH
+         * ========================================
+         * This code fetches parking lots first, then aggregates spots from each lot.
+         * Currently COMMENTED OUT because direct /api/parking-spots endpoint works.
+         * Keeping this for reference in case we need lot-based filtering in future.
+         * 
+         * To re-enable: Uncomment this block and remove the "return emptyList()" above.
+         */
+        
+        /*
         // Fallback: aggregate by lot
         println("DEBUG HomeFragment.fetchAllParkingSpots: Using lot-based aggregation fallback")
         return try {
@@ -131,10 +149,11 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
                                 break
                             }
                         } else {
-                            println("DEBUG HomeFragment.fetchAllParkingSpots: Lot '$key' API failed - status=${resp.code()}")
+                            val errorBody = resp.errorBody()?.string()
+                            println("DEBUG HomeFragment.fetchAllParkingSpots: Lot '$key' API failed - status=${resp.code()}, error=$errorBody")
                         }
                     } catch (e: Exception) {
-                        println("DEBUG HomeFragment.fetchAllParkingSpots: Lot '$key' exception - ${e.message}")
+                        println("DEBUG HomeFragment.fetchAllParkingSpots: Lot '$key' exception - ${e.javaClass.simpleName}: ${e.message}")
                     }
                 }
 
@@ -148,6 +167,7 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
             e.printStackTrace()
             emptyList()
         }
+        */
     }
 
     private fun showEmptyState(message: String) {

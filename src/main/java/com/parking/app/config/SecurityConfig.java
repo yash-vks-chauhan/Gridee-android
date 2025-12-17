@@ -18,72 +18,74 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-    @Autowired(required = false)
-    private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+        @Autowired(required = false)
+        private OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    @Autowired(required = false)
-    private ClientRegistrationRepository clientRegistrationRepository;
+        @Autowired(required = false)
+        private ClientRegistrationRepository clientRegistrationRepository;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, RateLimitingFilter rateLimitingFilter) throws Exception {
+        @Bean
+        public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter,
+                        RateLimitingFilter rateLimitingFilter) throws Exception {
 
-        // SECURITY FIX: Use custom CSRF handler that bypasses validation for JWT requests
-        JwtCsrfTokenRequestHandler requestHandler = new JwtCsrfTokenRequestHandler();
+                // SECURITY FIX: Use custom CSRF handler that bypasses validation for JWT
+                // requests
+                JwtCsrfTokenRequestHandler requestHandler = new JwtCsrfTokenRequestHandler();
 
-        http
-                .authorizeHttpRequests(auth -> auth
-                        // Public read-only endpoints for mobile home screens
-                        .requestMatchers(HttpMethod.GET, "/api/parking-spots/**", "/api/parking-lots/**").permitAll()
-                        .requestMatchers(
-                                "/api/parking-lots/list/by-names",
-                                "/api/auth/register",
-                                "/api/auth/login",
-                                "/api/users/social-signin",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/actuator/health",
-                                "/error"
-                        ).permitAll()
-                        .anyRequest().authenticated()
-                )
-                // SECURITY FIX: Enable CSRF protection with custom handler for JWT bypass
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .csrfTokenRequestHandler(requestHandler) // Use custom handler
-                        .ignoringRequestMatchers("/api/**") // Only for stateless auth endpoints
-                )
-                // SECURITY FIX: Add security headers
-                .headers(headers -> headers
-                        .frameOptions(frame -> frame.deny()) // Prevent clickjacking
-                        .xssProtection(xss -> xss.disable()) // Content-Security-Policy preferred
-                        .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; " +
-                                        "script-src 'self' 'unsafe-inline'; " +
-                                        "style-src 'self' 'unsafe-inline'; " +
-                                        "img-src 'self' data: https:; " +
-                                        "font-src 'self' data:; " +
-                                        "frame-ancestors 'none'")
-                        )
-                        .httpStrictTransportSecurity(hsts -> hsts
-                                .includeSubDomains(true)
-                                .maxAgeInSeconds(31536000) // 1 year
-                        )
-                )
-                // SECURITY FIX: Stateless session management for JWT
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
-                // FILTER ORDER: Rate Limiting -> JWT Authentication
-                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                http
+                                .authorizeHttpRequests(auth -> auth
+                                                // Public read-only endpoints for mobile home screens
+                                                .requestMatchers(HttpMethod.GET, "/api/parking-spots/**",
+                                                                "/api/parking-lots/**")
+                                                .permitAll()
+                                                .requestMatchers(
+                                                                "/api/parking-lots/list/by-names",
+                                                                "/api/auth/register",
+                                                                "/api/auth/login",
+                                                                "/api/auth/google",
+                                                                "/api/users/social-signin",
+                                                                "/swagger-ui/**",
+                                                                "/v3/api-docs/**",
+                                                                "/actuator/health",
+                                                                "/error")
+                                                .permitAll()
+                                                .anyRequest().authenticated())
+                                // SECURITY FIX: Enable CSRF protection with custom handler for JWT bypass
+                                .csrf(csrf -> csrf
+                                                .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                                                .csrfTokenRequestHandler(requestHandler) // Use custom handler
+                                                .ignoringRequestMatchers("/api/**") // Only for stateless auth endpoints
+                                )
+                                // SECURITY FIX: Add security headers
+                                .headers(headers -> headers
+                                                .frameOptions(frame -> frame.deny()) // Prevent clickjacking
+                                                .xssProtection(xss -> xss.disable()) // Content-Security-Policy
+                                                                                     // preferred
+                                                .contentSecurityPolicy(csp -> csp
+                                                                .policyDirectives("default-src 'self'; " +
+                                                                                "script-src 'self' 'unsafe-inline'; " +
+                                                                                "style-src 'self' 'unsafe-inline'; " +
+                                                                                "img-src 'self' data: https:; " +
+                                                                                "font-src 'self' data:; " +
+                                                                                "frame-ancestors 'none'"))
+                                                .httpStrictTransportSecurity(hsts -> hsts
+                                                                .includeSubDomains(true)
+                                                                .maxAgeInSeconds(31536000) // 1 year
+                                                ))
+                                // SECURITY FIX: Stateless session management for JWT
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                // FILTER ORDER: Rate Limiting -> JWT Authentication
+                                .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+                                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
-        // CONDITIONAL: Only configure OAuth2 if ClientRegistrationRepository is available
-        if (clientRegistrationRepository != null && oAuth2LoginSuccessHandler != null) {
-            http.oauth2Login(oauth2 -> oauth2
-                    .successHandler(oAuth2LoginSuccessHandler)
-            );
+                // CONDITIONAL: Only configure OAuth2 if ClientRegistrationRepository is
+                // available
+                if (clientRegistrationRepository != null && oAuth2LoginSuccessHandler != null) {
+                        http.oauth2Login(oauth2 -> oauth2
+                                        .successHandler(oAuth2LoginSuccessHandler));
+                }
+
+                return http.build();
         }
-
-        return http.build();
-    }
 }

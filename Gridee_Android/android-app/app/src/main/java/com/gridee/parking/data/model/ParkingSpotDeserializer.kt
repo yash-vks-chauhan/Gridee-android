@@ -19,16 +19,16 @@ class ParkingSpotDeserializer : JsonDeserializer<ParkingSpot> {
     ): ParkingSpot {
         val obj = json.asJsonObject
 
-        val spotCode = obj.get("spotId")?.asString
-        val id = obj.get("id")?.asString
-            ?: obj.get("_id")?.asString
+        val spotCode = obj.get("spotId")?.takeIf { !it.isJsonNull }?.asString
+        val id = obj.get("id")?.takeIf { !it.isJsonNull }?.asString
+            ?: obj.get("_id")?.takeIf { !it.isJsonNull }?.asString
             ?: spotCode
             ?: ""
-        val lotId = obj.get("lotId")?.asString ?: ""
-        val lotName = obj.get("lotName")?.asString
-        val name = obj.get("name")?.asString
-        val zoneName = obj.get("zoneName")?.asString
-        val capacity = obj.get("capacity")?.asInt ?: 0
+        val lotId = obj.get("lotId")?.takeIf { !it.isJsonNull }?.asString ?: ""
+        val lotName = obj.get("lotName")?.takeIf { !it.isJsonNull }?.asString
+        val name = obj.get("name")?.takeIf { !it.isJsonNull }?.asString
+        val zoneName = obj.get("zoneName")?.takeIf { !it.isJsonNull }?.asString
+        val capacity = obj.get("capacity")?.takeIf { !it.isJsonNull }?.asInt ?: 0
 
         val availableElement = obj.get("available")
         val available = when {
