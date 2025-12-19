@@ -53,7 +53,8 @@ class JwtAuthInterceptor(private val context: Context) : Interceptor {
         // List of paths that don't require JWT token
         val publicPaths = listOf(
             "/api/auth/login",
-            "/api/users/register",
+            "/api/auth/register",
+            "/api/auth/google",
             "/api/users/login",
             "/api/users/social-signin",
             "/api/otp/generate",

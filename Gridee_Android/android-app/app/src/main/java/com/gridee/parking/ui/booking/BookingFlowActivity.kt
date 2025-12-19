@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import android.app.AlertDialog
+import android.widget.EditText
 import com.gridee.parking.data.model.ParkingSpot
 import com.gridee.parking.databinding.ActivityBookingFlowBinding
 import java.text.SimpleDateFormat
@@ -44,6 +46,8 @@ class BookingFlowActivity : AppCompatActivity() {
         super.onResume()
         // Refresh vehicles when returning to this activity (e.g., from profile)
         viewModel.loadUserVehicles()
+        // Refresh wallet balance when returning (e.g., after adding money)
+        viewModel.loadWalletBalance()
     }
 
     private fun setupUI() {
@@ -107,6 +111,10 @@ class BookingFlowActivity : AppCompatActivity() {
         binding.btnContinueToPayment.setOnClickListener {
             createBooking()
         }
+        
+        binding.btnAddMoney.setOnClickListener {
+            showAddMoneyDialog()
+        }
     }
 
     private fun setupObservers() {
@@ -134,6 +142,10 @@ class BookingFlowActivity : AppCompatActivity() {
         
         viewModel.selectedVehicle.observe(this) { vehicle ->
             binding.tvSelectedVehicle.text = vehicle?.number ?: "Select your vehicle"
+        }
+        
+        viewModel.walletBalance.observe(this) { balance ->
+            binding.tvWalletBalance.text = "₹${String.format(Locale.getDefault(), "%.2f", balance)}"
         }
         
         // Backend integration observers
@@ -601,6 +613,81 @@ class BookingFlowActivity : AppCompatActivity() {
         
         viewModel.setVehicleNumber(selectedVehicle.number)
         viewModel.createBackendBooking()
+    }
+    
+    private fun showAddMoneyDialog() {
+        val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null)
+        val input = EditText(this)
+        input.hint = "Enter amount (e.g., 500)"
+        input.inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+        
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Add Money to Wallet")
+        builder.setMessage("Enter the amount you want to add to your wallet:")
+        builder.setView(input)
+        
+        builder.setPositiveButton("Add") { _, _ ->
+            val amountText = input.text.toString().trim()
+            if (amountText.isNotEmpty()) {
+                try {
+                    val amount = amountText.toDouble()
+                    if (amount > 0) {
+                        initiateWalletTopUp(amount)
+                    } else {
+                        showToast("Please enter a valid amount")
+                    }
+                } catch (e: NumberFormatException) {
+                    showToast("Invalid amount format")
+                }
+            } else {
+                showToast("Please enter an amount")
+            }
+        }
+        
+        builder.setNegativeButton("Cancel", null)
+        builder.show()
+    }
+    
+    private fun initiateWalletTopUp(amount: Double) {
+        val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
+        val userId = sharedPref.getString("user_id", null)
+        
+        if (userId == null) {
+            showToast("Please log in to add money")
+            return
+        }
+        
+        lifecycleScope.launch {
+            try {
+                // Create a top-up order via the backend
+                val walletRepository = com.gridee.parking.data.repository.WalletRepository(this@BookingFlowActivity)
+                val topUpRequest = com.gridee.parking.data.model.TopUpRequest(amount)
+                
+                // Call the API to create the order
+                val response = com.gridee.parking.data.api.ApiClient.apiService.topUpWallet(userId, topUpRequest)
+                
+                if (response.isSuccessful) {
+                    val result = response.body()
+                    if (result != null) {
+                        // Navigate to WalletTopUpActivity with order details
+                        val intent = Intent(this@BookingFlowActivity, com.gridee.parking.ui.wallet.WalletTopUpActivity::class.java).apply {
+                            putExtra("USER_ID", userId)
+                            putExtra("AMOUNT", amount)
+                            putExtra("ORDER_ID", result.orderId ?: "")
+                            putExtra("KEY_ID", result.keyId)
+                        }
+                        startActivity(intent)
+                    } else {
+                        showToast("Failed to initiate payment")
+                    }
+                } else {
+                    showToast("Error: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                showToast("Error: ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }
 
     

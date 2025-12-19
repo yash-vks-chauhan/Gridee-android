@@ -85,14 +85,6 @@ class UserRepository {
         return apiService.googleSignIn(googleData)
     }
     
-    suspend fun appleSignIn(authorizationCode: String): Response<AuthResponse> {
-        val appleData = mapOf(
-            "authorizationCode" to authorizationCode,
-            "provider" to "apple"
-        )
-        return apiService.socialSignIn(appleData)
-    }
-
     /**
      * Fetch current authenticated user info from OAuth2 (or Basic) context
      */

@@ -215,70 +215,13 @@ class LoginViewModel : ViewModel() {
         }
     }
     
-    fun handleAppleSignInSuccess(context: Context, authorizationCode: String) {
-        _loginState.value = LoginState.Loading
-        
-        viewModelScope.launch {
-            try {
-                // Send Apple authorization code to your backend for verification
-                val response = userRepository.appleSignIn(authorizationCode)
-                
-                if (response.isSuccessful) {
-                    response.body()?.let { auth ->
-                        // Save JWT token and user info
-                        val jwtManager = JwtTokenManager(context)
-                        jwtManager.saveAuthToken(
-                            token = auth.token,
-                            userId = auth.id,
-                            userName = auth.name,
-                            userRole = auth.role
-                        )
-                        
-                        // Build a User object from the response
-                        val user = User(
-                            id = auth.id,
-                            name = auth.name,
-                            email = auth.email,
-                            phone = auth.phone,
-                            vehicleNumbers = auth.user.vehicleNumbers ?: emptyList(),
-                            role = auth.role
-                        )
-                        _loginState.value = LoginState.Success(user)
-                    } ?: run {
-                        _loginState.value = LoginState.Error("Sign in successful but no user data received")
-                    }
-                } else {
-                    // Parse error response from backend
-                    val errorMessage = try {
-                        val errorBody = response.errorBody()?.string()
-                        if (errorBody != null) {
-                            val errorResponse = Gson().fromJson(errorBody, ErrorResponse::class.java)
-                            errorResponse.message ?: "Apple Sign In failed. Please try again"
-                        } else {
-                            "Apple Sign In failed. Please try again"
-                        }
-                    } catch (e: Exception) {
-                        "Apple Sign In failed. Please try again"
-                    }
-                    _loginState.value = LoginState.Error(errorMessage)
-                }
-            } catch (e: Exception) {
-                _loginState.value = LoginState.Error("Network error: ${e.message}")
-            }
-        }
-    }
     
     fun handleSignInError(message: String) {
         _loginState.value = LoginState.Error(message)
     }
     
-    @Deprecated("Use handleGoogleSignInSuccess instead")
-    fun signInWithApple() {
-        // TODO: Implement Apple Sign In
-        _loginState.value = LoginState.Error("Apple Sign In not implemented yet")
-    }
     
-    @Deprecated("Use handleAppleSignInSuccess instead")
+    @Deprecated("Use handleGoogleSignInSuccess instead")
     fun signInWithGoogle() {
         // TODO: Implement Google Sign In
         _loginState.value = LoginState.Error("Google Sign In not implemented yet")

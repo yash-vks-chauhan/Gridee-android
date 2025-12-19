@@ -63,7 +63,7 @@ function Home() {
         // Set body background to black (matches content) to hide top grey bar
         document.body.style.backgroundColor = 'var(--bg-body)';
 
-        const targetDate = new Date('2026-06-15T00:00:00').getTime();
+        const targetDate = new Date('2026-01-02T00:00:00').getTime();
 
         const updateTimer = () => {
             const now = new Date().getTime();
@@ -152,6 +152,7 @@ function Home() {
                         <Link to="/" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-primary)', border: 'none' }}>Home</Link>
                         <Link to="/about" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>About</Link>
                         <Link to="/privacy" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>Privacy</Link>
+                        <Link to="/data-safety" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>Data Safety</Link>
                     </div>
                     <p>&copy; 2025 Gridee. All rights reserved.</p>
                     <p>Governed by the laws of India.</p>

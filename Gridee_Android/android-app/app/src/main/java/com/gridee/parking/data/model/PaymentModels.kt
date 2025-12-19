@@ -33,5 +33,9 @@ data class TopUpRequest(
 )
 
 data class TopUpResponse(
-    @SerializedName("balance") val balance: Double? = null
+    @SerializedName("orderId") val orderId: String? = null,
+    @SerializedName("keyId") val keyId: String? = null,
+    @SerializedName("balance") val balance: Double? = null,
+    @SerializedName("currency") val currency: String? = null,
+    @SerializedName("amount") val amount: Double? = null
 )

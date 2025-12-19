@@ -41,10 +41,21 @@ data class User(
 )
 
 data class UserRegistration(
+    @SerializedName("name")
     val name: String,
+    
+    @SerializedName("email")
     val email: String,
+    
+    @SerializedName("phone")
     val phone: String,
+    
+    @SerializedName("password")  // Backend expects "password", not "passwordHash"
     val passwordHash: String,
+    
+    @SerializedName("parkingLotName")
     val parkingLotName: String?,
+    
+    @SerializedName("vehicleNumbers")
     val vehicleNumbers: List<String> = emptyList()
 )

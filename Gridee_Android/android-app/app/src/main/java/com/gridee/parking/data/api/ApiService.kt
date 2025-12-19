@@ -35,7 +35,7 @@ interface ApiService {
     
     // ========== User Management Endpoints ==========
     
-    @POST("api/users/register")
+    @POST("api/auth/register")
     suspend fun registerUser(@Body user: UserRegistration): Response<AuthResponse>
     
     @POST("api/users/login")

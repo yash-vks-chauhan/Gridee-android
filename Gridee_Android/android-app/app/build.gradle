@@ -4,22 +4,55 @@ plugins {
     id 'com.google.gms.google-services'
 }
 
+def signingProps = new Properties()
+def signingPropsFile = rootProject.file("keystore.properties")
+if (signingPropsFile.exists()) {
+    signingPropsFile.withInputStream { signingProps.load(it) }
+}
+
+def releaseStoreFile = signingProps.getProperty("RELEASE_STORE_FILE") ?: project.findProperty("RELEASE_STORE_FILE")
+def releaseStorePassword = signingProps.getProperty("RELEASE_STORE_PASSWORD") ?: project.findProperty("RELEASE_STORE_PASSWORD")
+def releaseKeyAlias = signingProps.getProperty("RELEASE_KEY_ALIAS") ?: project.findProperty("RELEASE_KEY_ALIAS")
+def releaseKeyPassword = signingProps.getProperty("RELEASE_KEY_PASSWORD") ?: project.findProperty("RELEASE_KEY_PASSWORD")
+def isReleaseTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains("release") }
+
 android {
     namespace 'com.gridee.parking'
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.gridee.parking"
         minSdk 24
-        targetSdk 34
-        versionCode 4
-        versionName "1.0.4"
+        targetSdk 35
+        versionCode 6
+        versionName "1.1.2 (build 3)"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        release {
+            if (releaseStoreFile) {
+                storeFile rootProject.file(releaseStoreFile)
+            }
+            if (releaseStorePassword) {
+                storePassword releaseStorePassword
+            }
+            if (releaseKeyAlias) {
+                keyAlias releaseKeyAlias
+            }
+            if (releaseKeyPassword) {
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (isReleaseTaskRequested && (!releaseStoreFile || !releaseStorePassword || !releaseKeyAlias || !releaseKeyPassword)) {
+                throw new GradleException("Release signing properties are missing. Set RELEASE_STORE_FILE, RELEASE_STORE_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_KEY_PASSWORD in keystore.properties, gradle.properties, or via -P.")
+            }
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }

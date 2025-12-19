@@ -63,6 +63,8 @@ class RegistrationViewModel : ViewModel() {
                     vehicleNumbers = emptyList()
                 )
                 
+                android.util.Log.d("RegistrationViewModel", "Attempting registration - Email: ${userRegistration.email}, Name: ${userRegistration.name}, ParkingLot: ${userRegistration.parkingLotName}")
+                
                 val response = userRepository.registerUser(userRegistration)
                 
                 if (response.isSuccessful) {
@@ -90,9 +92,11 @@ class RegistrationViewModel : ViewModel() {
                     }
                 } else {
                     val errorMessage = runCatching { response.errorBody()?.string() }.getOrNull() ?: "Registration failed"
+                    android.util.Log.e("RegistrationViewModel", "Registration failed - Status: ${response.code()}, Error: $errorMessage")
                     _registrationState.value = RegistrationState.Error(errorMessage)
                 }
             } catch (e: Exception) {
+                android.util.Log.e("RegistrationViewModel", "Registration exception", e)
                 _registrationState.value = RegistrationState.Error("Network error: ${e.message}")
             }
         }

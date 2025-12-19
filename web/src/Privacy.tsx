@@ -116,7 +116,6 @@ export default function Privacy() {
                         <p>If you have any concerns about your privacy, we are here to help.</p>
                         <div className="email-container">
                             <button className="email-link" id="emailBtn">gridee.business@gmail.com</button>
-                            <div className="copy-tooltip">Copied!</div>
                         </div>
                     </div>
 
@@ -128,6 +127,7 @@ export default function Privacy() {
                     <Link to="/" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>Home</Link>
                     <Link to="/about" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>About</Link>
                     <Link to="/privacy" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-primary)', border: 'none' }}>Privacy</Link>
+                    <Link to="/data-safety" style={{ margin: '0 12px', fontSize: '13px', color: 'var(--text-secondary)', border: 'none' }}>Data Safety</Link>
                 </div>
                 <p>&copy; 2025 Gridee. All rights reserved.</p>
                 <p>Governed by the laws of India.</p>

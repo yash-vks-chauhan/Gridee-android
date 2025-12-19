@@ -33,7 +33,8 @@ public class UserService {
 
     private static final Random RANDOM = new Random();
     // Email Regex (simple, you may replace with a more robust pattern)
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-\\.]+@[\\w-\\.]+\\.[a-z]{2,}$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[\\w-\\.]+@[\\w-\\.]+\\.[a-z]{2,}$",
+            Pattern.CASE_INSENSITIVE);
 
     // Phone Regex (for example, 10-15 digits)
     private static final Pattern PHONE_PATTERN = Pattern.compile("^[0-9]{10,15}$");
@@ -60,7 +61,8 @@ public class UserService {
     }
 
     public Users createUser(UserRequestDto userRequest) {
-        if (userRequest == null) throw new IllegalArgumentException("User data is required.");
+        if (userRequest == null)
+            throw new IllegalArgumentException("User data is required.");
 
         // Validate required fields
         if (userRequest.getName() == null || userRequest.getName().trim().isEmpty()) {
@@ -91,7 +93,7 @@ public class UserService {
         }
 
         if (userRepository.findByEmailAndActive(userRequest.getEmail(), true).isPresent()) {
-            //TODO: check for deleted user
+            // TODO: check for deleted user
             throw new IllegalArgumentException("Email already registered.");
         }
         if (userRepository.findByPhoneAndActive(userRequest.getPhone(), true).isPresent()) {
@@ -124,7 +126,6 @@ public class UserService {
 
         return userRepository.save(user);
     }
-
 
     // Authenticate user by email or phone and plain password (only active users)
     public Users authenticate(String emailOrPhone, String plainPassword) {
@@ -161,16 +162,17 @@ public class UserService {
         if (userDetails.getName() != null && !userDetails.getName().trim().isEmpty()) {
             existingUser.setName(userDetails.getName());
         }
-        if(StringUtils.hasText(userDetails.getParkingLotName())){
+        if (StringUtils.hasText(userDetails.getParkingLotName())) {
             ParkingLot lot = parkingLotRepository.findByName(userDetails.getParkingLotName()).orElse(null);
-            if(lot==null){
-                throw new IllegalArgumentException("Parking lot not found with name: " + userDetails.getParkingLotName());
+            if (lot == null) {
+                throw new IllegalArgumentException(
+                        "Parking lot not found with name: " + userDetails.getParkingLotName());
             }
             existingUser.setParkingLotId(lot.getId());
             existingUser.setParkingLotName(lot.getName());
         }
 
-        if(!CollectionUtils.isEmpty(userDetails.getVehicleNumbers())){
+        if (!CollectionUtils.isEmpty(userDetails.getVehicleNumbers())) {
             List<String> sanitized = userDetails.getVehicleNumbers().stream()
                     .filter(StringUtils::hasText)
                     .map(String::trim)
@@ -203,7 +205,6 @@ public class UserService {
             existingUser.setPhone(userDetails.getPhone());
         }
 
-
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
             String hashedPassword = BCrypt.hashpw(userDetails.getPassword(), BCrypt.gensalt());
             existingUser.setPasswordHash(hashedPassword);
@@ -214,7 +215,8 @@ public class UserService {
 
     public Users addUserVehicles(String userId, List<String> vehicleNumbers) {
         Users existingUser = userRepository.findById(userId).orElse(null);
-        if (existingUser == null) return null;
+        if (existingUser == null)
+            return null;
         if (vehicleNumbers == null || vehicleNumbers.isEmpty()) {
             throw new IllegalArgumentException("Vehicle numbers list cannot be empty.");
         }
@@ -306,7 +308,8 @@ public class UserService {
 
     public void deleteUser(String id) {
         Users existingUser = userRepository.findById(id).orElse(null);
-        if (existingUser == null) return;
+        if (existingUser == null)
+            return;
         existingUser.setActive(false);
         existingUser.setUpdatedAt(Date.from(Instant.now()));
         userRepository.save(existingUser);

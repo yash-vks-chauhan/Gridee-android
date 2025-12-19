@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.gridee.parking.data.model.ParkingSpot
 import com.gridee.parking.data.repository.BookingRepository
 import com.gridee.parking.data.repository.UserRepository
+import com.gridee.parking.data.repository.WalletRepository
 import com.gridee.parking.data.model.Booking
 import com.gridee.parking.data.model.Vehicle
 import kotlinx.coroutines.launch
@@ -45,6 +46,7 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     
     private val bookingRepository = BookingRepository(application)
     private val parkingRepository = com.gridee.parking.data.repository.ParkingRepository()
+    private val walletRepository = WalletRepository(application)
     
     private val _startTime = MutableLiveData<Date>()
     val startTime: LiveData<Date> = _startTime
@@ -92,8 +94,12 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     private val _bookingHistory = MutableLiveData<List<BookingDetails>>()
     val bookingHistory: LiveData<List<BookingDetails>> = _bookingHistory
     
+    private val _walletBalance = MutableLiveData<Double>()
+    val walletBalance: LiveData<Double> = _walletBalance
+    
     init {
         // No dummy data; bookings will be populated from backend when needed
+        loadWalletBalance()
     }
     
     fun setStartTime(time: Date) {
@@ -379,6 +385,28 @@ class BookingViewModel(application: Application) : AndroidViewModel(application)
     
     fun modifyBooking(bookingId: String, newStartTime: Date, newEndTime: Date) {
         // TODO: Implement booking modification
+    }
+    
+    fun loadWalletBalance() {
+        viewModelScope.launch {
+            try {
+                println("BookingViewModel: Loading wallet balance")
+                walletRepository.getWalletDetails().fold(
+                    onSuccess = { details ->
+                        val balance = details.balance ?: 0.0
+                        println("BookingViewModel: Wallet balance loaded: $balance")
+                        _walletBalance.value = balance
+                    },
+                    onFailure = { exception ->
+                        println("BookingViewModel: Failed to load wallet balance: ${exception.message}")
+                        _walletBalance.value = 0.0
+                    }
+                )
+            } catch (e: Exception) {
+                println("BookingViewModel: Exception loading wallet balance: ${e.message}")
+                _walletBalance.value = 0.0
+            }
+        }
     }
     
     fun addVehicleToProfile(vehicleNumber: String, onResult: (Boolean) -> Unit) {

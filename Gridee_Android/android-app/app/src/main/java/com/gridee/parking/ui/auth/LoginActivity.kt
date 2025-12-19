@@ -12,8 +12,6 @@ import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityLoginBinding
 import com.gridee.parking.ui.main.MainContainerActivity
 import com.gridee.parking.ui.operator.OperatorDashboardActivity
-import com.gridee.parking.utils.AppleSignInManager
-import com.gridee.parking.utils.AppleSignInResult
 import com.gridee.parking.utils.GoogleSignInManager
 import com.gridee.parking.utils.GoogleSignInResult
 import kotlinx.coroutines.launch
@@ -26,7 +24,6 @@ class LoginActivity : AppCompatActivity() {
     private var isPasswordVisible = false
     
     private lateinit var googleSignInManager: GoogleSignInManager
-    private lateinit var appleSignInManager: AppleSignInManager
     
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -53,7 +50,6 @@ class LoginActivity : AppCompatActivity() {
         
         // Initialize sign-in managers
         googleSignInManager = GoogleSignInManager(this)
-        appleSignInManager = AppleSignInManager(this)
         
         setupUI()
         observeViewModel()
@@ -76,13 +72,6 @@ class LoginActivity : AppCompatActivity() {
         binding.tvForgotPassword.setOnClickListener {
             // TODO: Implement forgot password
             Toast.makeText(this, "Forgot password feature coming soon!", Toast.LENGTH_SHORT).show()
-        }
-        
-        // Apple Sign In
-        binding.btnSignInWithApple.setOnClickListener {
-            appleSignInManager.signIn()
-            // Note: Apple Sign In result will be handled in onNewIntent() 
-            // when the redirect comes back from the browser
         }
         
         // Google Sign In
@@ -188,7 +177,6 @@ class LoginActivity : AppCompatActivity() {
         binding.btnSignIn.text = if (show) "" else "Sign In"
         
         // Disable other buttons during loading
-        binding.btnSignInWithApple.isEnabled = !show
         binding.btnSignInWithGoogle.isEnabled = !show
     }
     
@@ -197,19 +185,5 @@ class LoginActivity : AppCompatActivity() {
         binding.tilPassword.error = null
     }
     
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        // Handle Apple Sign-In redirect
-        when (val result = appleSignInManager.handleRedirect(intent)) {
-            is AppleSignInResult.Success -> {
-                viewModel.handleAppleSignInSuccess(this, result.authorizationCode)
-            }
-            is AppleSignInResult.Error -> {
-                viewModel.handleSignInError(result.message)
-            }
-            is AppleSignInResult.Cancelled -> {
-                Toast.makeText(this, "Apple Sign In cancelled", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+
 }
