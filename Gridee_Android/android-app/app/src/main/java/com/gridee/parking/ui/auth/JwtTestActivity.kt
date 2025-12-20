@@ -55,12 +55,17 @@ class JwtTestActivity : AppCompatActivity() {
     private lateinit var btnClearLogs: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var tvStatus: TextView
+    private lateinit var statusDot: View
     private lateinit var tvLogs: TextView
+    private lateinit var btnBack: android.widget.ImageButton
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_jwt_test)
         
+        // Set light status bar
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+
         initViews()
         setupClickListeners()
         observeViewModel()
@@ -68,8 +73,8 @@ class JwtTestActivity : AppCompatActivity() {
         // Check initial auth status
         checkAuthenticationStatus()
         
-        addLog("✅ JWT Test Activity initialized")
-        addLog("📱 Backend URL: ${com.gridee.parking.config.ApiConfig.BASE_URL}")
+        addLog("✅ Console initialized")
+        addLog("🔗 Endpoint: ${com.gridee.parking.config.ApiConfig.BASE_URL}")
     }
     
     private fun initViews() {
@@ -84,10 +89,16 @@ class JwtTestActivity : AppCompatActivity() {
         btnClearLogs = findViewById(R.id.btnClearLogs)
         progressBar = findViewById(R.id.progressBarTest)
         tvStatus = findViewById(R.id.tvStatus)
+        statusDot = findViewById(R.id.statusDot)
         tvLogs = findViewById(R.id.tvLogs)
+        btnBack = findViewById(R.id.btnBack)
     }
     
     private fun setupClickListeners() {
+        btnBack.setOnClickListener {
+            finish()
+        }
+        
         btnLogin.setOnClickListener {
             testLogin()
         }
@@ -133,11 +144,15 @@ class JwtTestActivity : AppCompatActivity() {
                     addLog("✅ OAuth2 user info fetched successfully")
                     addLog("📦 Response: ${body}")
 
-                    AlertDialog.Builder(this@JwtTestActivity)
-                        .setTitle("OAuth2 User Info")
-                        .setMessage(body?.entries?.joinToString("\n") { (k, v) -> "$k: $v" } ?: "<empty>")
-                        .setPositiveButton("OK", null)
-                        .show()
+                    val message = body?.entries?.joinToString("\n") { (k, v) -> "$k: $v" } ?: "<empty>"
+                    
+                    com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+                        title = "OAuth2 User Info",
+                        message = message,
+                        buttonText = "Close",
+                        isRewardMode = false
+                    ).show(supportFragmentManager, "oauth2_info")
+                    
                 } else {
                     val err = response.errorBody()?.string()
                     addLog("❌ OAuth2 user fetch failed: ${response.code()} ${response.message()}")
@@ -255,15 +270,20 @@ class JwtTestActivity : AppCompatActivity() {
             addLog("📝 Bearer: ${jwtManager.getBearerToken()?.take(50)}...")
             addLog("📏 Length: ${token.length} characters")
             
-            // Show full token in dialog
-            AlertDialog.Builder(this)
-                .setTitle("JWT Token")
-                .setMessage(token)
-                .setPositiveButton("Copy") { _, _ ->
-                    copyToClipboard(token)
-                }
-                .setNegativeButton("Close", null)
-                .show()
+            // Show full token in Bottom Sheet
+            val bottomSheet = com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+                title = "JWT Token",
+                message = token,
+                buttonText = "Copy Token",
+                isRewardMode = false
+            )
+            
+            bottomSheet.setPrimaryButton("Copy Token") {
+                copyToClipboard(token)
+            }
+            
+            bottomSheet.show(supportFragmentManager, "view_token")
+            
         } else {
             addLog("❌ No token found")
             Toast.makeText(this, "No token available", Toast.LENGTH_SHORT).show()
@@ -288,27 +308,32 @@ class JwtTestActivity : AppCompatActivity() {
             info.append("$key: $displayValue\n")
         }
         
-        // Show in dialog
-        AlertDialog.Builder(this)
-            .setTitle("Authentication Data")
-            .setMessage(info.toString())
-            .setPositiveButton("OK", null)
-            .show()
+        // Show in Bottom Sheet
+        com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+            title = "User Details",
+            message = info.toString(),
+            buttonText = "Close",
+            isRewardMode = false
+        ).show(supportFragmentManager, "user_info")
     }
     
     private fun testLogout() {
         addLog("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
         addLog("🚪 Testing Logout...")
         
-        AlertDialog.Builder(this)
-            .setTitle("Confirm Logout")
-            .setMessage("Are you sure you want to logout? This will clear all JWT tokens.")
-            .setPositiveButton("Logout") { _, _ ->
-                viewModel.logout(this)
-                clearInputFields()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        val bottomSheet = com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+            title = "Confirm Logout",
+            message = "Are you sure you want to terminate this session? This will clear all stored JWT tokens.",
+            buttonText = "Logout",
+            isRewardMode = false
+        )
+        
+        bottomSheet.setPrimaryButton("Logout") {
+            viewModel.logout(this)
+            clearInputFields()
+        }
+        
+        bottomSheet.show(supportFragmentManager, "logout_confirm")
     }
     
     private fun clearLogs() {
@@ -323,7 +348,27 @@ class JwtTestActivity : AppCompatActivity() {
     
     private fun updateStatus(status: String, colorResId: Int) {
         tvStatus.text = status
-        tvStatus.setTextColor(resources.getColor(colorResId, theme))
+        
+        // Map the legacy color IDs to our monochrome/status colors if needed, 
+        // or just use color tint for the dot
+        val color = try {
+            if (colorResId == android.R.color.holo_green_light) {
+                 android.graphics.Color.parseColor("#111111") // Active = Black
+            } else if (colorResId == android.R.color.holo_red_light) {
+                 android.graphics.Color.parseColor("#757575") // Error = Grey
+            } else if (colorResId == android.R.color.holo_blue_light) {
+                 android.graphics.Color.parseColor("#424242") // Loading = Dark Grey
+            } else {
+                 android.graphics.Color.parseColor("#BDBDBD") // Idle = Light Grey
+            }
+        } catch (e: Exception) {
+            android.graphics.Color.parseColor("#BDBDBD")
+        }
+        
+        statusDot.backgroundTintList = android.content.res.ColorStateList.valueOf(color)
+        
+        // Keep text color always dark grey/black for consistency
+        tvStatus.setTextColor(android.graphics.Color.parseColor("#212121"))
     }
     
     private fun addLog(message: String) {
@@ -336,7 +381,7 @@ class JwtTestActivity : AppCompatActivity() {
         runOnUiThread {
             tvLogs.append(logMessage)
             // Auto-scroll to bottom
-            val scrollView = findViewById<android.widget.ScrollView>(R.id.scrollViewLogs)
+            val scrollView = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollViewLogs)
             scrollView.post {
                 scrollView.fullScroll(View.FOCUS_DOWN)
             }
@@ -351,14 +396,19 @@ class JwtTestActivity : AppCompatActivity() {
     }
     
     private fun showSuccessDialog(userName: String) {
-        AlertDialog.Builder(this)
-            .setTitle("Login Successful! 🎉")
-            .setMessage("Welcome back, $userName!\n\nWhat would you like to do?")
-            .setPositiveButton("Go to Main App") { _, _ ->
-                navigateToMainApp()
-            }
-            .setNegativeButton("Continue Testing", null)
-            .show()
+        val bottomSheet = com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
+            title = "Welcome, $userName!",
+            message = "Authentication was successful. You now have a valid JWT token.",
+            buttonText = "Go to Main App",
+            lottieFileName = "success_check.json", // Optional: if you have this file
+            isRewardMode = false
+        )
+        
+        bottomSheet.setPrimaryButton("Go to Main App") {
+            navigateToMainApp()
+        }
+        
+        bottomSheet.show(supportFragmentManager, "login_success")
     }
     
     private fun navigateToMainApp() {

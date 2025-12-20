@@ -1,285 +1,397 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F5F5"
-    android:padding="16dp">
+    android:orientation="vertical"
+    android:fitsSystemWindows="true">
 
+    <!-- Fixed Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="20dp"
+        android:background="#F5F5F5"
+        android:elevation="4dp">
+        
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_circle_white_ripple"
+            android:src="@drawable/ic_arrow_back"
+            android:scaleType="centerInside"
+            android:padding="8dp"
+            app:tint="#111111"
+            android:elevation="2dp"
+            android:contentDescription="Back" />
 
-        <!-- Header -->
-        <TextView
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Auth Console"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-black"
+                android:textColor="#111111"
+                android:letterSpacing="-0.02" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="JWT System Diagnostics &amp; Testing"
+                android:textSize="14sp"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="#757575"
+                android:layout_marginTop="4dp" />
+        </LinearLayout>
+    </LinearLayout>
+    
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E0E0E0" />
+
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🧪 JWT Authentication Test"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:textColor="#333333"
-            android:gravity="center"
-            android:paddingBottom="8dp" />
+            android:orientation="vertical"
+            android:padding="24dp">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Test JWT-based authentication"
-            android:textSize="14sp"
-            android:textColor="#666666"
-            android:gravity="center"
-            android:paddingBottom="24dp" />
-
-        <!-- Status Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
+            <!-- Main Interface Card -->
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Current Status"
-                    android:textSize="12sp"
-                    android:textColor="#666666"
-                    android:paddingBottom="4dp" />
-
-                <TextView
-                    android:id="@+id/tvStatus"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="⚪ Not Initialized"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#999999" />
-
-                <ProgressBar
-                    android:id="@+id/progressBarTest"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:visibility="gone"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:indeterminate="true" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Login Form Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🔐 Test Credentials"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"
-                    android:paddingBottom="12dp" />
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Email or Phone"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etTestEmail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textEmailAddress"
-                        android:text="test@example.com" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:hint="Password"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    app:endIconMode="password_toggle">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/etTestPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:inputType="textPassword"
-                        android:text="password123" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <Button
-                    android:id="@+id/btnTestLogin"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:text="🚀 Test Login with JWT"
-                    android:textAllCaps="false"
-                    android:textSize="16sp"
-                    android:padding="12dp"
-                    android:backgroundTint="#4CAF50" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Test Actions Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🧪 Test Actions"
-                    android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:textColor="#333333"
-                    android:paddingBottom="12dp" />
-
-                <Button
-                    android:id="@+id/btnCheckAuth"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="🔍 Check Authentication Status"
-                    android:textAllCaps="false"
-                    android:backgroundTint="#2196F3"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-                <Button
-                    android:id="@+id/btnViewToken"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="🔑 View JWT Token"
-                    android:textAllCaps="false"
-                    android:backgroundTint="#FF9800"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-                <Button
-                    android:id="@+id/btnViewUserInfo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="👤 View User Info"
-                    android:textAllCaps="false"
-                    android:backgroundTint="#9C27B0"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-                <Button
-                    android:id="@+id/btnFetchOAuth2User"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
-                    android:text="🌐 Fetch OAuth2 User (/api/oauth2/user)"
-                    android:textAllCaps="false"
-                    android:backgroundTint="#607D8B"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-
-                <Button
-                    android:id="@+id/btnTestLogout"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🚪 Test Logout"
-                    android:textAllCaps="false"
-                    android:backgroundTint="#F44336"
-                    style="@style/Widget.MaterialComponents.Button.OutlinedButton" />
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Logs Card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginBottom="32dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:strokeColor="#DDDDDD"
+                app:strokeWidth="1dp"
+                app:cardBackgroundColor="#FFFFFF">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:paddingBottom="12dp">
+                    android:orientation="vertical"
+                    android:padding="24dp">
 
-                    <TextView
-                        android:layout_width="0dp"
+                    <!-- Status Section -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="📋 Test Logs"
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="#333333" />
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingBottom="24dp">
 
-                    <Button
-                        android:id="@+id/btnClearLogs"
+                        <FrameLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content">
+                            
+                            <!-- Pulse/Dot Indicator -->
+                            <View
+                                android:id="@+id/statusDot"
+                                android:layout_width="10dp"
+                                android:layout_height="10dp"
+                                android:background="@drawable/circle_background"
+                                android:backgroundTint="#BDBDBD"/>
+                        </FrameLayout>
+
+                        <TextView
+                            android:id="@+id/tvStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="16dp"
+                            android:text="Not Authenticated"
+                            android:textSize="16sp"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="#424242" />
+
+                        <ProgressBar
+                            android:id="@+id/progressBarTest"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:visibility="gone"
+                            android:indeterminateTint="#212121" />
+                    </LinearLayout>
+
+                    <!-- Divider -->
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#F5F5F5"
+                        android:layout_marginBottom="24dp"/>
+
+                    <!-- Login Form -->
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Clear"
-                        android:textAllCaps="false"
+                        android:text="AUTHENTICATION"
                         android:textSize="12sp"
-                        style="@style/Widget.MaterialComponents.Button.TextButton" />
+                        android:textStyle="bold"
+                        android:textColor="#9E9E9E"
+                        android:letterSpacing="0.1"
+                        android:layout_marginBottom="16dp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:boxStrokeColor="#212121"
+                        app:hintTextColor="#616161"
+                        app:boxBackgroundColor="#FAFAFA"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="1.5dp"
+                        android:hint="Email Address">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTestEmail"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textEmailAddress"
+                            android:text="test@example.com"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp"
+                            android:textColor="#212121" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                        app:boxStrokeColor="#212121"
+                        app:hintTextColor="#616161"
+                        app:boxBackgroundColor="#FAFAFA"
+                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusTopEnd="12dp"
+                        app:boxCornerRadiusBottomStart="12dp"
+                        app:boxCornerRadiusBottomEnd="12dp"
+                        app:boxStrokeWidth="1dp"
+                        app:boxStrokeWidthFocused="1.5dp"
+                        app:endIconMode="password_toggle"
+                        app:endIconTint="#757575"
+                        android:hint="Password">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTestPassword"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="textPassword"
+                            android:text="password123"
+                            android:paddingTop="16dp"
+                            android:paddingBottom="16dp"
+                            android:textColor="#212121" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTestLogin"
+                        android:layout_width="match_parent"
+                        android:layout_height="60dp"
+                        android:layout_marginTop="24dp"
+                        android:text="Authenticate System"
+                        android:textColor="#FFFFFF"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.02"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#111111"
+                        stateListAnimator="@null"
+                        app:elevation="0dp"
+                        android:elevation="0dp"/>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Actions Section -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DIAGNOSTICS"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#9E9E9E"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Row 1 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCheckAuth"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="Check Status"
+                        android:textColor="#424242"
+                        android:textSize="13sp"
+                        app:strokeColor="#DDDDDD"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewToken"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="View Token"
+                        android:textColor="#424242"
+                        android:textSize="13sp"
+                        app:strokeColor="#DDDDDD"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#FFFFFF" />
                 </LinearLayout>
 
-                <ScrollView
+                <!-- Row 2 -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewUserInfo"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="8dp"
+                        android:text="User Details"
+                        android:textColor="#424242"
+                        android:textSize="13sp"
+                        app:strokeColor="#DDDDDD"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#FFFFFF" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnFetchOAuth2User"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="56dp"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="OAuth2 Data"
+                        android:textColor="#424242"
+                        android:textSize="13sp"
+                        app:strokeColor="#DDDDDD"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="12dp"
+                        android:backgroundTint="#FFFFFF" />
+                </LinearLayout>
+
+                <!-- Logout -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnTestLogout"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:layout_marginTop="4dp"
+                    android:text="Terminate Session"
+                    android:textColor="#212121"
+                    android:textSize="13sp"
+                    app:strokeColor="#DDDDDD"
+                    app:strokeWidth="1dp"
+                    app:cornerRadius="12dp"
+                    android:backgroundTint="#FFFFFF" />
+                    
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearLogs"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="8dp"
+                    android:text="Clear Console"
+                    android:textColor="#9E9E9E"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <!-- Console Output -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TERMINAL"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#9E9E9E"
+                android:letterSpacing="0.1"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="#1A1A1A">
+
+                <androidx.core.widget.NestedScrollView
                     android:id="@+id/scrollViewLogs"
                     android:layout_width="match_parent"
-                    android:layout_height="300dp"
-                    android:background="#F9F9F9"
-                    android:padding="8dp">
+                    android:layout_height="match_parent"
+                    android:scrollbars="vertical"
+                    android:padding="16dp"
+                    android:fillViewport="true">
 
                     <TextView
                         android:id="@+id/tvLogs"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Logs will appear here...\n"
-                        android:textSize="12sp"
-                        android:textColor="#666666"
-                        android:fontFamily="monospace" />
-                </ScrollView>
-            </LinearLayout>
-        </androidx.cardview.widget.CardView>
+                        android:text="> System waiting..."
+                        android:textSize="13sp"
+                        android:textColor="#EEEEEE"
+                        android:fontFamily="monospace"
+                        android:lineSpacingExtra="5dp" />
+                </androidx.core.widget.NestedScrollView>
 
-        <!-- Footer -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="⚠️ This is a test activity for JWT authentication.\nRemove from production build."
-            android:textSize="12sp"
-            android:textColor="#FF5722"
-            android:gravity="center"
-            android:textStyle="italic" />
+            </com.google.android.material.card.MaterialCardView>
+            
+            <!-- Bottom spacing -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
 
-    </LinearLayout>
-</ScrollView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</LinearLayout>

@@ -17,6 +17,7 @@ import com.gridee.parking.ui.adapters.Transaction
 import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.TransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.utils.AuthSession
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -293,8 +294,7 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun getUserId(): String? {
-        val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        return sharedPref.getString("user_id", null)
+        return AuthSession.getUserId(requireContext())
     }
 
     private fun showTopUpDialog() {
@@ -366,11 +366,7 @@ class WalletFragment : BaseTabFragment<FragmentWalletNewBinding>() {
 
     private fun handleUnauthorized() {
         showToast("Session expired. Please log in again.")
-        try {
-            val prefs = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-            prefs.edit().clear().apply()
-            com.gridee.parking.utils.JwtTokenManager(requireContext()).clearAuthToken()
-        } catch (_: Exception) { }
+        AuthSession.clearSession(requireContext())
         val intent = android.content.Intent(requireContext(), com.gridee.parking.ui.auth.LoginActivity::class.java)
         intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)

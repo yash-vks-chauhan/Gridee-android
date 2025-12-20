@@ -4,6 +4,7 @@ import android.content.Context
 import com.gridee.parking.data.api.ApiClient
 import com.gridee.parking.data.model.WalletDetails
 import com.gridee.parking.data.model.WalletTransaction
+import com.gridee.parking.utils.AuthSession
 
 class WalletRepository(private val context: Context) {
     
@@ -12,7 +13,7 @@ class WalletRepository(private val context: Context) {
     
     suspend fun getWalletDetails(): Result<WalletDetails> {
         return try {
-            val userId = sharedPreferences.getString("user_id", null)
+            val userId = AuthSession.getUserId(context)
             if (userId == null) {
                 println("WalletRepository: No user ID found")
                 return Result.failure(Exception("User not logged in"))
@@ -42,7 +43,7 @@ class WalletRepository(private val context: Context) {
     
     suspend fun getWalletTransactions(): Result<List<WalletTransaction>> {
         return try {
-            val userId = sharedPreferences.getString("user_id", null)
+            val userId = AuthSession.getUserId(context)
             if (userId == null) {
                 println("WalletRepository: No user ID found for transactions")
                 return Result.failure(Exception("User not logged in"))
@@ -67,7 +68,7 @@ class WalletRepository(private val context: Context) {
     
     suspend fun topUpWallet(amount: Double): Result<Map<String, Any>> {
         return try {
-            val userId = sharedPreferences.getString("user_id", null)
+            val userId = AuthSession.getUserId(context)
             if (userId == null) {
                 println("WalletRepository: No user ID found for topup")
                 return Result.failure(Exception("User not logged in"))

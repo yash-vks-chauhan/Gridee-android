@@ -17,8 +17,10 @@ import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewbinding.ViewBinding
 import com.gridee.parking.R
-import com.gridee.parking.ui.MainActivity
+import com.gridee.parking.ui.auth.LoginActivity
 import com.gridee.parking.ui.components.CustomBottomNavigation
+import com.gridee.parking.ui.main.MainContainerActivity
+import com.gridee.parking.utils.AuthSession
 
 abstract class BaseActivityWithBottomNav<T : ViewBinding> : AppCompatActivity(), 
     CustomBottomNavigation.OnTabSelectedListener {
@@ -37,6 +39,19 @@ abstract class BaseActivityWithBottomNav<T : ViewBinding> : AppCompatActivity(),
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // All bottom-nav activities require an authenticated session.
+        if (!AuthSession.isAuthenticated(this)) {
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            intent.putExtra(LoginActivity.EXTRA_FORCE_LOGIN, true)
+            startActivity(intent)
+            finish()
+            return
+        }
+
+        // Keep legacy prefs in sync for older screens that still rely on "gridee_prefs".
+        AuthSession.syncLegacyPrefsFromJwt(this)
         
         // Enable edge-to-edge display
         setupEdgeToEdge()
@@ -201,36 +216,18 @@ abstract class BaseActivityWithBottomNav<T : ViewBinding> : AppCompatActivity(),
     }
     
     override fun onTabSelected(tabId: Int) {
-        if (tabId == getCurrentTab()) {
-            return // Already on this tab
+        val isMainContainer = this is MainContainerActivity
+        if (tabId == getCurrentTab() && isMainContainer) {
+            return // Already on this tab in the main container
         }
-        
-        when (tabId) {
-            CustomBottomNavigation.TAB_HOME -> {
-                if (this !is MainActivity) {
-                    navigateToActivity(MainActivity::class.java)
-                }
-            }
-            CustomBottomNavigation.TAB_BOOKINGS -> {
-                if (this::class.java.simpleName != "BookingsActivity") {
-                    navigateToActivity(Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
-                }
-            }
-            CustomBottomNavigation.TAB_WALLET -> {
-                if (this::class.java.simpleName != "WalletActivity") {
-                    navigateToActivity(Class.forName("com.gridee.parking.ui.wallet.WalletActivity"))
-                }
-            }
-            CustomBottomNavigation.TAB_PROFILE -> {
-                if (this::class.java.simpleName != "ProfileActivity") {
-                    navigateToActivity(Class.forName("com.gridee.parking.ui.profile.ProfileActivity"))
-                }
-            }
-        }
+
+        navigateToMainContainer(tabId)
     }
     
-    private fun navigateToActivity(activityClass: Class<*>) {
-        val intent = Intent(this, activityClass)
+    private fun navigateToMainContainer(tabId: Int) {
+        val intent = Intent(this, MainContainerActivity::class.java)
+        intent.putExtra(MainContainerActivity.EXTRA_TARGET_TAB, tabId)
+
         // Preserve user data if needed
         val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
         val userName = sharedPref.getString("user_name", "User")

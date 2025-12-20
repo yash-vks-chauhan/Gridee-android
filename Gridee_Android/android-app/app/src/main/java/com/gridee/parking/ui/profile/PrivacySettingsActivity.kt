@@ -3,6 +3,7 @@ package com.gridee.parking.ui.profile
 import android.os.Bundle
 import com.gridee.parking.databinding.ActivityPrivacySettingsBinding
 import com.gridee.parking.ui.base.BaseActivity
+import com.gridee.parking.utils.AuthSession
 
 class PrivacySettingsActivity : BaseActivity<ActivityPrivacySettingsBinding>() {
 
@@ -119,6 +120,7 @@ class PrivacySettingsActivity : BaseActivity<ActivityPrivacySettingsBinding>() {
         showToast("Account deletion request submitted. You will receive a confirmation email.")
         
         // For now, just clear local data
+        AuthSession.clearSession(this)
         val grideePrefs = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
         val privacyPrefs = getSharedPreferences("gridee_privacy_prefs", MODE_PRIVATE)
         

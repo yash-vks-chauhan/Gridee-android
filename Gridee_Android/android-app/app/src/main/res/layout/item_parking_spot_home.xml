@@ -3,69 +3,130 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_spot"
-    android:layout_width="match_parent"
+    android:layout_width="200dp"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="2dp"
-    app:strokeColor="@color/border_light"
-    app:strokeWidth="1dp">
+    app:cardCornerRadius="32dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@android:color/transparent"
+    app:strokeWidth="0dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingVertical="32dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/tv_spot_name"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/text_primary"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                tools:text="TP Avenue" />
-
-            <TextView
-                android:id="@+id/tv_spot_status"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="@drawable/rounded_background_light"
-                android:paddingHorizontal="10dp"
-                android:paddingVertical="6dp"
-                android:textColor="@color/text_primary"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                tools:text="AVAILABLE" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_spot_meta"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp"
-            tools:text="ID: ps1 • Capacity: 400" />
-
+        <!-- Big Count -->
         <TextView
             android:id="@+id/tv_spot_availability"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:textColor="@color/primary_green"
-            android:textSize="14sp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:textColor="@android:color/black"
+            android:textSize="64sp"
             android:textStyle="bold"
-            tools:text="400/400 available" />
-    </LinearLayout>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="100" />
+
+        <!-- Label -->
+        <TextView
+            android:id="@+id/tv_label_spots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:letterSpacing="0.2"
+            android:text="SPOTS"
+            android:textAllCaps="true"
+            android:textColor="@color/primary_green"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_spot_availability" />
+
+        <!-- Solid Divider -->
+        <View
+            android:id="@+id/view_divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginHorizontal="24dp"
+            android:background="#E0E0E0"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_label_spots" />
+
+        <!-- Left Notch (Fake Hole) -->
+        <View
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:background="@drawable/shape_notch_circle"
+            android:translationX="-10dp"
+            app:layout_constraintBottom_toBottomOf="@id/view_divider"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/view_divider" />
+
+        <!-- Right Notch (Fake Hole) -->
+        <View
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:background="@drawable/shape_notch_circle"
+            android:translationX="10dp"
+            app:layout_constraintBottom_toBottomOf="@id/view_divider"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/view_divider" />
+
+        <!-- Name -->
+        <TextView
+            android:id="@+id/tv_spot_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginHorizontal="16dp"
+            android:gravity="center"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/view_divider"
+            tools:text="DB City Mall" />
+            
+        <TextView
+             android:id="@+id/tv_spot_meta"
+             android:layout_width="0dp"
+             android:layout_height="wrap_content"
+             android:layout_marginTop="4dp"
+             android:layout_marginHorizontal="16dp"
+             android:gravity="center"
+             android:maxLines="1"
+             android:ellipsize="end"
+             android:textColor="@color/text_secondary"
+             android:textSize="12sp"
+             app:layout_constraintEnd_toEndOf="parent"
+             app:layout_constraintStart_toStartOf="parent"
+             app:layout_constraintTop_toBottomOf="@id/tv_spot_name"
+             tools:text="DB City Mall Parking" />
+             
+        <!-- Constraints for dummy status if needed by code, hidden -->
+        <TextView
+            android:id="@+id/tv_spot_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>
-

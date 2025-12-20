@@ -7,6 +7,9 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.gridee.parking.databinding.FragmentMainPageBinding
+import com.gridee.parking.ui.components.CustomBottomNavigation
+import com.gridee.parking.ui.main.MainContainerActivity
+import com.gridee.parking.utils.AuthSession
 
 class MainPageFragment : Fragment() {
     
@@ -50,12 +53,9 @@ class MainPageFragment : Fragment() {
         // Add booking-specific content
         binding.btnPrimaryAction.text = "View All Bookings"
         binding.btnPrimaryAction.setOnClickListener {
-            try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
-                startActivity(intent)
-            } catch (e: Exception) {
-                showToast("Bookings feature coming soon!")
-            }
+            val intent = Intent(requireContext(), MainContainerActivity::class.java)
+            intent.putExtra(MainContainerActivity.EXTRA_TARGET_TAB, CustomBottomNavigation.TAB_BOOKINGS)
+            startActivity(intent)
         }
         
         binding.btnSecondaryAction.text = "Book New Parking"
@@ -139,8 +139,7 @@ class MainPageFragment : Fragment() {
     }
     
     private fun logout() {
-        val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        sharedPref.edit().clear().apply()
+        AuthSession.clearSession(requireContext())
         
         try {
             val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.auth.LoginActivity"))

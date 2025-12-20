@@ -1,17 +1,18 @@
 package com.gridee.parking.ui.fragments
 
-import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.gridee.parking.data.model.ParkingSpot
 import com.gridee.parking.data.repository.ParkingRepository
 import com.gridee.parking.databinding.FragmentHomeBinding
 import com.gridee.parking.ui.adapters.ParkingSpotHomeAdapter
 import com.gridee.parking.ui.MainViewModel
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.ui.bottomsheet.ParkingSpotBottomSheet
 import kotlinx.coroutines.launch
 
 class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
@@ -19,6 +20,7 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     private lateinit var viewModel: MainViewModel
     private val parkingRepository = ParkingRepository()
     private lateinit var parkingSpotAdapter: ParkingSpotHomeAdapter
+    private var isLoadingParkingSpots: Boolean = false
 
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentHomeBinding {
         return FragmentHomeBinding.inflate(inflater, container, false)
@@ -37,42 +39,84 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
 
         setupClickListeners()
         setupParkingSpots()
-        loadParkingSpots()
+        refreshParkingSpots(showBlockingLoading = true)
     }
 
     private fun setupParkingSpots() {
-        parkingSpotAdapter = ParkingSpotHomeAdapter()
+        parkingSpotAdapter = ParkingSpotHomeAdapter { spot ->
+            openParkingSpotBottomSheet(spot)
+        }
         binding.recyclerParkingSpots.apply {
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = parkingSpotAdapter
-            isNestedScrollingEnabled = false
+            edgeEffectFactory = com.gridee.parking.ui.utils.BounceEdgeEffectFactory()
+            
+            // Remove any existing ItemDecorations if we added them previously (safe guard)
+            // if (itemDecorationCount > 0) removeItemDecorationAt(0)
+            
+            // Add snapping for the "one after another" feel
+            val snapHelper = androidx.recyclerview.widget.PagerSnapHelper()
+            // Reset snap helper if attached previously to avoid crash "SnapHelper is already attached"
+            binding.recyclerParkingSpots.onFlingListener = null 
+            snapHelper.attachToRecyclerView(this)
         }
     }
+    
+    private fun openParkingSpotBottomSheet(spot: ParkingSpot) {
+        val lotName = spot.lotName?.takeIf { it.isNotBlank() }
+            ?: spot.zoneName?.takeIf { it.isNotBlank() }
+            ?: spot.name?.takeIf { it.isNotBlank() }
+            ?: ""
+        
+        val sheet = ParkingSpotBottomSheet.newInstance(
+            parkingSpotId = spot.id,
+            parkingLotId = spot.lotId,
+            parkingLotName = lotName
+        )
+        sheet.show(parentFragmentManager, ParkingSpotBottomSheet.TAG)
+    }
 
-    private fun loadParkingSpots() {
-        binding.progressParkingSpots.visibility = View.VISIBLE
-        binding.recyclerParkingSpots.visibility = View.GONE
-        binding.tvParkingSpotsEmpty.visibility = View.GONE
+    private fun refreshParkingSpots(showBlockingLoading: Boolean) {
+        if (isLoadingParkingSpots) return
+        isLoadingParkingSpots = true
+
+        setParkingSpotsRefreshing(isRefreshing = true, showBlockingLoading = showBlockingLoading)
 
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 val spots = fetchAllParkingSpots()
-                println("DEBUG HomeFragment.loadParkingSpots: Fetched spots size=${spots.size}")
+                println("DEBUG HomeFragment.refreshParkingSpots: Fetched spots size=${spots.size}")
                 binding.tvParkingSpotsTitle.text = "Parking Spots (${spots.size})"
 
                 if (spots.isEmpty()) {
                     showEmptyState("No parking spots available")
                 } else {
-                    // Ensure RecyclerView is ALWAYS visible when we have data
                     binding.progressParkingSpots.visibility = View.GONE
                     binding.tvParkingSpotsEmpty.visibility = View.GONE
                     binding.recyclerParkingSpots.visibility = View.VISIBLE
                     parkingSpotAdapter.submitList(spots)
-                    println("DEBUG HomeFragment.loadParkingSpots: RecyclerView set to VISIBLE with ${spots.size} spots")
+                    println("DEBUG HomeFragment.refreshParkingSpots: RecyclerView set to VISIBLE with ${spots.size} spots")
                 }
             } catch (e: Exception) {
-                println("DEBUG HomeFragment.loadParkingSpots: Exception - ${e.message}")
+                println("DEBUG HomeFragment.refreshParkingSpots: Exception - ${e.message}")
                 showEmptyState("Unable to load parking spots")
+            } finally {
+                isLoadingParkingSpots = false
+                setParkingSpotsRefreshing(isRefreshing = false, showBlockingLoading = showBlockingLoading)
+            }
+        }
+    }
+
+    private fun setParkingSpotsRefreshing(isRefreshing: Boolean, showBlockingLoading: Boolean) {
+        binding.btnRefreshParkingSpots.isEnabled = !isRefreshing
+        binding.progressRefreshParkingSpots.visibility = if (isRefreshing) View.VISIBLE else View.GONE
+        binding.btnRefreshParkingSpots.visibility = if (isRefreshing) View.INVISIBLE else View.VISIBLE
+
+        if (showBlockingLoading) {
+            binding.progressParkingSpots.visibility = if (isRefreshing) View.VISIBLE else View.GONE
+            if (isRefreshing) {
+                binding.recyclerParkingSpots.visibility = View.GONE
+                binding.tvParkingSpotsEmpty.visibility = View.GONE
             }
         }
     }
@@ -178,33 +222,17 @@ class HomeFragment : BaseTabFragment<FragmentHomeBinding>() {
     }
 
     private fun setupClickListeners() {
-        setupFabListener()
-    }
-    
-    private fun setupFabListener() {
+        binding.btnRefreshParkingSpots.setOnClickListener {
+            refreshParkingSpots(showBlockingLoading = false)
+        }
+
         // Hero Animation Click Listener
         binding.heroAnimation.setOnClickListener {
             val bottomSheet = com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.newInstance(
-                lottieFileName = "premium_crown.json"
+                lottieFileName = "premium_crown.json",
+                isRewardMode = true
             )
             bottomSheet.show(parentFragmentManager, com.gridee.parking.ui.bottomsheet.UniversalBottomSheet.TAG)
-        }
-
-        // FAB click listener - parking lot selection
-        binding.fabBookParking.setOnClickListener {
-            try {
-                // Navigate to parking lot selection first
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.booking.ParkingLotSelectionActivity"))
-                startActivity(intent)
-            } catch (e: Exception) {
-                // Fallback to ParkingDiscoveryActivity if ParkingLotSelectionActivity fails
-                try {
-                    val fallbackIntent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.discovery.ParkingDiscoveryActivity"))
-                    startActivity(fallbackIntent)
-                } catch (fallbackException: Exception) {
-                    showToast("Unable to open parking selection")
-                }
-            }
         }
     }
 

@@ -6,21 +6,30 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
-import androidx.dynamicanimation.animation.DynamicAnimation
-import androidx.dynamicanimation.animation.SpringAnimation
-import androidx.dynamicanimation.animation.SpringForce
+import android.view.animation.AccelerateInterpolator
+import androidx.core.animation.doOnEnd
+import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import android.view.HapticFeedbackConstants
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.view.animation.PathInterpolator
 import androidx.lifecycle.ViewModelProvider
 import com.gridee.parking.databinding.FragmentProfileBinding
 import com.gridee.parking.ui.base.BaseTabFragment
 import com.gridee.parking.ui.bottomsheet.AddVehicleBottomSheet
 import com.gridee.parking.ui.bottomsheet.EditVehicleBottomSheet
+import com.gridee.parking.ui.profile.AccountSettingsActivity
+import com.gridee.parking.ui.profile.HelpSupportActivity
+import com.gridee.parking.ui.profile.NotificationsActivity
 import com.gridee.parking.ui.profile.ProfileViewModel
+import com.gridee.parking.utils.AuthSession
 import com.gridee.parking.utils.NotificationHelper
 
 class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
     private lateinit var viewModel: ProfileViewModel
     private var isVehiclesExpanded = false
+    private var isAnimating = false // Prevent double-tap glitches
 
     override fun getViewBinding(inflater: LayoutInflater, container: ViewGroup?): FragmentProfileBinding {
         return FragmentProfileBinding.inflate(inflater, container, false)
@@ -43,6 +52,10 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         setupObservers()
         setupClickListeners()
         loadUserData()
+        
+        childFragmentManager.setFragmentResultListener("profile_updated", viewLifecycleOwner) { _, _ ->
+            loadUserData()
+        }
     }
     
     private fun setupCollapsingToolbar() {
@@ -133,13 +146,7 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
         viewModel.logoutSuccess.observe(this) { success ->
             if (success) {
-                // Clear user data from SharedPreferences
-                val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-                sharedPref.edit().apply {
-                    remove("user_id")
-                    putBoolean("is_logged_in", false)
-                    apply()
-                }
+                AuthSession.clearSession(requireContext())
                 navigateToLogin()
             }
         }
@@ -147,30 +154,49 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
     private fun setupClickListeners() {
         // Account section click
-        binding.btnEditProfile.setOnClickListener {
-            try {
-                val intent = Intent(requireContext(), Class.forName("com.gridee.parking.ui.profile.EditProfileActivity"))
-                startActivity(intent)
-            } catch (e: Exception) {
-                showToast("Edit Profile - Coming Soon!")
-            }
+        val editProfileListener = View.OnClickListener {
+            com.gridee.parking.ui.bottomsheet.ProfilePageBottomSheet.newInstance()
+                .show(childFragmentManager, com.gridee.parking.ui.bottomsheet.ProfilePageBottomSheet.TAG)
         }
+
+        binding.btnEditProfile.setOnClickListener(editProfileListener)
+        binding.tvUserName.setOnClickListener(editProfileListener)
+        binding.tvUserInitials.setOnClickListener(editProfileListener)
 
         // Account & Profile category
         binding.btnAccountSettings.setOnClickListener {
-            showToast("Account Settings - Coming Soon!")
+            startActivity(Intent(requireContext(), AccountSettingsActivity::class.java))
         }
 
-        binding.btnSecurityPrivacy.setOnClickListener {
-            showToast("Security & Privacy - Coming Soon!")
-        }
+
 
         binding.btnNotifications.setOnClickListener {
-            showToast("Notification Settings - Coming Soon!")
+            startActivity(Intent(requireContext(), NotificationsActivity::class.java))
         }
 
         // Vehicle Management category - Accordion Animation
         binding.btnMyVehicles.setOnClickListener {
+            if (isAnimating) return@setOnClickListener
+            
+            // 1. Haptic Feedback (Mechanical feel)
+            it.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+            
+            // 2. "Squish" Micro-interaction (Weight/Inertia)
+            it.animate()
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(100)
+                .setInterpolator(DecelerateInterpolator())
+                .withEndAction {
+                    it.animate()
+                        .scaleX(1f)
+                        .scaleY(1f)
+                        .setDuration(100)
+                        .setInterpolator(DecelerateInterpolator())
+                        .start()
+                }
+                .start()
+                
             toggleVehiclesAccordion()
         }
 
@@ -180,7 +206,11 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
         // App Preferences category
         binding.btnDisplayTheme.setOnClickListener {
-            showToast("Display & Theme - Coming Soon!")
+            com.gridee.parking.ui.bottomsheet.ProfilePageBottomSheet.newInstanceForInfo(
+                lottieFile = "central_icons_brush.json",
+                title = "Dark Mode",
+                message = "Dark mode is coming soon for a more comfortable visual experience at night."
+            ).show(childFragmentManager, com.gridee.parking.ui.bottomsheet.ProfilePageBottomSheet.TAG)
         }
 
         binding.btnSoundsVibration.setOnClickListener {
@@ -193,13 +223,13 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
 
         // Support & Legal category
         binding.btnHelpSupport.setOnClickListener {
-            showToast("Help & Support - Coming Soon!")
+            startActivity(Intent(requireContext(), HelpSupportActivity::class.java))
         }
 
         binding.btnPrivacyPolicy.setOnClickListener {
             try {
                 // Open privacy policy in default browser
-                val privacyPolicyUrl = "https://docs.gridee.in/privacy"
+                val privacyPolicyUrl = "https://docs.gridee.in/#/privacy"
                 val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(privacyPolicyUrl))
                 startActivity(intent)
             } catch (e: Exception) {
@@ -207,8 +237,24 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             }
         }
 
+        binding.btnDataSafety.setOnClickListener {
+            try {
+                val dataSafetyUrl = "https://docs.gridee.in/#/data-safety"
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(dataSafetyUrl))
+                startActivity(intent)
+            } catch (e: Exception) {
+                showToast("Unable to open Data Safety page. Please try again.")
+            }
+        }
+
         binding.btnAbout.setOnClickListener {
-            showToast("About - Coming Soon!")
+            try {
+                val aboutUrl = "https://docs.gridee.in/#/about"
+                val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(aboutUrl))
+                startActivity(intent)
+            } catch (e: Exception) {
+                showToast("Unable to open About page. Please try again.")
+            }
         }
 
         // Logout
@@ -376,8 +422,30 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
                 showAddVehicleDialog()
             }
             container.addView(emptyView)
+            
+            // ANIMATE EMPTY STATE - 3D HINGE EFFECT
+            emptyView.alpha = 0f
+            emptyView.translationY = -50f.dpToPx() // Hyper-extended slide
+            emptyView.rotationX = -20f // Tilted back
+            emptyView.scaleX = 0.9f // Depth scale
+            emptyView.scaleY = 0.9f
+            emptyView.pivotY = 0f // Swing from top
+            
+            emptyView.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .rotationX(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(400) // Follow-through duration
+                .setStartDelay(60)
+                .setInterpolator(PathInterpolator(0.4f, 0f, 0.2f, 1f))
+                .start()
             return
         }
+        
+        // Define Apple-style physics for content
+        val contentInterpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
         
         vehicles.forEachIndexed { index, vehicleNumber ->
             val vehicleView = layoutInflater.inflate(
@@ -424,6 +492,25 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
             }
             
             container.addView(vehicleView)
+            
+            // EXTRAORDINARY 3D "DECK" REVEAL
+            vehicleView.alpha = 0f
+            vehicleView.translationY = -50f.dpToPx() // Hyper-extended slide (-50dp)
+            vehicleView.rotationX = -20f // 3D Hinge Effect (Tilted back)
+            vehicleView.scaleX = 0.92f // Depth Scale (Coming from background)
+            vehicleView.scaleY = 0.92f
+            vehicleView.pivotY = 0f // Hinge point at the top
+            
+            vehicleView.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .rotationX(0f)
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(450) // Long, luxurious duration
+                .setStartDelay(60L + (index * 50L)) // Increased stagger (50ms) for distinctive arrival
+                .setInterpolator(contentInterpolator)
+                .start()
         }
         
         // Add "Add New Vehicle" button at the end
@@ -447,120 +534,148 @@ class ProfileFragment : BaseTabFragment<FragmentProfileBinding>() {
         }
         
         container.addView(addVehicleView)
+        
+        // ADD BUTTON ENTRANCE (Slighter slower/later for CTA distinction)
+        addVehicleView.alpha = 0f
+        addVehicleView.translationY = -20f.dpToPx()
+        addVehicleView.scaleX = 0.95f // Subtle scale up entrance
+        addVehicleView.scaleY = 0.95f
+        
+        addVehicleView.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(400) // Slower duration
+            .setStartDelay(60L + (vehicles.size * 30L) + 20L) // Wait for list + extra beat
+            .setInterpolator(contentInterpolator)
+            .start()
     }
     
     private fun toggleVehiclesAccordion() {
-        isVehiclesExpanded = !isVehiclesExpanded
-        
         val expandedLayout = binding.layoutVehiclesExpanded
         val arrowIcon = binding.ivVehiclesExpand
         
+        isVehiclesExpanded = !isVehiclesExpanded
+        isAnimating = true
+        
+        // Use Hardware Acceleration for butter-smooth rendering during animation
+        expandedLayout.setLayerType(View.LAYER_TYPE_HARDWARE, null)
+
+        // Apple-style Cubic Bezier Curves
+        // Opening: Rapid start, gentle deceleration (0.4, 0.0, 0.2, 1.0)
+        val openInterpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
+        // Closing: Gentle acceleration, crisp finish (0.4, 0.0, 1.0, 1.0)
+        val closeInterpolator = PathInterpolator(0.4f, 0f, 1f, 1f)
+        
         if (isVehiclesExpanded) {
-            // Populate vehicles with real data
+            // OPENING
             val vehicles = viewModel.userProfile.value?.vehicleNumbers ?: emptyList()
             populateVehicles(vehicles)
             
-            // Expand animation
             expandedLayout.visibility = View.VISIBLE
+            expandedLayout.alpha = 0f
+            expandedLayout.translationY = -20f.dpToPx() // Subtle slide from top
             
-            // Measure the expanded height
+            // Measure precise target height
             expandedLayout.measure(
-                View.MeasureSpec.makeMeasureSpec(expandedLayout.width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(binding.root.width, View.MeasureSpec.AT_MOST),
                 View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
             )
             val targetHeight = expandedLayout.measuredHeight
             
-            // Height animation with spring physics
-            val heightAnimation = ValueAnimator.ofInt(0, targetHeight)
-            heightAnimation.addUpdateListener { animation ->
-                val value = animation.animatedValue as Int
-                val layoutParams = expandedLayout.layoutParams
-                layoutParams.height = value
-                expandedLayout.layoutParams = layoutParams
-            }
-            heightAnimation.duration = 400
-            heightAnimation.interpolator = DecelerateInterpolator()
-            heightAnimation.start()
-            
-            // Alpha animation with blur effect simulation
-            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_LOW
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
+            // 1. Height Expansion (350ms)
+            ValueAnimator.ofInt(0, targetHeight).apply {
+                duration = 350
+                interpolator = openInterpolator
+                addUpdateListener { animation ->
+                    expandedLayout.layoutParams.height = animation.animatedValue as Int
+                    expandedLayout.requestLayout()
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        expandedLayout.layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        expandedLayout.setLayerType(View.LAYER_TYPE_NONE, null)
+                        isAnimating = false
+                    }
+                })
                 start()
             }
             
-            // Scale animation for professional effect
-            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
+            // 2. Fade In (Delayed slightly for "solid" feel)
+            expandedLayout.animate()
+                .alpha(1f)
+                .setDuration(300)
+                .setStartDelay(50) // Prevent ghosting
+                .setInterpolator(openInterpolator)
+                .start()
             
-            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 1f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
+            // 3. Slide Down
+            expandedLayout.animate()
+                .translationY(0f)
+                .setDuration(350)
+                .setInterpolator(openInterpolator)
+                .start()
             
-            // Set initial scale for spring animation
-            expandedLayout.scaleX = 0.95f
-            expandedLayout.scaleY = 0.95f
-            
-            // Rotate arrow icon
+            // 4. Icon Rotation
             arrowIcon.animate()
                 .rotation(180f)
-                .setDuration(300)
-                .setInterpolator(DecelerateInterpolator())
+                .setDuration(350)
+                .setInterpolator(openInterpolator)
                 .start()
                 
         } else {
-            // Collapse animation
-            val initialHeight = expandedLayout.height
+            // CLOSING
+            val currentHeight = expandedLayout.height
             
-            // Height animation
-            val heightAnimation = ValueAnimator.ofInt(initialHeight, 0)
-            heightAnimation.addUpdateListener { animation ->
-                val value = animation.animatedValue as Int
-                val layoutParams = expandedLayout.layoutParams
-                layoutParams.height = value
-                expandedLayout.layoutParams = layoutParams
-                
-                // Hide when fully collapsed
-                if (value == 0) {
-                    expandedLayout.visibility = View.GONE
+            // 1. Height Collapse (300ms)
+            ValueAnimator.ofInt(currentHeight, 0).apply {
+                duration = 300
+                interpolator = closeInterpolator
+                addUpdateListener { animation ->
+                    expandedLayout.layoutParams.height = animation.animatedValue as Int
+                    expandedLayout.requestLayout()
                 }
-            }
-            heightAnimation.duration = 350
-            heightAnimation.interpolator = DecelerateInterpolator()
-            heightAnimation.start()
-            
-            // Alpha animation with opacity
-            val alphaSpring = SpringAnimation(expandedLayout, DynamicAnimation.ALPHA, 0f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_LOW_BOUNCY
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        expandedLayout.visibility = View.GONE
+                        expandedLayout.setLayerType(View.LAYER_TYPE_NONE, null)
+                        // Reset properties for next open
+                        expandedLayout.rotationX = 0f
+                        expandedLayout.scaleX = 1f
+                        expandedLayout.scaleY = 1f
+                        isAnimating = false
+                    }
+                })
                 start()
             }
             
-            // Scale animation for smooth collapse
-            val scaleXSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_X, 0.95f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
+            // 2. 3D "FOLD BACK" EXIT
+            // We animate the whole container retreating into the background
+            expandedLayout.pivotY = 0f // Pivot at the top hinge
             
-            val scaleYSpring = SpringAnimation(expandedLayout, DynamicAnimation.SCALE_Y, 0.95f).apply {
-                spring.stiffness = SpringForce.STIFFNESS_MEDIUM
-                spring.dampingRatio = SpringForce.DAMPING_RATIO_MEDIUM_BOUNCY
-                start()
-            }
+            expandedLayout.animate()
+                .alpha(0f)                // Fade out
+                .translationY(-30f.dpToPx()) // Slide up deeper
+                .rotationX(15f)           // TILT BACK (Folding effect)
+                .scaleX(0.95f)            // Shrink slightly (Depth retreat)
+                .scaleY(0.95f)
+                .setDuration(250)         // Fast but visible
+                .setStartDelay(0)
+                .setInterpolator(closeInterpolator)
+                .start()
             
-            // Rotate arrow icon back
+            // 3. Icon Rotation
             arrowIcon.animate()
                 .rotation(0f)
                 .setDuration(300)
-                .setInterpolator(DecelerateInterpolator())
+                .setInterpolator(closeInterpolator)
                 .start()
         }
+    }
+
+    private fun Float.dpToPx(): Float {
+        return this * resources.displayMetrics.density
     }
 
     companion object {

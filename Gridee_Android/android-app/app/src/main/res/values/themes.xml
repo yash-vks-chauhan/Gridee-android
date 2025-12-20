@@ -71,6 +71,7 @@
         <item name="android:navigationBarColor">@color/white</item>
         <item name="android:navigationBarDividerColor" tools:targetApi="p">@android:color/transparent</item>
         <item name="android:windowLightNavigationBar">true</item>
+        <item name="bottomSheetDragHandleStyle">@null</item>
     </style>
     
     <style name="BottomSheetStyle" parent="Widget.Material3.BottomSheet">

@@ -10,7 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityRegistrationBinding
-import com.gridee.parking.ui.MainActivity
+import com.gridee.parking.ui.main.MainContainerActivity
 
 class RegistrationActivity : AppCompatActivity() {
     
@@ -69,6 +69,7 @@ class RegistrationActivity : AppCompatActivity() {
         }
         
         binding.tvLoginLink.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
             // Navigate to login activity
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -131,8 +132,8 @@ class RegistrationActivity : AppCompatActivity() {
                     
                     Toast.makeText(this, "Registration successful! Welcome to Gridee!", Toast.LENGTH_LONG).show()
                     
-                    // Navigate directly to main activity
-                    val intent = Intent(this, MainActivity::class.java)
+                    // Navigate directly to main container (same as login)
+                    val intent = Intent(this, MainContainerActivity::class.java)
                     intent.putExtra("USER_NAME", state.user.name)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     startActivity(intent)

@@ -27,6 +27,7 @@ import com.gridee.parking.ui.adapters.Transaction
 import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.WalletTransactionGrouping
 import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
+import com.gridee.parking.utils.AuthSession
 
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -423,8 +424,7 @@ class TransactionHistoryActivity : AppCompatActivity() {
     }
 
     private fun getUserId(): String? {
-        val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
-        return sharedPref.getString("user_id", null)
+        return AuthSession.getUserId(this)
     }
 
     private fun showDateFilterModal() {

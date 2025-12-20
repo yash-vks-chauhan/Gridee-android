@@ -21,6 +21,7 @@ import com.gridee.parking.ui.adapters.TransactionType
 import com.gridee.parking.ui.adapters.WalletTransactionGrouping
 import com.gridee.parking.ui.adapters.WalletTransactionsAdapter
 import com.gridee.parking.ui.base.BaseTabFragment
+import com.gridee.parking.utils.AuthSession
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import androidx.dynamicanimation.animation.DynamicAnimation
@@ -177,13 +178,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
 
     private fun handleUnauthorized() {
         showToast("Session expired. Please log in again.")
-        try {
-            // Clear saved session
-            val prefs = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-            prefs.edit().clear().apply()
-            // Also clear JWT store
-            com.gridee.parking.utils.JwtTokenManager(requireContext()).clearAuthToken()
-        } catch (_: Exception) { }
+        AuthSession.clearSession(requireContext())
         // Navigate to login
         val intent = android.content.Intent(requireContext(), com.gridee.parking.ui.auth.LoginActivity::class.java)
         intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -502,8 +497,7 @@ class WalletFragmentNew : BaseTabFragment<FragmentWalletNewBinding>() {
     }
 
     private fun getUserId(): String? {
-        val sharedPref = requireActivity().getSharedPreferences("gridee_prefs", android.content.Context.MODE_PRIVATE)
-        return sharedPref.getString("user_id", null)
+        return AuthSession.getUserId(requireContext())
     }
     private companion object {
         private const val MAX_RECENT_TRANSACTIONS = 5

@@ -109,7 +109,13 @@ class TransactionsAdapter(
             }
             binding.tvAmount.text = amountText
 
-            binding.ivTransactionIcon.setImageResource(R.drawable.ic_wallet_outline)
+            val iconRes = when (transaction.type) {
+                TransactionType.BONUS -> R.drawable.ic_transaction_reward
+                TransactionType.TOP_UP -> R.drawable.ic_transaction_topup
+                TransactionType.PARKING_PAYMENT -> R.drawable.ic_transaction_payment
+                TransactionType.REFUND -> R.drawable.ic_transaction_topup
+            }
+            binding.ivTransactionIcon.setImageResource(iconRes)
             binding.ivTransactionIcon.imageTintList =
                 ContextCompat.getColorStateList(context, R.color.text_secondary)
             

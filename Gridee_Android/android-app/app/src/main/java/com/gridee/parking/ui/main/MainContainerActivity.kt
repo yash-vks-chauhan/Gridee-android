@@ -53,10 +53,35 @@ class MainContainerActivity : BaseActivityWithBottomNav<ActivityMainContainerBin
             // Update padding based on active fragment
             updateContainerPaddingForFragment(currentFragment)
             
-            // Don't add bottom padding to bottom navigation to keep original size
-            // The bottom nav will handle its own positioning
-            
             insets
+        }
+        
+        // ENABLE HIGH REFRESH RATE (90Hz / 120Hz)
+        // This ensures the OS doesn't throttle the app to 60Hz to save battery,
+        // allowing our physics animations to run at maximum smoothness.
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.attributes.layoutInDisplayCutoutMode = android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
+        }
+        
+        try {
+            val display = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                display
+            } else {
+                @Suppress("DEPRECATION")
+                window.windowManager.defaultDisplay
+            }
+
+            val supportedModes = display?.supportedModes
+            // Find the mode with the highest refresh rate
+            val highestRefreshRateMode = supportedModes?.maxByOrNull { it.refreshRate }
+            
+            if (highestRefreshRateMode != null && highestRefreshRateMode.refreshRate >= 90f) {
+                val layoutParams = window.attributes
+                layoutParams.preferredDisplayModeId = highestRefreshRateMode.modeId
+                window.attributes = layoutParams
+            }
+        } catch (e: Exception) {
+            // Fallback safely if display query fails
         }
         
         // Setup bottom navigation manually using binding

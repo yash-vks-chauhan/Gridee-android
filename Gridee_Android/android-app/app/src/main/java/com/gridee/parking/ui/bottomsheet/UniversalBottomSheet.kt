@@ -2,6 +2,7 @@ package com.gridee.parking.ui.bottomsheet
 
 import android.app.Dialog
 import android.content.Intent
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -36,11 +37,15 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
     private var lottieFileName: String? = null
     private var rewardedAd: RewardedAd? = null
     private var isLoadingRewardedAd: Boolean = false
+    private var pendingShowRewardedAd: Boolean = false
+    private var primaryButtonIdleLabel: CharSequence? = null
+    private var isViewDestroyed: Boolean = false
     private val rewardAmountRupees = 20.0
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setStyle(STYLE_NORMAL, com.gridee.parking.R.style.BottomSheetDialogTheme)
+        if (isRewardMode) preloadRewardedAd()
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -105,9 +110,18 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        isViewDestroyed = false
         _binding = BottomSheetUniversalBinding.inflate(inflater, container, false)
         return binding.root
     }
+
+
+
+    private var title: String? = null
+    private var message: String? = null
+    private var primaryButtonText: String? = null
+    private var onPrimaryClickListener: (() -> Unit)? = null
+    private var isRewardMode: Boolean = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -115,9 +129,9 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
         setupBehaviors()
         setupInsets()
         
-        // Ambient Shadow: Colored glow (Android 9+)
+        // Ambient Shadow (Android 9+)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            binding.root.outlineAmbientShadowColor = android.graphics.Color.parseColor("#40000000") // Soft black/blue glow
+            binding.root.outlineAmbientShadowColor = android.graphics.Color.parseColor("#40000000")
             binding.root.outlineSpotShadowColor = android.graphics.Color.parseColor("#40000000")
         }
     }
@@ -125,7 +139,6 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
     private fun setupInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            // 32dp initial padding + navigation bar height
             val initialPadding = (32 * view.context.resources.displayMetrics.density).toInt()
             view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, initialPadding + bars.bottom)
             insets
@@ -136,24 +149,20 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
         val bottomSheetBehavior = (dialog as? com.google.android.material.bottomsheet.BottomSheetDialog)?.behavior
         bottomSheetBehavior?.addBottomSheetCallback(object : com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
             override fun onStateChanged(bottomSheet: View, newState: Int) {
-                // Haptic Feedback
                 if (newState == com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED ||
                     newState == com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN
                 ) {
                     bottomSheet.performHapticFeedback(android.view.HapticFeedbackConstants.CONTEXT_CLICK)
                 }
                 
-                // Handle Animation: Reset when settled
                 if (newState == com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED ||
                     newState == com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED) {
-                    animateHandle(32) // Reset to default width
+                    animateHandle(32)
                 }
             }
 
             override fun onSlide(bottomSheet: View, slideOffset: Float) {
-                // Micro-Interaction: Widen handle when dragging
-                // We use a threshold to detect active dragging
-                animateHandle(48) // Widen to 48dp
+                animateHandle(48)
             }
         })
     }
@@ -162,7 +171,6 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
         val targetWidthPx = (targetWidthDp * resources.displayMetrics.density).toInt()
         if (binding.dragHandle.layoutParams.width != targetWidthPx) {
             val params = binding.dragHandle.layoutParams
-            // Simple layout update (TransitionManager could be smoother but this is responsive)
             params.width = targetWidthPx
             binding.dragHandle.layoutParams = params
         }
@@ -171,10 +179,67 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
     private fun setupUI() {
         // Close Button
         binding.btnClose.setOnClickListener {
+            pendingShowRewardedAd = false
+            setRewardedAdLoading(false)
             dismiss()
         }
 
-        // Set Lottie Animation
+        // Configure UI based on mode
+        if (isRewardMode) {
+            setupRewardUI()
+        } else {
+            setupStandardUI()
+        }
+    }
+
+    private fun setupStandardUI() {
+        // Hide reward specific elements
+        binding.ivRewardBg.isVisible = false
+        binding.viewGradientOverlay.isVisible = false
+        
+        // Hide drag handle for cleaner look
+        binding.dragHandle.isVisible = false
+        
+        // Lottie (Optional)
+        if (lottieFileName != null) {
+            binding.lottieIcon.setAnimation(lottieFileName)
+            binding.lottieIcon.playAnimation()
+            binding.lottieIcon.isVisible = true
+            
+            // Subtle pop animation
+            binding.lottieIcon.scaleX = 0f
+            binding.lottieIcon.scaleY = 0f
+            binding.lottieIcon.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(600)
+                .setInterpolator(android.view.animation.OvershootInterpolator(1.2f))
+                .start()
+        } else {
+            binding.lottieIcon.isVisible = false
+        }
+
+        // Texts
+        binding.tvTitle.text = title
+        binding.tvSubtitle.text = message
+        binding.tvSubtitle.gravity = android.view.Gravity.START
+        binding.tvSubtitle.textAlignment = View.TEXT_ALIGNMENT_TEXT_START
+
+        // Button
+        if (primaryButtonText != null) {
+            binding.btnPrimary.text = primaryButtonText
+            binding.btnPrimary.isVisible = true
+            binding.btnPrimary.setOnClickListener {
+                onPrimaryClickListener?.invoke()
+                dismiss() // Auto dismiss by default unless overridden
+            }
+        } else {
+            binding.btnPrimary.isVisible = false
+        }
+    }
+
+    private fun setupRewardUI() {
+        // Lottie
         if (lottieFileName != null) {
             binding.lottieIcon.setAnimation(lottieFileName)
             binding.lottieIcon.playAnimation()
@@ -183,14 +248,14 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
             binding.lottieIcon.isVisible = false
         }
 
-        // Background Pattern Animation (Continuous Rotation)
+        // Background Pattern Animation
         val rotateAnim = android.animation.ObjectAnimator.ofFloat(binding.ivRewardBg, "rotation", 0f, 360f)
-        rotateAnim.duration = 40000 // 40 seconds for a full rotation (very slow and subtle)
+        rotateAnim.duration = 40000
         rotateAnim.repeatCount = android.animation.ObjectAnimator.INFINITE
         rotateAnim.interpolator = android.view.animation.LinearInterpolator()
         rotateAnim.start()
 
-        // Icon Pop Animation
+        // Animations
         binding.lottieIcon.scaleX = 0f
         binding.lottieIcon.scaleY = 0f
         binding.lottieIcon.animate()
@@ -201,7 +266,6 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
             .setStartDelay(200)
             .start()
             
-        // Background Fade In
         binding.ivRewardBg.alpha = 0f
         binding.ivRewardBg.animate()
             .alpha(0.6f)
@@ -209,40 +273,96 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
             .setStartDelay(100)
             .start()
 
-        // Primary button: show rewarded video for coin reward
+        // Set Texts from provided values or defaults only if not set
+        binding.tvTitle.text = title ?: "Daily Reward"
+        binding.tvSubtitle.text = message ?: "You've earned 50 coins! Come back tomorrow for more."
+        binding.btnPrimary.text = primaryButtonText ?: "Claim Reward"
+        primaryButtonIdleLabel = binding.btnPrimary.text
+
         binding.btnPrimary.setOnClickListener {
-            showRewardVideo()
+            // Check if there is a custom listener, otherwise use default reward logic
+            if (onPrimaryClickListener != null) {
+                onPrimaryClickListener?.invoke()
+            } else {
+                showRewardVideo()
+            }
         }
 
-        // Preload rewarded ad so it's ready when user taps
+        // Preload rewarded ad
         preloadRewardedAd()
     }
 
+    // Public Configuration Methods =======================================================
+    
+    fun setTitle(text: String) {
+        this.title = text
+        if (_binding != null) binding.tvTitle.text = text
+    }
+
+    fun setMessage(text: String) {
+        this.message = text
+        if (_binding != null) binding.tvSubtitle.text = text
+    }
+
+    fun setPrimaryButton(text: String, onClick: () -> Unit) {
+        this.primaryButtonText = text
+        this.onPrimaryClickListener = onClick
+        if (_binding != null) {
+            binding.btnPrimary.text = text
+            primaryButtonIdleLabel = text
+            binding.btnPrimary.isVisible = true
+            binding.btnPrimary.setOnClickListener {
+                onClick()
+                if (!isRewardMode) dismiss()
+            }
+        }
+    }
+
     fun setLottieFile(fileName: String) {
-        lottieFileName = fileName
+        this.lottieFileName = fileName
         if (_binding != null) {
             binding.lottieIcon.setAnimation(fileName)
             binding.lottieIcon.playAnimation()
+            binding.lottieIcon.isVisible = true
         }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        isViewDestroyed = true
+        pendingShowRewardedAd = false
+        isLoadingRewardedAd = false
+        primaryButtonIdleLabel = null
         _binding = null
         rewardedAd = null
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        pendingShowRewardedAd = false
+        super.onDismiss(dialog)
     }
 
     companion object {
         const val TAG = "UniversalBottomSheet"
 
         fun newInstance(
-            lottieFileName: String? = null
+            lottieFileName: String? = null,
+            title: String? = null,
+            message: String? = null,
+            buttonText: String? = null,
+            isRewardMode: Boolean = false
         ): UniversalBottomSheet {
             val fragment = UniversalBottomSheet()
             fragment.lottieFileName = lottieFileName
+            fragment.title = title
+            fragment.message = message
+            fragment.primaryButtonText = buttonText
+            fragment.isRewardMode = isRewardMode
             return fragment
         }
     }
+    
+    // =================================================================================
 
     private fun preloadRewardedAd() {
         if (isLoadingRewardedAd || rewardedAd != null) return
@@ -260,16 +380,23 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     isLoadingRewardedAd = false
                     rewardedAd = ad
+                    maybeShowRewardedAdIfPending()
                 }
 
                 override fun onAdFailedToLoad(adError: LoadAdError) {
                     isLoadingRewardedAd = false
                     rewardedAd = null
-                    Toast.makeText(
-                        requireContext(),
-                        "Unable to load reward video right now.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    if (pendingShowRewardedAd) {
+                        pendingShowRewardedAd = false
+                        setRewardedAdLoading(false)
+                        if (isAdded) {
+                            Toast.makeText(
+                                requireContext(),
+                                "Failed to load reward video. Please try again.",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                 }
             }
         )
@@ -278,25 +405,53 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
     private fun showRewardVideo() {
         val ad = rewardedAd
         if (ad == null) {
-            // Try loading again and inform user
-            Toast.makeText(
-                requireContext(),
-                "Loading reward video, please try again in a moment.",
-                Toast.LENGTH_SHORT
-            ).show()
+            pendingShowRewardedAd = true
+            setRewardedAdLoading(true)
             preloadRewardedAd()
             return
+        }
+
+        pendingShowRewardedAd = false
+        setRewardedAdLoading(false)
+        showRewardedAd(ad)
+    }
+
+    private fun maybeShowRewardedAdIfPending() {
+        if (!pendingShowRewardedAd) return
+        val ad = rewardedAd ?: return
+        if (isViewDestroyed || !isAdded) return
+
+        pendingShowRewardedAd = false
+        setRewardedAdLoading(false)
+        showRewardedAd(ad)
+    }
+
+    private fun setRewardedAdLoading(isLoading: Boolean) {
+        if (_binding == null) return
+        if (primaryButtonIdleLabel == null) primaryButtonIdleLabel = binding.btnPrimary.text
+
+        binding.btnPrimary.isEnabled = !isLoading
+        binding.btnPrimary.alpha = if (isLoading) 0.6f else 1f
+        binding.btnPrimary.text = if (isLoading) "Loading..." else primaryButtonIdleLabel
+    }
+
+    private fun showRewardedAd(ad: RewardedAd) {
+        if (!isAdded) return
+        if (_binding != null) {
+            binding.btnPrimary.isEnabled = false
+            binding.btnPrimary.alpha = 0.6f
         }
 
         ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdDismissedFullScreenContent() {
                 rewardedAd = null
-                // Close the bottom sheet after video is closed
                 dismiss()
             }
 
             override fun onAdFailedToShowFullScreenContent(adError: com.google.android.gms.ads.AdError) {
                 rewardedAd = null
+                preloadRewardedAd()
+                setRewardedAdLoading(false)
                 Toast.makeText(
                     requireContext(),
                     "Failed to show reward video.",
@@ -310,7 +465,6 @@ class UniversalBottomSheet : BottomSheetDialogFragment() {
         }
 
         ad.show(requireActivity()) { rewardItem ->
-            // Video watched fully; credit the wallet with the configured reward
             creditRewardToWallet(rewardAmountRupees)
             Toast.makeText(
                 requireContext(),

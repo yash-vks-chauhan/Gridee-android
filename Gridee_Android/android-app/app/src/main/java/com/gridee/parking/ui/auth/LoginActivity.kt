@@ -12,12 +12,17 @@ import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityLoginBinding
 import com.gridee.parking.ui.main.MainContainerActivity
 import com.gridee.parking.ui.operator.OperatorDashboardActivity
+import com.gridee.parking.utils.AuthSession
 import com.gridee.parking.utils.GoogleSignInManager
 import com.gridee.parking.utils.GoogleSignInResult
 import kotlinx.coroutines.launch
 import java.util.Locale
 
 class LoginActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_FORCE_LOGIN = "extra_force_login"
+    }
     
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: LoginViewModel by viewModels()
@@ -41,6 +46,16 @@ class LoginActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // If a valid JWT is already stored, skip login and go directly to the correct home screen.
+        // This prevents users from being sent back to the login page every time the app is reopened/updated.
+        val forceLogin = intent?.getBooleanExtra(EXTRA_FORCE_LOGIN, false) ?: false
+        if (!forceLogin && AuthSession.isAuthenticated(this)) {
+            AuthSession.syncLegacyPrefsFromJwt(this)
+            navigateToHomeFromSession()
+            return
+        }
+
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
@@ -54,10 +69,31 @@ class LoginActivity : AppCompatActivity() {
         setupUI()
         observeViewModel()
     }
+
+    private fun navigateToHomeFromSession() {
+        val normalizedRole = AuthSession.getUserRole(this)?.uppercase(Locale.ROOT) ?: "USER"
+        val userName = AuthSession.getUserName(this)
+
+        when (normalizedRole) {
+            "OPERATOR" -> {
+                val intent = Intent(this, OperatorDashboardActivity::class.java)
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
+            else -> {
+                val intent = Intent(this, MainContainerActivity::class.java)
+                userName?.let { intent.putExtra("USER_NAME", it) }
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                startActivity(intent)
+            }
+        }
+        finish()
+    }
     
     private fun setupUI() {
         // Sign In button click
         binding.btnSignIn.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             val emailOrPhone = binding.etEmailPhone.text.toString()
             val password = binding.etPassword.text.toString()
             viewModel.loginUser(this, emailOrPhone, password)
@@ -70,12 +106,13 @@ class LoginActivity : AppCompatActivity() {
         
         // Forgot password click
         binding.tvForgotPassword.setOnClickListener {
-            // TODO: Implement forgot password
-            Toast.makeText(this, "Forgot password feature coming soon!", Toast.LENGTH_SHORT).show()
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
+            startActivity(Intent(this, ForgotPasswordActivity::class.java))
         }
         
         // Google Sign In
         binding.btnSignInWithGoogle.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             googleSignInManager.launchSignIn(googleSignInLauncher)
         }
         
@@ -86,6 +123,7 @@ class LoginActivity : AppCompatActivity() {
         
         // Sign Up link
         binding.tvSignUpLink.setOnClickListener {
+            it.performHapticFeedback(android.view.HapticFeedbackConstants.VIRTUAL_KEY)
             startActivity(Intent(this, RegistrationActivity::class.java))
         }
         

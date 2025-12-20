@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
+import com.gridee.parking.ui.main.MainContainerActivity
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 
 /**
@@ -304,28 +305,28 @@ private fun handleTabNavigation(context: android.content.Context, tabIndex: Int)
     when (tabIndex) {
         0 -> { /* Already on Home */ }
         1 -> {
-            try {
-                val intent = Intent(context, Class.forName("com.gridee.parking.ui.bookings.BookingsActivity"))
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Handle error
+            val intent = Intent(context, MainContainerActivity::class.java)
+            intent.putExtra(MainContainerActivity.EXTRA_TARGET_TAB, tabIndex)
+            if (context !is android.app.Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            context.startActivity(intent)
         }
         2 -> {
-            try {
-                val intent = Intent(context, Class.forName("com.gridee.parking.ui.wallet.WalletActivity"))
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Handle error
+            val intent = Intent(context, MainContainerActivity::class.java)
+            intent.putExtra(MainContainerActivity.EXTRA_TARGET_TAB, tabIndex)
+            if (context !is android.app.Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            context.startActivity(intent)
         }
         3 -> {
-            try {
-                val intent = Intent(context, Class.forName("com.gridee.parking.ui.profile.ProfileActivity"))
-                context.startActivity(intent)
-            } catch (e: Exception) {
-                // Handle error
+            val intent = Intent(context, MainContainerActivity::class.java)
+            intent.putExtra(MainContainerActivity.EXTRA_TARGET_TAB, tabIndex)
+            if (context !is android.app.Activity) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            context.startActivity(intent)
         }
     }
 }

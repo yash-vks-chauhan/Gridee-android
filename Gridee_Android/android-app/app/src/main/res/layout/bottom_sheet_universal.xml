@@ -5,9 +5,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_bottom_sheet_universal"
-    android:paddingBottom="32dp">
+    android:paddingBottom="0dp">
 
-    <!-- Drag Handle -->
+    <!-- Drag Handle and Close Button stay pinned to top -->
     <View
         android:id="@+id/drag_handle"
         android:layout_width="32dp"
@@ -18,7 +18,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Close Button (iOS Style) -->
     <ImageView
         android:id="@+id/btn_close"
         android:layout_width="32dp"
@@ -33,7 +32,8 @@
         android:focusable="true"
         android:contentDescription="Close"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:elevation="10dp"/>
 
     <!-- Background Pattern (Expanded) -->
     <ImageView
@@ -49,6 +49,7 @@
 
     <!-- Gradient Fade Overlay -->
     <View
+        android:id="@+id/view_gradient_overlay"
         android:layout_width="match_parent"
         android:layout_height="150dp"
         android:background="@drawable/gradient_transparent_to_white"
@@ -56,69 +57,84 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Header Animation -->
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/lottie_icon"
-        android:layout_width="240dp"
-        android:layout_height="240dp"
-        android:layout_marginTop="48dp"
-        app:lottie_fileName="premium_crown.json"
-        app:lottie_autoPlay="true"
-        app:lottie_loop="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/drag_handle" />
-
-    <!-- Title -->
-    <TextView
-        android:id="@+id/tv_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:fontFamily="@font/inter_semibold"
-        android:gravity="center"
-        android:text="Daily Reward"
-        android:textColor="#1A1A1A"
-        android:textSize="24sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/lottie_icon" />
-
-    <!-- Subtitle -->
-    <TextView
-        android:id="@+id/tv_subtitle"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:layout_marginStart="32dp"
-        android:layout_marginEnd="32dp"
-        android:fontFamily="@font/inter_regular"
-        android:gravity="center"
-        android:text="You've earned 50 coins! Come back tomorrow for more."
-        android:textColor="#5C5C5C"
-        android:textSize="16sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_title" />
-
-    <!-- Primary Action Button -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_primary"
+    <!-- Scrollable Content Container -->
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="32dp"
-        android:layout_marginEnd="24dp"
-        android:backgroundTint="#1A1A1A"
-        android:fontFamily="@font/inter_semibold"
-        android:text="Claim Reward"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        app:cornerRadius="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_subtitle" />
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/drag_handle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        android:layout_marginTop="8dp"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="32dp"
+            android:clipToPadding="false">
+
+            <!-- Header Animation -->
+            <com.airbnb.lottie.LottieAnimationView
+                android:id="@+id/lottie_icon"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_marginTop="24dp"
+                android:layout_gravity="center_horizontal"
+                app:lottie_fileName="premium_crown.json"
+                app:lottie_autoPlay="true"
+                app:lottie_loop="true" />
+
+            <!-- Title -->
+            <TextView
+                android:id="@+id/tv_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:fontFamily="@font/inter_semibold"
+                android:gravity="center"
+                android:text="Daily Reward"
+                android:textColor="#1A1A1A"
+                android:textSize="24sp" />
+
+            <!-- Subtitle -->
+            <TextView
+                android:id="@+id/tv_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:fontFamily="@font/inter_regular"
+                android:gravity="center"
+                android:text="You've earned 50 coins! Come back tomorrow for more."
+                android:textColor="#5C5C5C"
+                android:textSize="16sp"
+                android:lineSpacingExtra="4dp"/>
+
+            <!-- Primary Action Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_primary"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginEnd="24dp"
+                android:backgroundTint="#1A1A1A"
+                android:fontFamily="@font/inter_semibold"
+                android:text="Claim Reward"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                app:cornerRadius="16dp" />
+                
+            <!-- Extra Bottom Spacing -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="32dp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

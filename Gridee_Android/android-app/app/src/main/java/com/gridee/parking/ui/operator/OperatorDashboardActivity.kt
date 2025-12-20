@@ -25,6 +25,7 @@ import com.gridee.parking.R
 import com.gridee.parking.databinding.ActivityOperatorDashboardBinding
 import com.gridee.parking.ui.auth.LoginActivity
 import com.gridee.parking.ui.qr.QrScannerActivity
+import com.gridee.parking.utils.AuthSession
 import com.gridee.parking.utils.NotificationHelper
 
 /**
@@ -65,6 +66,17 @@ class OperatorDashboardActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (!AuthSession.isAuthenticated(this)) {
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            intent.putExtra(LoginActivity.EXTRA_FORCE_LOGIN, true)
+            startActivity(intent)
+            finish()
+            return
+        }
+        AuthSession.syncLegacyPrefsFromJwt(this)
+
         binding = ActivityOperatorDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -579,9 +591,7 @@ class OperatorDashboardActivity : AppCompatActivity() {
     }
 
     private fun logout() {
-        // Clear SharedPreferences
-        val sharedPref = getSharedPreferences("gridee_prefs", MODE_PRIVATE)
-        sharedPref.edit().clear().apply()
+        AuthSession.clearSession(this)
 
         // Navigate to login
         val intent = Intent(this, LoginActivity::class.java)

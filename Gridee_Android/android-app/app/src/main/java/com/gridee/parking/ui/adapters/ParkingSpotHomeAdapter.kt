@@ -10,7 +10,9 @@ import com.gridee.parking.R
 import com.gridee.parking.data.model.ParkingSpot
 import com.gridee.parking.databinding.ItemParkingSpotHomeBinding
 
-class ParkingSpotHomeAdapter :
+class ParkingSpotHomeAdapter(
+    private val onItemClick: (ParkingSpot) -> Unit
+) :
     ListAdapter<ParkingSpot, ParkingSpotHomeAdapter.ParkingSpotViewHolder>(DiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ParkingSpotViewHolder {
@@ -19,7 +21,7 @@ class ParkingSpotHomeAdapter :
             parent,
             false
         )
-        return ParkingSpotViewHolder(binding)
+        return ParkingSpotViewHolder(binding, onItemClick)
     }
 
     override fun onBindViewHolder(holder: ParkingSpotViewHolder, position: Int) {
@@ -27,7 +29,8 @@ class ParkingSpotHomeAdapter :
     }
 
     class ParkingSpotViewHolder(
-        private val binding: ItemParkingSpotHomeBinding
+        private val binding: ItemParkingSpotHomeBinding,
+        private val onItemClick: (ParkingSpot) -> Unit
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(spot: ParkingSpot) {
@@ -40,30 +43,16 @@ class ParkingSpotHomeAdapter :
 
             binding.tvSpotName.text = displayName
 
-            val resolvedStatus = spot.status.ifBlank {
-                if (spot.available > 0) "available" else "unavailable"
-            }
-            binding.tvSpotStatus.text = resolvedStatus.uppercase()
+            // Clean minimalistic binding
+            binding.tvSpotAvailability.text = "${spot.available}"
+            
+            // Optional subtitle if needed, or hide if same as name
+            binding.tvSpotMeta.text = "Gridee Parking" // Or specific zone name if available
+            
+            // Hide Status (Constraint dummy)
+            // binding.tvSpotStatus.visibility = View.GONE
 
-            val capacity = if (spot.capacity > 0) spot.capacity else spot.available
-            val idLabel = spot.spotCode?.takeIf { it.isNotBlank() } ?: spot.id
-            binding.tvSpotMeta.text = if (capacity > 0) {
-                "ID: $idLabel • Capacity: $capacity"
-            } else {
-                "ID: $idLabel"
-            }
-
-            binding.tvSpotAvailability.text = if (capacity > 0) {
-                "${spot.available}/$capacity available"
-            } else {
-                "${spot.available} available"
-            }
-
-            val context = binding.root.context
-            val isAvailable = spot.available > 0
-            val accentColor = if (isAvailable) R.color.primary_green else R.color.error
-            binding.tvSpotStatus.setTextColor(ContextCompat.getColor(context, accentColor))
-            binding.tvSpotAvailability.setTextColor(ContextCompat.getColor(context, accentColor))
+            binding.root.setOnClickListener { onItemClick(spot) }
         }
     }
 
@@ -77,4 +66,3 @@ class ParkingSpotHomeAdapter :
         }
     }
 }
-

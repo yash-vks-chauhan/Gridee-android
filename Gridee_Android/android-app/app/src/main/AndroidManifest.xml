@@ -51,9 +51,9 @@
             android:name=".ui.auth.RegistrationActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
-        
+
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.auth.ForgotPasswordActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
         
@@ -104,11 +104,6 @@
             android:name=".ui.wallet.WalletTopUpActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
-        
-        <activity
-            android:name=".ui.bookings.BookingsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Gridee.NoActionBar" />
             
         <activity
             android:name=".ui.activities.TransactionHistoryActivity"
@@ -151,17 +146,27 @@
             android:theme="@style/Theme.Gridee.NoActionBar" />
         
         <activity
-            android:name=".ui.profile.ProfileActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Gridee.NoActionBar" />
-        
-        <activity
             android:name=".ui.profile.EditProfileActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
         
         <activity
             android:name=".ui.profile.PrivacySettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Gridee.NoActionBar" />
+
+        <activity
+            android:name=".ui.profile.NotificationsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Gridee.NoActionBar" />
+
+        <activity
+            android:name=".ui.profile.AccountSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Gridee.NoActionBar" />
+
+        <activity
+            android:name=".ui.profile.HelpSupportActivity"
             android:exported="false"
             android:theme="@style/Theme.Gridee.NoActionBar" />
         

@@ -2,6 +2,8 @@ package com.gridee.parking.utils
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Base64
+import org.json.JSONObject
 
 /**
  * Utility class for managing JWT tokens
@@ -20,7 +22,7 @@ class JwtTokenManager(context: Context) {
         private const val KEY_USER_ROLE = "user_role"
         private const val KEY_TOKEN_TIMESTAMP = "token_timestamp"
         
-        // Token expiry time (24 hours in milliseconds)
+        // Fallback expiry time (used only if JWT doesn't contain an "exp" claim)
         private const val TOKEN_EXPIRY_TIME = 24 * 60 * 60 * 1000L
     }
     
@@ -47,7 +49,7 @@ class JwtTokenManager(context: Context) {
         val timestamp = prefs.getLong(KEY_TOKEN_TIMESTAMP, 0)
         
         // Check if token exists and hasn't expired
-        return if (token != null && !isTokenExpired(timestamp)) {
+        return if (token != null && !isTokenExpired(token, timestamp)) {
             token
         } else {
             // Clear expired token
@@ -95,9 +97,52 @@ class JwtTokenManager(context: Context) {
     /**
      * Check if token has expired
      */
-    private fun isTokenExpired(timestamp: Long): Boolean {
+    private fun isTokenExpired(token: String, timestamp: Long): Boolean {
         val currentTime = System.currentTimeMillis()
+
+        // Prefer actual JWT expiry if present.
+        val jwtExpiry = getJwtExpiryMillis(token)
+        if (jwtExpiry != null) {
+            return currentTime >= jwtExpiry
+        }
+
+        // Fallback to local timestamp if "exp" is missing/unparseable.
         return (currentTime - timestamp) > TOKEN_EXPIRY_TIME
+    }
+
+    /**
+     * Extract JWT "exp" claim (epoch seconds) and convert to epoch millis.
+     * Returns null if token is malformed or claim is missing.
+     */
+    private fun getJwtExpiryMillis(token: String): Long? {
+        return try {
+            val parts = token.split('.')
+            if (parts.size < 2) return null
+
+            val payloadJson = String(decodeBase64Url(parts[1]) ?: return null, Charsets.UTF_8)
+            val payload = JSONObject(payloadJson)
+            if (!payload.has("exp")) return null
+
+            val expSeconds = payload.optLong("exp", -1L)
+            if (expSeconds <= 0L) return null
+            expSeconds * 1000L
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun decodeBase64Url(value: String): ByteArray? {
+        return try {
+            // JWT uses Base64 URL-safe encoding without padding. Add padding if required.
+            val padded = when (value.length % 4) {
+                2 -> "$value=="
+                3 -> "$value="
+                else -> value
+            }
+            Base64.decode(padded, Base64.URL_SAFE or Base64.NO_WRAP)
+        } catch (_: Exception) {
+            null
+        }
     }
     
     /**

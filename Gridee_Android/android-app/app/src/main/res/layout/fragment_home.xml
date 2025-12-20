@@ -22,7 +22,6 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="120dp"
             android:fitsSystemWindows="false">
 
             <View
@@ -47,11 +46,42 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <!-- Parking Spots Section -->
+            <FrameLayout
+                android:id="@+id/parking_spots_refresh_container"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="20dp"
+                android:layout_marginTop="18dp"
+                android:contentDescription="Refresh parking spots"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/hero_background">
+
+                <ImageButton
+                    android:id="@+id/btn_refresh_parking_spots"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Refresh parking spots"
+                    android:padding="6dp"
+                    android:src="@android:drawable/ic_popup_sync"
+                    android:tint="@color/text_secondary"
+                    android:stateListAnimator="@animator/touch_scale" />
+
+                <ProgressBar
+                    android:id="@+id/progress_refresh_parking_spots"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+            </FrameLayout>
+
             <TextView
                 android:id="@+id/tv_parking_spots_title"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
+                android:layout_marginStart="8dp"
                 android:layout_marginEnd="20dp"
                 android:layout_marginTop="20dp"
                 android:text="Parking Spots"
@@ -59,7 +89,7 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintStart_toEndOf="@id/parking_spots_refresh_container"
                 app:layout_constraintTop_toBottomOf="@id/hero_background" />
 
             <TextView
@@ -81,8 +111,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:layout_marginStart="20dp"
                 android:visibility="gone"
-                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_parking_spots_subtitle"
                 tools:visibility="visible" />
@@ -106,13 +136,12 @@
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler_parking_spots"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginEnd="12dp"
                 android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:paddingHorizontal="12dp"
                 android:overScrollMode="never"
-                android:nestedScrollingEnabled="false"
                 android:visibility="gone"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -123,36 +152,5 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </ScrollView>
-
-    <!-- Floating Action Button -->
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/fab_book_parking_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="24dp"
-        android:padding="1dp"
-        android:clickable="false"
-        android:focusable="false"
-        app:cardBackgroundColor="@color/white"
-        app:cardElevation="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:shapeAppearance="@style/ShapeAppearance.Gridee.Circle"
-        app:strokeColor="@color/fab_border"
-        app:strokeWidth="1dp">
-
-        <com.google.android.material.floatingactionbutton.FloatingActionButton
-            android:id="@+id/fab_book_parking"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            app:backgroundTint="@color/white"
-            android:src="@drawable/ic_add"
-            app:tint="@color/text_primary"
-            app:rippleColor="@color/quick_add_ripple"
-            app:useCompatPadding="false"
-            tools:ignore="ContentDescription" />
-
-    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
